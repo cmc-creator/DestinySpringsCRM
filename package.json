@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "prisma generate && next build",
-    "vercel-build": "next build",
+    "vercel-build": "prisma generate && next build",
     "postinstall": "prisma generate",
     "prepare": "git config core.hooksPath .githooks || true",
     "start": "node -e \"const vars=['DATABASE_URL','DATABASE_PRIVATE_URL','POSTGRES_URL','POSTGRES_PRIVATE_URL','AUTH_SECRET','NEXTAUTH_URL'];vars.forEach(k=>console.log('[env]',k,process.env[k]?'SET':'NOT SET'))\" && prisma db push --accept-data-loss && tsx prisma/seed.ts && next start",
