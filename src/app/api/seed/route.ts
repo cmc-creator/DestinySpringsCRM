@@ -6,7 +6,7 @@ import bcrypt from "bcryptjs";
 // Delete this file once the database is seeded.
 export async function GET(req: NextRequest) {
   const secret = req.nextUrl.searchParams.get("secret");
-  if (!secret || secret !== process.env.SEED_SECRET) {
+  if (!secret || secret !== "nyxaegis-seed-2026") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
