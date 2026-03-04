@@ -1,9 +1,12 @@
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 
-const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
+declare global {
+  // eslint-disable-next-line no-var
+  var __prisma: PrismaClient | undefined;
+}
 
-function createPrismaClient() {
+function createPrismaClient(): PrismaClient {
   const connectionString = process.env.DATABASE_URL;
   if (!connectionString) throw new Error("DATABASE_URL environment variable is not set");
   const adapter = new PrismaPg({ connectionString });
@@ -13,6 +16,14 @@ function createPrismaClient() {
   });
 }
 
-export const prisma = globalForPrisma.prisma ?? createPrismaClient();
-
-if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
+// Lazy proxy — client is only created on first actual DB call, not at import time.
+// This prevents build-time failures when DATABASE_URL is not available.
+export const prisma: PrismaClient = new Proxy({} as PrismaClient, {
+  get(_, prop: string | symbol) {
+    if (!global.__prisma) {
+      global.__prisma = createPrismaClient();
+    }
+    const value = Reflect.get(global.__prisma, prop);
+    return typeof value === "function" ? value.bind(global.__prisma) : value;
+  },
+});
