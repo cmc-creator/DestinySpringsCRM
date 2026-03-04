@@ -8,7 +8,7 @@
     "vercel-build": "next build",
     "postinstall": "prisma generate",
     "prepare": "git config core.hooksPath .githooks || true",
-    "start": "next start",
+    "start": "prisma migrate deploy && next start",
     "lint": "next lint",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
