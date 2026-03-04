@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { timingSafeEqual } from "crypto";
 import { prisma } from "@/lib/prisma";
 
+export const maxDuration = 30;
+
 function safeCompare(a: string, b: string): boolean {
   const len = Math.max(a.length, b.length);
   const bufA = Buffer.alloc(len);

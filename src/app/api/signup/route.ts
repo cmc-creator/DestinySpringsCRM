@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 
+export const maxDuration = 30;
+
 export async function POST(req: NextRequest) {
   try {
     const { name, email, password, role = "ACCOUNT", hospitalName, repTitle } = await req.json();
