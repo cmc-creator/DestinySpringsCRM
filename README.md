@@ -115,7 +115,7 @@ prisma/
 1. Push to GitHub
 2. Connect to Vercel
 3. Set environment variables
-4. Deploy — Vercel will run `prisma db push && next build`
+4. Deploy — Vercel will run `prisma migrate deploy && next build`
 
 ---
 
