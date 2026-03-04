@@ -8,7 +8,7 @@
     "vercel-build": "next build",
     "postinstall": "prisma generate",
     "prepare": "git config core.hooksPath .githooks || true",
-    "start": "node -e \"const vars=['DATABASE_URL','DATABASE_PRIVATE_URL','POSTGRES_URL','POSTGRES_PRIVATE_URL','AUTH_SECRET','NEXTAUTH_URL'];vars.forEach(k=>console.log('[env]',k,process.env[k]?'SET':'NOT SET'))\" && prisma migrate deploy && tsx prisma/seed.ts && next start",
+    "start": "node -e \"const vars=['DATABASE_URL','DATABASE_PRIVATE_URL','POSTGRES_URL','POSTGRES_PRIVATE_URL','AUTH_SECRET','NEXTAUTH_URL'];vars.forEach(k=>console.log('[env]',k,process.env[k]?'SET':'NOT SET'))\" && prisma db push --accept-data-loss && tsx prisma/seed.ts && next start",
     "lint": "next lint",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
