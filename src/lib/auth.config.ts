@@ -11,6 +11,7 @@ function getRoleHome(role?: string) {
 }
 
 export const authConfig: NextAuthConfig = {
+  trustHost: true,
   pages: {
     signIn: "/login",
     error: "/login",
