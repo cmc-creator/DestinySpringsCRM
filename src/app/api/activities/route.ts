@@ -4,16 +4,27 @@ import { prisma } from "@/lib/prisma";
 
 export const maxDuration = 30;
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { searchParams } = new URL(req.url);
+  const from = searchParams.get("from");
+  const to   = searchParams.get("to");
+
   const activities = await prisma.activity.findMany({
-    take: 50,
-    orderBy: { createdAt: "desc" },
+    where: from || to ? {
+      scheduledAt: {
+        ...(from ? { gte: new Date(from) } : {}),
+        ...(to   ? { lte: new Date(to)   } : {}),
+      },
+    } : {},
+    orderBy: { scheduledAt: { sort: "asc", nulls: "last" } },
+    take: 500,
     include: {
-      hospital: { select: { hospitalName: true } },
-      lead: { select: { hospitalName: true } },
-      rep: { include: { user: { select: { name: true } } } },
+      hospital: { select: { id: true, hospitalName: true } },
+      lead:     { select: { hospitalName: true } },
+      rep:      { include: { user: { select: { name: true } } } },
     },
   });
   return NextResponse.json(activities);
