@@ -11,6 +11,7 @@ const TEXT       = "var(--nyx-text)";
 const ACCENT_DIM = "var(--nyx-accent-dim)";
 const ACCENT_MID = "var(--nyx-accent-mid)";
 const ACCENT_STR = "var(--nyx-accent-str)";
+const ACCENT_LBL = "var(--nyx-accent-label)";
 
 type NavItem = { href: string; label: string; icon: string };
 type NavGroup = { group: string; items: NavItem[] };
@@ -172,7 +173,7 @@ export function Sidebar({ role, userName, userEmail }: SidebarProps) {
       <nav style={{ flex: 1, padding: "12px 10px", overflowY: "auto" }}>
         {nav.map((group) => (
           <div key={group.group} style={{ marginBottom: 20 }}>
-            <div style={{ fontSize: "0.62rem", fontWeight: 700, color: ACCENT_MID, letterSpacing: "0.14em", textTransform: "uppercase", padding: "0 8px", marginBottom: 4 }}>{group.group}</div>
+            <div style={{ fontSize: "0.62rem", fontWeight: 700, color: ACCENT_LBL, letterSpacing: "0.14em", textTransform: "uppercase", padding: "0 8px", marginBottom: 4 }}>{group.group}</div>
             {group.items.map((item) => {
               const active = pathname === item.href || pathname.startsWith(item.href + "/");
               return (
@@ -188,9 +189,9 @@ export function Sidebar({ role, userName, userEmail }: SidebarProps) {
                     marginBottom: 1,
                     textDecoration: "none",
                     background: active ? ACCENT_DIM : "transparent",
-                    color: active ? CYAN : TEXT_MUTED,
+                    color: active ? CYAN : TEXT,
                     fontSize: "0.82rem",
-                    fontWeight: active ? 600 : 400,
+                    fontWeight: active ? 600 : 450,
                     transition: "all 0.15s",
                     borderLeft: active ? `2px solid ${CYAN}` : "2px solid transparent",
                   }}
