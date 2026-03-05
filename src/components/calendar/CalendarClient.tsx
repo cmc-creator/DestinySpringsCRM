@@ -744,8 +744,9 @@ export default function CalendarClient({
     const isNew = !data.id;
     const method  = isNew ? "POST" : "PATCH";
     const url     = isNew ? "/api/activities" : `/api/activities/${data.id}`;
-    const { id: _id, ...rest } = data;
-    const body = isNew ? rest : { ...rest, id: data.id };
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { id: _omit, ...rest } = data;
+    const body = isNew ? rest : data;
 
     const res = await fetch(url, {
       method,
