@@ -124,7 +124,7 @@ async function getRows(type: string) {
         "Est. Value ($)": Number(l.estimatedValue ?? 0),
         Rep: l.assignedRep?.user?.name ?? "",
         "Created": fmt(l.createdAt),
-        "Last Contact": fmt(l.lastContactedAt),
+        "Last Updated": fmt(l.updatedAt),
       }));
     }
 
