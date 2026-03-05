@@ -1,6 +1,7 @@
 ﻿import { prisma } from "@/lib/prisma";
 import { formatDate } from "@/lib/utils";
 import TerritoryMapWrapper from "@/components/maps/TerritoryMapWrapper";
+import RouteIQButton from "@/components/maps/RouteIQButton";
 
 const REP_COLORS = ["var(--nyx-accent)","#34d399","#fbbf24","#a78bfa","#f59e0b","#60a5fa","#f87171","#fb923c"];
 const CYAN = "var(--nyx-accent)";
@@ -47,22 +48,31 @@ export default async function TerritoryPage() {
   return (
     <div>
       <div style={{ marginBottom: 28 }}>
-        <p style={{ color: "var(--nyx-accent-label)", fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 4 }}>BD TEAM</p>
-        <h1 style={{ fontSize: "1.8rem", fontWeight: 900, color: TEXT, letterSpacing: "-0.02em" }}>Territory Management</h1>
-        <p style={{ color: TEXT_MUTED, fontSize: "0.875rem", marginTop: 4 }}>Rep coverage and hospital locations across the US</p>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12, marginBottom: 4 }}>
+          <div>
+            <p style={{ color: "var(--nyx-accent-label)", fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 4 }}>BD TEAM</p>
+            <h1 style={{ fontSize: "1.8rem", fontWeight: 900, color: TEXT, letterSpacing: "-0.02em" }}>Territory Management</h1>
+            <p style={{ color: TEXT_MUTED, fontSize: "0.875rem", marginTop: 4 }}>Rep coverage and hospital locations across the US</p>
+          </div>
+          <RouteIQButton hospitals={mapHospitals} />
+        </div>
       </div>
 
       {/* Leaflet Map */}
-      <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 14, padding: 24, marginBottom: 28 }}>
-        <p style={{ fontSize: "0.65rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 16 }}>INTERACTIVE COVERAGE MAP</p>
-        <TerritoryMapWrapper hospitals={mapHospitals} repTerritories={repTerritories} />
-        <div style={{ display: "flex", gap: 16, marginTop: 14, flexWrap: "wrap" }}>
-          {repTerritories.map(r => (
-            <div key={r.id} style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <div style={{ width: 10, height: 10, borderRadius: 2, background: r.color, boxShadow: `0 0 6px ${r.color}88` }} />
-              <span style={{ fontSize: "0.75rem", color: TEXT_MUTED }}>{r.name} ({r.states.length} states)</span>
-            </div>
-          ))}
+      <div className="gold-card" style={{ borderRadius: 14, marginBottom: 28 }}>
+        <div style={{ background: CARD, borderRadius: 14, padding: 24 }}>
+          <p style={{ fontSize: "0.65rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 16 }}>INTERACTIVE COVERAGE MAP</p>
+          <div style={{ width: "100%", minHeight: 320, borderRadius: 10, overflow: "hidden" }}>
+            <TerritoryMapWrapper hospitals={mapHospitals} repTerritories={repTerritories} />
+          </div>
+          <div style={{ display: "flex", gap: 16, marginTop: 14, flexWrap: "wrap" }}>
+            {repTerritories.map(r => (
+              <div key={r.id} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <div style={{ width: 10, height: 10, borderRadius: 2, background: r.color, boxShadow: `0 0 6px ${r.color}88` }} />
+                <span style={{ fontSize: "0.75rem", color: TEXT_MUTED }}>{r.name} ({r.states.length} states)</span>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -72,7 +82,8 @@ export default async function TerritoryPage() {
           const color = REP_COLORS[i % REP_COLORS.length];
           const states = [...new Set([...(rep.licensedStates ?? []), ...rep.territories.map((t: { state: string }) => t.state)])];
           return (
-            <div key={rep.id} style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 20 }}>
+            <div key={rep.id} className="gold-card" style={{ borderRadius: 12 }}>
+              <div style={{ background: CARD, borderRadius: 12, padding: 20, position: "relative", zIndex: 1 }}>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 14 }}>
                 <div>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
@@ -113,6 +124,7 @@ export default async function TerritoryPage() {
                   HIPAA certified  {formatDate(rep.hipaaTrainedAt)}
                 </div>
               )}
+              </div>
             </div>
           );
         })}
@@ -124,38 +136,42 @@ export default async function TerritoryPage() {
       </div>
 
       {/* Territory Table */}
-      <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, overflow: "hidden" }}>
-        <div style={{ padding: "16px 20px", borderBottom: `1px solid ${BORDER}` }}>
-          <p style={{ fontSize: "0.65rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.12em", textTransform: "uppercase" }}>TERRITORY ASSIGNMENTS</p>
+      <div className="gold-card" style={{ borderRadius: 12 }}>
+        <div style={{ background: CARD, borderRadius: 12, overflow: "hidden" }}>
+          <div style={{ padding: "16px 20px", borderBottom: `1px solid ${BORDER}` }}>
+            <p style={{ fontSize: "0.65rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.12em", textTransform: "uppercase" }}>TERRITORY ASSIGNMENTS</p>
+          </div>
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 580 }}>
+              <thead>
+                <tr style={{ borderBottom: `1px solid ${BORDER}` }}>
+                  {["State","Region","Rep","City","Title","Notes"].map(h => (
+                    <th key={h} style={{ padding: "11px 16px", textAlign: "left", fontSize: "0.65rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.1em", textTransform: "uppercase", whiteSpace: "nowrap" }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {reps.flatMap(rep =>
+                  rep.territories.length > 0
+                    ? rep.territories.map((t: { id: string; state: string; region?: string | null; city?: string | null; notes?: string | null }) => (
+                      <tr key={t.id} style={{ borderBottom: `1px solid var(--nyx-accent-dim)` }}>
+                        <td style={{ padding: "11px 16px", fontWeight: 700, fontSize: "0.85rem", color: CYAN }}>{t.state}</td>
+                        <td style={{ padding: "11px 16px", fontSize: "0.8rem", color: TEXT_MUTED }}>{t.region ?? ""}</td>
+                        <td style={{ padding: "11px 16px", fontSize: "0.82rem", color: TEXT, fontWeight: 600 }}>{rep.user.name}</td>
+                        <td style={{ padding: "11px 16px", fontSize: "0.8rem", color: TEXT_MUTED }}>{t.city ?? ""}</td>
+                        <td style={{ padding: "11px 16px", fontSize: "0.8rem", color: TEXT_MUTED }}>{rep.title ?? ""}</td>
+                        <td style={{ padding: "11px 16px", fontSize: "0.78rem", color: TEXT_MUTED }}>{t.notes ?? ""}</td>
+                      </tr>
+                    ))
+                    : []
+                )}
+                {reps.every(r => r.territories.length === 0) && (
+                  <tr><td colSpan={6} style={{ padding: 28, textAlign: "center", color: TEXT_MUTED }}>No territory assignments yet.</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
-          <thead>
-            <tr style={{ borderBottom: `1px solid ${BORDER}` }}>
-              {["State","Region","Rep","City","Title","Notes"].map(h => (
-                <th key={h} style={{ padding: "11px 16px", textAlign: "left", fontSize: "0.65rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.1em", textTransform: "uppercase" }}>{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {reps.flatMap(rep =>
-              rep.territories.length > 0
-                ? rep.territories.map((t: { id: string; state: string; region?: string | null; city?: string | null; notes?: string | null }) => (
-                  <tr key={t.id} style={{ borderBottom: `1px solid var(--nyx-accent-dim)` }}>
-                    <td style={{ padding: "11px 16px", fontWeight: 700, fontSize: "0.85rem", color: CYAN }}>{t.state}</td>
-                    <td style={{ padding: "11px 16px", fontSize: "0.8rem", color: TEXT_MUTED }}>{t.region ?? ""}</td>
-                    <td style={{ padding: "11px 16px", fontSize: "0.82rem", color: TEXT, fontWeight: 600 }}>{rep.user.name}</td>
-                    <td style={{ padding: "11px 16px", fontSize: "0.8rem", color: TEXT_MUTED }}>{t.city ?? ""}</td>
-                    <td style={{ padding: "11px 16px", fontSize: "0.8rem", color: TEXT_MUTED }}>{rep.title ?? ""}</td>
-                    <td style={{ padding: "11px 16px", fontSize: "0.78rem", color: TEXT_MUTED }}>{t.notes ?? ""}</td>
-                  </tr>
-                ))
-                : []
-            )}
-            {reps.every(r => r.territories.length === 0) && (
-              <tr><td colSpan={6} style={{ padding: 28, textAlign: "center", color: TEXT_MUTED }}>No territory assignments yet.</td></tr>
-            )}
-          </tbody>
-        </table>
       </div>
     </div>
   );

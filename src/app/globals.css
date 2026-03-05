@@ -210,13 +210,70 @@
 ::-webkit-scrollbar-thumb { background: var(--nyx-scrollbar); border-radius: 99px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--nyx-accent-mid); }
 
+/* ── Gold card border system ─────────────────────────────────────── */
+@keyframes gold-card-shine {
+  0%, 100% {
+    box-shadow:
+      0 0 0 1px var(--nyx-accent-dim),
+      inset 0 1px 0 rgba(255,255,255,0.03),
+      0 4px 24px rgba(0,0,0,0.4);
+  }
+  45%, 55% {
+    box-shadow:
+      0 0 0 1px var(--nyx-accent-str),
+      0 0 18px var(--nyx-accent-glow),
+      inset 0 1px 0 rgba(255,255,255,0.07),
+      0 4px 24px rgba(0,0,0,0.4);
+  }
+}
+
+/* Gradient border — looks like polished metal at any radius */
+.gold-card {
+  position: relative;
+  border: 1px solid transparent !important;
+  background-clip: padding-box;
+  background-color: var(--nyx-card);
+  border-radius: 12px;
+  box-shadow:
+    0 0 0 1px var(--nyx-accent-dim),
+    inset 0 1px 0 rgba(255,255,255,0.03),
+    0 4px 24px rgba(0,0,0,0.4);
+  animation: gold-card-shine 7s ease-in-out infinite;
+}
+.gold-card::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  background: linear-gradient(
+    145deg,
+    var(--nyx-accent-str) 0%,
+    var(--nyx-accent-dim) 30%,
+    transparent 50%,
+    var(--nyx-accent-dim) 70%,
+    var(--nyx-accent-str) 100%
+  );
+  background-size: 200% 200%;
+  animation: gold-shimmer-sweep 7s ease-in-out infinite;
+  z-index: 0;
+  pointer-events: none;
+  border-radius: inherit;
+}
+.gold-card > * { position: relative; z-index: 1; }
+
+@keyframes gold-shimmer-sweep {
+  0%, 100% { background-position: 0% 0%; opacity: 0.7; }
+  50%       { background-position: 100% 100%; opacity: 1; }
+}
+
 .card-glow {
   border: 1px solid var(--nyx-border);
+  box-shadow: inset 0 1px 0 var(--nyx-accent-dim);
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 .card-glow:hover {
   border-color: var(--nyx-accent-mid);
-  box-shadow: 0 0 24px var(--nyx-accent-dim), 0 4px 20px rgba(0,0,0,0.45);
+  box-shadow: 0 0 24px var(--nyx-accent-dim), 0 4px 20px rgba(0,0,0,0.45), inset 0 1px 0 var(--nyx-accent-mid);
 }
 
 .stat-value {

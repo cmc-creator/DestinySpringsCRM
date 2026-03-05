@@ -223,9 +223,7 @@ export default function RepsClient() {
           const colors = ["var(--nyx-accent)","#34d399","#fbbf24","#a78bfa","#f59e0b","#60a5fa","#f87171","#fb923c"];
           const color = colors[i % colors.length];
           return (
-            <div key={rep.id} onClick={() => setModal(rep)} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: 20, cursor: "pointer", transition: "border-color 0.15s" }}
-              onMouseEnter={e => (e.currentTarget.style.borderColor = `${color}44`)}
-              onMouseLeave={e => (e.currentTarget.style.borderColor = C.border)}>
+            <div key={rep.id} onClick={() => setModal(rep)} className="gold-card" style={{ borderRadius: 12, padding: 20, cursor: "pointer" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
                 <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
                   <div style={{ width: 38, height: 38, borderRadius: "50%", background: `${color}18`, border: `1px solid ${color}44`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.85rem", fontWeight: 700, color, flexShrink: 0 }}>

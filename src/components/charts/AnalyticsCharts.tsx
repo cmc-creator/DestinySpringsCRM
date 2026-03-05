@@ -95,7 +95,7 @@ export default function AnalyticsCharts({
       {/* KPI Cards */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 14, marginBottom: 32 }}>
         {kpis.map(k => (
-          <div key={k.label} style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: "18px 16px" }}>
+          <div key={k.label} className="gold-card" style={{ borderRadius: 12, padding: "18px 16px" }}>
             <div style={{ fontSize: "1.4rem", marginBottom: 8 }}>{k.icon}</div>
             <div style={{ fontSize: "1.7rem", fontWeight: 900, color: k.color, textShadow: `0 0 20px ${k.color}55`, lineHeight: 1, marginBottom: 4 }}>{k.value}</div>
             <div style={{ fontSize: "0.72rem", color: TEXT_MUTED, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em" }}>{k.label}</div>
@@ -107,7 +107,7 @@ export default function AnalyticsCharts({
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginBottom: 20 }}>
 
         {/* Pipeline by Stage — horizontal bars */}
-        <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 20 }}>
+        <div className="gold-card" style={{ borderRadius: 12, padding: 20 }}>
           <p style={{ fontSize: "0.65rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 18 }}>PIPELINE FUNNEL</p>
           {oppsByStage.length === 0
             ? <p style={{ color: TEXT_MUTED, fontSize: "0.85rem" }}>No opportunity data yet.</p>
@@ -125,7 +125,7 @@ export default function AnalyticsCharts({
         </div>
 
         {/* Monthly Revenue — vertical bars */}
-        <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 20 }}>
+        <div className="gold-card" style={{ borderRadius: 12, padding: 20 }}>
           <p style={{ fontSize: "0.65rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 18 }}>REVENUE TREND</p>
           {monthlyRevenue.length === 0
             ? <p style={{ color: TEXT_MUTED, fontSize: "0.85rem" }}>No invoice data yet.</p>
@@ -164,7 +164,7 @@ export default function AnalyticsCharts({
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginBottom: 20 }}>
 
         {/* Lead Conversion Funnel */}
-        <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 20 }}>
+        <div className="gold-card" style={{ borderRadius: 12, padding: 20 }}>
           <p style={{ fontSize: "0.65rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 18 }}>LEAD PIPELINE</p>
           {leadsByStatus.length === 0
             ? <p style={{ color: TEXT_MUTED, fontSize: "0.85rem" }}>No lead data yet.</p>
@@ -182,7 +182,7 @@ export default function AnalyticsCharts({
         </div>
 
         {/* Rep Leaderboard */}
-        <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 20 }}>
+        <div className="gold-card" style={{ borderRadius: 12, padding: 20 }}>
           <p style={{ fontSize: "0.65rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 18 }}>REP LEADERBOARD</p>
           {topReps.length === 0
             ? <p style={{ color: TEXT_MUTED, fontSize: "0.85rem" }}>No rep data yet.</p>
@@ -210,7 +210,7 @@ export default function AnalyticsCharts({
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
 
         {/* Hospital Mix */}
-        <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 20 }}>
+        <div className="gold-card" style={{ borderRadius: 12, padding: 20 }}>
           <p style={{ fontSize: "0.65rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 18 }}>ACCOUNT MIX BY TYPE</p>
           {hospitalMix.length === 0
             ? <p style={{ color: TEXT_MUTED, fontSize: "0.85rem" }}>No account data yet.</p>
@@ -231,7 +231,7 @@ export default function AnalyticsCharts({
         </div>
 
         {/* Outcome Summary */}
-        <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 20 }}>
+        <div className="gold-card" style={{ borderRadius: 12, padding: 20 }}>
           <p style={{ fontSize: "0.65rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 18 }}>WIN / LOSS SUMMARY</p>
           {(() => {
             const won  = oppsByStage.find(o => o.stage === "CLOSED_WON");

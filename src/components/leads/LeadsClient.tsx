@@ -210,10 +210,22 @@ export default function LeadsClient({ reps }: { reps: Rep[] }) {
 
   async function handleSave(data: Partial<Lead>) {
     const ex = modal !== "add" && modal !== null ? modal : null;
-    if (ex) {
-      await fetch(`/api/leads/${ex.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
-    } else {
-      await fetch("/api/leads", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
+    // Strip relation objects and computed fields — only send scalars to API
+    const { assignedRep: _ar, id: _id, createdAt: _ca, ...payload } = data as Partial<Lead> & { assignedRep?: unknown; id?: unknown; createdAt?: unknown };
+    try {
+      const res = ex
+        ? await fetch(`/api/leads/${ex.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) })
+        : await fetch("/api/leads", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        console.error("Lead save failed:", err);
+        alert(`Failed to save lead: ${err?.error ?? res.statusText}`);
+        return;
+      }
+    } catch (e) {
+      console.error("Lead save error:", e);
+      alert("Network error — could not save lead.");
+      return;
     }
     setModal(null);
     await load();
@@ -260,8 +272,9 @@ export default function LeadsClient({ reps }: { reps: Rep[] }) {
       </div>
 
       {/* Table */}
-      <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, overflow: "hidden" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+      <div className="gold-card" style={{ borderRadius: 12 }}>
+        <div style={{ background: C.card, borderRadius: 12, overflow: "hidden" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr style={{ borderBottom: `1px solid ${C.border}` }}>
               {["Hospital", "Contact", "Status", "Priority", "Source", "Est. Value", "Rep", "Created", ""].map(h => (
@@ -301,6 +314,7 @@ export default function LeadsClient({ reps }: { reps: Rep[] }) {
             ))}
           </tbody>
         </table>
+        </div>
       </div>
 
       {modal !== null && (
@@ -317,6 +331,7 @@ export default function LeadsClient({ reps }: { reps: Rep[] }) {
 }
 
 function hexToRgb(hex: string): string {
+  if (!hex.startsWith("#")) return "120,100,50"; // fallback for CSS vars
   const r = parseInt(hex.slice(1,3),16);
   const g = parseInt(hex.slice(3,5),16);
   const b = parseInt(hex.slice(5,7),16);

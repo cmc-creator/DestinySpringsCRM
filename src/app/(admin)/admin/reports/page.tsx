@@ -83,7 +83,7 @@ export default function ReportsPage() {
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
         {REPORTS.map((r) => (
-          <div key={r.id} style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 20, display: "flex", flexDirection: "column" }}>
+          <div key={r.id} className="gold-card" style={{ borderRadius: 12, padding: 20, display: "flex", flexDirection: "column" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
               <span style={{ fontSize: "1.8rem" }}>{r.icon}</span>
               <span style={{

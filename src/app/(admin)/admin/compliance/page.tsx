@@ -36,7 +36,7 @@ export default async function CompliancePage() {
           { label: "Pending Review", value: pendingCount, color: "#fbbf24" },
           { label: "Active Reps", value: reps.length, color: CYAN },
         ].map((s) => (
-          <div key={s.label} style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 10, padding: "14px 20px" }}>
+          <div key={s.label} className="gold-card" style={{ borderRadius: 10, padding: "14px 20px" }}>
             <div style={{ fontSize: "1.4rem", fontWeight: 900, color: s.color }}>{s.value}</div>
             <div style={{ fontSize: "0.72rem", color: TEXT_MUTED }}>{s.label}</div>
           </div>
@@ -44,7 +44,7 @@ export default async function CompliancePage() {
       </div>
 
       {/* Rep compliance status */}
-      <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: "20px", marginBottom: 24 }}>
+      <div className="gold-card" style={{ borderRadius: 12, padding: "20px", marginBottom: 24 }}>
         <p style={{ fontSize: "0.7rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 14 }}>REP COMPLIANCE STATUS</p>
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {reps.length === 0 && <p style={{ color: TEXT_MUTED, fontSize: "0.85rem" }}>No active reps.</p>}
@@ -66,7 +66,8 @@ export default async function CompliancePage() {
       </div>
 
       {/* Docs table */}
-      <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, overflow: "hidden" }}>
+      <div className="gold-card" style={{ borderRadius: 12 }}>
+        <div style={{ background: CARD, borderRadius: 12, overflow: "hidden" }}>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr style={{ borderBottom: `1px solid ${BORDER}` }}>
@@ -95,6 +96,7 @@ export default async function CompliancePage() {
             ))}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   );

@@ -57,7 +57,7 @@ export default async function AdminDashboard() {
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 16, marginBottom: 32 }}>
         {stats.map((s) => (
           <Link key={s.label} href={s.href} style={{ textDecoration: "none" }}>
-            <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: "20px 18px", cursor: "pointer", transition: "border-color 0.2s" }}>
+            <div className="gold-card" style={{ borderRadius: 12, padding: "20px 18px", cursor: "pointer", transition: "box-shadow 0.2s" }}>
               <div style={{ fontSize: "1.4rem", marginBottom: 8 }}>{s.icon}</div>
               <div style={{ fontSize: "1.8rem", fontWeight: 900, color: CYAN, textShadow: "0 0 20px var(--nyx-accent-label)", lineHeight: 1, marginBottom: 4 }}>{s.value}</div>
               <div style={{ fontSize: "0.75rem", color: TEXT_MUTED, fontWeight: 500 }}>{s.label}</div>
@@ -80,7 +80,7 @@ export default async function AdminDashboard() {
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
         {/* Recent Opportunities */}
-        <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: "20px" }}>
+        <div className="gold-card" style={{ borderRadius: 12, padding: "20px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
             <p style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.12em", textTransform: "uppercase" }}>RECENT OPPORTUNITIES</p>
             <Link href="/admin/opportunities" style={{ fontSize: "0.75rem", color: CYAN, textDecoration: "none", opacity: 0.7 }}>View all →</Link>
@@ -103,7 +103,7 @@ export default async function AdminDashboard() {
         </div>
 
         {/* Activity Feed */}
-        <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: "20px" }}>
+        <div className="gold-card" style={{ borderRadius: 12, padding: "20px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
             <p style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.12em", textTransform: "uppercase" }}>RECENT ACTIVITY</p>
           </div>

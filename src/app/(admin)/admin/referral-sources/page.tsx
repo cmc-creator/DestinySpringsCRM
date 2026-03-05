@@ -162,9 +162,9 @@ export default function ReferralSourcesPage() {
 
       {/* Add Modal */}
       {showAdd && (
-        <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.7)", zIndex:200, display:"flex", alignItems:"center", justifyContent:"center", padding:16 }}
+        <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.78)", zIndex:200, display:"flex", alignItems:"flex-start", justifyContent:"center", padding:"40px 16px 32px", overflowY:"auto" }}
           onClick={(e) => { if (e.target === e.currentTarget) setShowAdd(false); }}>
-          <div style={{ background:"var(--nyx-bg)", border:`1px solid ${C.border}`, borderRadius:14, padding:32, width:"100%", maxWidth:520, maxHeight:"90vh", overflowY:"auto" }}>
+          <div style={{ background:"var(--nyx-bg)", border:`1px solid var(--nyx-accent-str)`, borderRadius:14, padding:32, width:"100%", maxWidth:520, flexShrink:0 }}>
             <h2 style={{ fontSize:"1.2rem", fontWeight:900, color:C.text, marginBottom:20 }}>Add Referral Source</h2>
             {error && <div style={{ background:"rgba(239,68,68,0.08)", border:"1px solid rgba(239,68,68,0.2)", borderRadius:8, padding:"10px 14px", color:C.red, fontSize:"0.82rem", marginBottom:16 }}>{error}</div>}
 
