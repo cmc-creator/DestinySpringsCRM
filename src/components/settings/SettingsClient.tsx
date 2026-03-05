@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import { useState, useEffect } from "react";
 
 const inp: React.CSSProperties = {
@@ -13,7 +13,7 @@ type NyxVars = {
   "--nyx-accent-mid": string; "--nyx-accent-str": string; "--nyx-bg": string;
   "--nyx-card": string; "--nyx-border": string; "--nyx-sidebar-bg": string;
   "--nyx-text": string; "--nyx-text-muted": string; "--nyx-input-bg": string;
-  "--nyx-scrollbar": string;
+  "--nyx-scrollbar": string; "--nyx-accent-label": string;
 };
 interface Theme { key: string; label: string; desc: string; accent: string; vars: NyxVars; }
 
@@ -32,28 +32,30 @@ const THEMES: Theme[] = [
       "--nyx-border":      "rgba(201,168,76,0.13)",
       "--nyx-sidebar-bg":  "rgba(5,3,1,0.995)",
       "--nyx-text":        "#EDE4CF",
-      "--nyx-text-muted":  "rgba(237,228,207,0.46)",
+      "--nyx-text-muted":  "rgba(237,228,207,0.72)",
       "--nyx-input-bg":    "rgba(0,0,0,0.45)",
       "--nyx-scrollbar":   "rgba(201,168,76,0.20)",
+      "--nyx-accent-label":"rgba(201,168,76,0.60)",
     },
   },
   {
     key: "glass", label: "Glass", desc: "Midnight Cyan",
-    accent: "#00d4ff",
+    accent: "var(--nyx-accent)",
     vars: {
-      "--nyx-accent":      "#00d4ff",
-      "--nyx-accent-glow": "rgba(0,212,255,0.18)",
-      "--nyx-accent-dim":  "rgba(0,212,255,0.08)",
-      "--nyx-accent-mid":  "rgba(0,212,255,0.15)",
-      "--nyx-accent-str":  "rgba(0,212,255,0.30)",
+      "--nyx-accent":      "var(--nyx-accent)",
+      "--nyx-accent-glow": "var(--nyx-accent-mid)",
+      "--nyx-accent-dim":  "var(--nyx-accent-dim)",
+      "--nyx-accent-mid":  "var(--nyx-accent-mid)",
+      "--nyx-accent-str":  "var(--nyx-accent-str)",
       "--nyx-bg":          "#040810",
-      "--nyx-card":        "rgba(0,212,255,0.03)",
-      "--nyx-border":      "rgba(0,212,255,0.08)",
+      "--nyx-card":        "var(--nyx-accent-dim)",
+      "--nyx-border":      "var(--nyx-accent-dim)",
       "--nyx-sidebar-bg":  "rgba(4,6,12,0.98)",
       "--nyx-text":        "#d8e8f4",
-      "--nyx-text-muted":  "rgba(216,232,244,0.50)",
+      "--nyx-text-muted":  "rgba(216,232,244,0.72)",
       "--nyx-input-bg":    "rgba(0,0,0,0.35)",
-      "--nyx-scrollbar":   "rgba(0,212,255,0.15)",
+      "--nyx-scrollbar":   "var(--nyx-accent-mid)",
+      "--nyx-accent-label":"rgba(0,212,255,0.60)",
     },
   },
   {
@@ -70,9 +72,10 @@ const THEMES: Theme[] = [
       "--nyx-border":      "rgba(52,211,153,0.09)",
       "--nyx-sidebar-bg":  "rgba(2,7,4,0.99)",
       "--nyx-text":        "#d4f0e4",
-      "--nyx-text-muted":  "rgba(212,240,228,0.46)",
+      "--nyx-text-muted":  "rgba(212,240,228,0.72)",
       "--nyx-input-bg":    "rgba(0,0,0,0.40)",
       "--nyx-scrollbar":   "rgba(52,211,153,0.18)",
+      "--nyx-accent-label":"rgba(52,211,153,0.60)",
     },
   },
   {
@@ -89,9 +92,10 @@ const THEMES: Theme[] = [
       "--nyx-border":      "rgba(167,139,250,0.10)",
       "--nyx-sidebar-bg":  "rgba(4,2,10,0.99)",
       "--nyx-text":        "#e4dcf7",
-      "--nyx-text-muted":  "rgba(228,220,247,0.46)",
+      "--nyx-text-muted":  "rgba(228,220,247,0.72)",
       "--nyx-input-bg":    "rgba(0,0,0,0.40)",
       "--nyx-scrollbar":   "rgba(167,139,250,0.18)",
+      "--nyx-accent-label":"rgba(167,139,250,0.60)",
     },
   },
   {
@@ -108,9 +112,10 @@ const THEMES: Theme[] = [
       "--nyx-border":      "rgba(251,191,36,0.10)",
       "--nyx-sidebar-bg":  "rgba(5,4,0,0.99)",
       "--nyx-text":        "#f2e8c8",
-      "--nyx-text-muted":  "rgba(242,232,200,0.46)",
+      "--nyx-text-muted":  "rgba(242,232,200,0.72)",
       "--nyx-input-bg":    "rgba(0,0,0,0.42)",
       "--nyx-scrollbar":   "rgba(251,191,36,0.18)",
+      "--nyx-accent-label":"rgba(251,191,36,0.60)",
     },
   },
   {
@@ -127,9 +132,10 @@ const THEMES: Theme[] = [
       "--nyx-border":      "rgba(248,113,113,0.10)",
       "--nyx-sidebar-bg":  "rgba(7,2,3,0.99)",
       "--nyx-text":        "#f4dcdc",
-      "--nyx-text-muted":  "rgba(244,220,220,0.46)",
+      "--nyx-text-muted":  "rgba(244,220,220,0.72)",
       "--nyx-input-bg":    "rgba(0,0,0,0.42)",
       "--nyx-scrollbar":   "rgba(248,113,113,0.18)",
+      "--nyx-accent-label":"rgba(248,113,113,0.60)",
     },
   },
 ];

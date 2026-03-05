@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import { useState, useEffect, useCallback } from "react";
 
 type InvoiceStatus = "DRAFT"|"SENT"|"PAID"|"OVERDUE"|"VOID";
@@ -13,7 +13,7 @@ interface Invoice {
   createdAt: string;
 }
 
-const C = { card: "rgba(255,255,255,0.03)", border: "rgba(0,212,255,0.08)", cyan: "#00d4ff", text: "#d8e8f4", muted: "rgba(216,232,244,0.55)", input: "rgba(0,0,0,0.35)" };
+const C = { card: "var(--nyx-card)", border: "var(--nyx-border)", cyan: "var(--nyx-accent)", text: "var(--nyx-text)", muted: "var(--nyx-text-muted)", input: "var(--nyx-input-bg)" };
 const inp: React.CSSProperties = { width: "100%", background: C.input, border: `1px solid ${C.border}`, borderRadius: 7, padding: "8px 12px", color: C.text, fontSize: "0.875rem", outline: "none", boxSizing: "border-box" };
 const sel: React.CSSProperties = { ...inp, appearance: "none" };
 
@@ -60,7 +60,7 @@ function InvoiceModal({ invoice, hospitals, onClose, onSave, onDelete }: {
 
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 16 }}>
-      <div style={{ background: "#0d1525", border: `1px solid rgba(0,212,255,0.15)`, borderRadius: 14, width: "100%", maxWidth: 700, maxHeight: "92vh", overflowY: "auto", padding: 28 }}>
+      <div style={{ background: "#0d1525", border: `1px solid var(--nyx-accent-mid)`, borderRadius: 14, width: "100%", maxWidth: 700, maxHeight: "92vh", overflowY: "auto", padding: 28 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
           <h2 style={{ fontSize: "1.2rem", fontWeight: 800, color: C.text }}>{isEdit ? "Edit Invoice" : "Create Invoice"}</h2>
           <button onClick={onClose} style={{ background: "none", border: "none", color: C.muted, cursor: "pointer", fontSize: "1.4rem" }}>×</button>
@@ -98,8 +98,8 @@ function InvoiceModal({ invoice, hospitals, onClose, onSave, onDelete }: {
             {/* Line Items */}
             <div style={{ gridColumn: "1/-1", borderTop: `1px solid ${C.border}`, paddingTop: 14, marginTop: 4 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-                <p style={{ fontSize: "0.65rem", fontWeight: 700, color: "rgba(0,212,255,0.45)", letterSpacing: "0.12em", textTransform: "uppercase" }}>Line Items</p>
-                <button type="button" onClick={() => setLines(l => [...l, { description: "", qty: 1, unitPrice: 0 }])} style={{ background: "rgba(0,212,255,0.08)", border: `1px solid rgba(0,212,255,0.2)`, borderRadius: 6, padding: "4px 10px", color: C.cyan, cursor: "pointer", fontSize: "0.75rem" }}>+ Line</button>
+                <p style={{ fontSize: "0.65rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.12em", textTransform: "uppercase" }}>Line Items</p>
+                <button type="button" onClick={() => setLines(l => [...l, { description: "", qty: 1, unitPrice: 0 }])} style={{ background: "var(--nyx-accent-dim)", border: `1px solid var(--nyx-accent-str)`, borderRadius: 6, padding: "4px 10px", color: C.cyan, cursor: "pointer", fontSize: "0.75rem" }}>+ Line</button>
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 60px 100px 32px", gap: 6, marginBottom: 8 }}>
                 {["DESCRIPTION","QTY","UNIT PRICE",""].map(h => <div key={h} style={{ fontSize: "0.65rem", color: C.muted, fontWeight: 700 }}>{h}</div>)}
@@ -113,7 +113,7 @@ function InvoiceModal({ invoice, hospitals, onClose, onSave, onDelete }: {
                 </div>
               ))}
               <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 10 }}>
-                <div style={{ background: "rgba(0,212,255,0.06)", border: `1px solid rgba(0,212,255,0.15)`, borderRadius: 8, padding: "10px 20px", textAlign: "right" }}>
+                <div style={{ background: "var(--nyx-accent-dim)", border: `1px solid var(--nyx-accent-mid)`, borderRadius: 8, padding: "10px 20px", textAlign: "right" }}>
                   <div style={{ fontSize: "0.7rem", color: C.muted, marginBottom: 2 }}>TOTAL</div>
                   <div style={{ fontSize: "1.3rem", fontWeight: 900, color: C.cyan }}>{fmt(total)}</div>
                 </div>
@@ -140,7 +140,7 @@ function InvoiceModal({ invoice, hospitals, onClose, onSave, onDelete }: {
             </div>
             <div style={{ display: "flex", gap: 10 }}>
               <button type="button" onClick={onClose} style={{ background: "none", border: `1px solid ${C.border}`, borderRadius: 7, padding: "8px 20px", color: C.muted, cursor: "pointer" }}>Cancel</button>
-              <button type="submit" disabled={saving} style={{ background: "rgba(0,212,255,0.12)", border: `1px solid rgba(0,212,255,0.25)`, borderRadius: 7, padding: "8px 24px", color: C.cyan, cursor: "pointer", fontWeight: 700 }}>{saving ? "Saving…" : isEdit ? "Save Changes" : "Create Invoice"}</button>
+              <button type="submit" disabled={saving} style={{ background: "var(--nyx-accent-mid)", border: `1px solid var(--nyx-accent-str)`, borderRadius: 7, padding: "8px 24px", color: C.cyan, cursor: "pointer", fontWeight: 700 }}>{saving ? "Saving…" : isEdit ? "Save Changes" : "Create Invoice"}</button>
             </div>
           </div>
         </form>
@@ -184,7 +184,7 @@ export default function InvoicesClient({ hospitals }: { hospitals: Hospital[] })
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20, flexWrap: "wrap", gap: 12 }}>
         <div>
-          <p style={{ color: "rgba(0,212,255,0.55)", fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 4 }}>BILLING</p>
+          <p style={{ color: "var(--nyx-accent-label)", fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 4 }}>BILLING</p>
           <h1 style={{ fontSize: "1.8rem", fontWeight: 900, color: C.text }}>Invoices</h1>
           <p style={{ color: C.muted, fontSize: "0.875rem", marginTop: 4 }}>{invoices.length} invoices</p>
         </div>
@@ -197,13 +197,13 @@ export default function InvoicesClient({ hospitals }: { hospitals: Hospital[] })
             <div style={{ fontSize: "1rem", fontWeight: 900, color: "#fbbf24" }}>{fmt(totalOutstanding)}</div>
             <div style={{ fontSize: "0.65rem", color: C.muted }}>Outstanding</div>
           </div>
-          <button onClick={() => setModal("add")} style={{ background: "rgba(0,212,255,0.1)", border: "1px solid rgba(0,212,255,0.25)", borderRadius: 8, padding: "9px 18px", color: C.cyan, cursor: "pointer", fontWeight: 700 }}>+ New Invoice</button>
+          <button onClick={() => setModal("add")} style={{ background: "var(--nyx-accent-dim)", border: "1px solid var(--nyx-accent-str)", borderRadius: 8, padding: "9px 18px", color: C.cyan, cursor: "pointer", fontWeight: 700 }}>+ New Invoice</button>
         </div>
       </div>
 
       <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
         {["ALL",...STATUSES].map(s => (
-          <button key={s} onClick={() => setFilterStatus(s)} style={{ background: filterStatus === s ? "rgba(0,212,255,0.1)" : C.card, border: `1px solid ${filterStatus === s ? "rgba(0,212,255,0.3)" : C.border}`, borderRadius: 6, padding: "5px 14px", color: filterStatus === s ? C.cyan : C.muted, cursor: "pointer", fontSize: "0.75rem", fontWeight: filterStatus === s ? 700 : 400 }}>{s}</button>
+          <button key={s} onClick={() => setFilterStatus(s)} style={{ background: filterStatus === s ? "var(--nyx-accent-dim)" : C.card, border: `1px solid ${filterStatus === s ? "var(--nyx-accent-str)" : C.border}`, borderRadius: 6, padding: "5px 14px", color: filterStatus === s ? C.cyan : C.muted, cursor: "pointer", fontSize: "0.75rem", fontWeight: filterStatus === s ? 700 : 400 }}>{s}</button>
         ))}
       </div>
 
@@ -212,7 +212,7 @@ export default function InvoicesClient({ hospitals }: { hospitals: Hospital[] })
           <thead>
             <tr style={{ borderBottom: `1px solid ${C.border}` }}>
               {["Invoice #","Hospital","Status","Total","Due Date","Paid","Created",""].map(h => (
-                <th key={h} style={{ padding: "12px 14px", textAlign: "left", fontSize: "0.65rem", fontWeight: 700, color: "rgba(0,212,255,0.45)", letterSpacing: "0.1em", textTransform: "uppercase" }}>{h}</th>
+                <th key={h} style={{ padding: "12px 14px", textAlign: "left", fontSize: "0.65rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.1em", textTransform: "uppercase" }}>{h}</th>
               ))}
             </tr>
           </thead>
@@ -220,8 +220,8 @@ export default function InvoicesClient({ hospitals }: { hospitals: Hospital[] })
             {loading && <tr><td colSpan={8} style={{ padding: 32, textAlign: "center", color: C.muted }}>Loading…</td></tr>}
             {!loading && filtered.length === 0 && <tr><td colSpan={8} style={{ padding: 32, textAlign: "center", color: C.muted }}>No invoices. Create one to get started.</td></tr>}
             {filtered.map(inv => (
-              <tr key={inv.id} onClick={() => setModal(inv)} style={{ borderBottom: `1px solid rgba(0,212,255,0.04)`, cursor: "pointer" }}
-                onMouseEnter={e => (e.currentTarget.style.background = "rgba(0,212,255,0.03)")}
+              <tr key={inv.id} onClick={() => setModal(inv)} style={{ borderBottom: `1px solid var(--nyx-accent-dim)`, cursor: "pointer" }}
+                onMouseEnter={e => (e.currentTarget.style.background = "var(--nyx-accent-dim)")}
                 onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
                 <td style={{ padding: "12px 14px", fontWeight: 700, fontSize: "0.85rem", color: C.cyan }}>{inv.invoiceNumber}</td>
                 <td style={{ padding: "12px 14px", fontSize: "0.82rem", color: C.text }}>{inv.hospital.hospitalName}</td>

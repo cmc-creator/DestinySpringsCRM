@@ -2,8 +2,8 @@
 import AnalyticsCharts from "@/components/charts/AnalyticsCharts";
 import type { OppStageRow, LeadRow, RepRow, MonthRow, HospTypeRow } from "@/components/charts/AnalyticsCharts";
 
-const TEXT = "#d8e8f4";
-const TEXT_MUTED = "rgba(216,232,244,0.55)";
+const TEXT = "var(--nyx-text)";
+const TEXT_MUTED = "var(--nyx-text-muted)";
 
 export default async function AnalyticsPage() {
   const [oppsByStageRaw, leadsByStatusRaw, repStatsRaw, hospitalStatsRaw, paidInvoices, totalRepsCount, totalHospitalsCount] = await Promise.all([
@@ -79,7 +79,7 @@ export default async function AnalyticsPage() {
   return (
     <div>
       <div style={{ marginBottom: 28 }}>
-        <p style={{ color: "rgba(0,212,255,0.55)", fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 4 }}>INTELLIGENCE</p>
+        <p style={{ color: "var(--nyx-accent-label)", fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 4 }}>INTELLIGENCE</p>
         <h1 style={{ fontSize: "1.8rem", fontWeight: 900, color: TEXT, letterSpacing: "-0.02em" }}>Analytics</h1>
         <p style={{ color: TEXT_MUTED, fontSize: "0.875rem", marginTop: 4 }}>Pipeline performance, revenue trends, and team metrics</p>
       </div>

@@ -1,13 +1,13 @@
-import { prisma } from "@/lib/prisma";
+﻿import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { formatCurrency, formatDate } from "@/lib/utils";
 
-const CYAN = "#00d4ff";
-const CARD = "rgba(255,255,255,0.03)";
-const BORDER = "rgba(0,212,255,0.08)";
-const TEXT = "#d8e8f4";
-const TEXT_MUTED = "rgba(216,232,244,0.55)";
+const CYAN = "var(--nyx-accent)";
+const CARD = "var(--nyx-card)";
+const BORDER = "var(--nyx-accent-dim)";
+const TEXT = "var(--nyx-text)";
+const TEXT_MUTED = "var(--nyx-text-muted)";
 
 const statusColors: Record<string, string> = {
   DRAFT: "#94a3b8", SENT: "#fbbf24", PAID: "#34d399", OVERDUE: "#f87171", VOID: "#94a3b8",
@@ -29,7 +29,7 @@ export default async function AccountInvoicesPage() {
   return (
     <div>
       <div style={{ marginBottom: 28 }}>
-        <p style={{ color: "rgba(0,212,255,0.55)", fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 4 }}>ACCOUNT PORTAL</p>
+        <p style={{ color: "var(--nyx-accent-label)", fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 4 }}>ACCOUNT PORTAL</p>
         <h1 style={{ fontSize: "1.8rem", fontWeight: 900, color: TEXT }}>Invoices</h1>
         <p style={{ color: TEXT_MUTED, fontSize: "0.875rem", marginTop: 4 }}>Your billing history with NyxAegis</p>
       </div>
@@ -52,7 +52,7 @@ export default async function AccountInvoicesPage() {
           <thead>
             <tr style={{ borderBottom: `1px solid ${BORDER}` }}>
               {["Invoice #", "Amount", "Status", "Due Date", "Paid Date"].map((h) => (
-                <th key={h} style={{ padding: "12px 16px", textAlign: "left", fontSize: "0.68rem", fontWeight: 700, color: "rgba(0,212,255,0.45)", letterSpacing: "0.1em", textTransform: "uppercase" }}>{h}</th>
+                <th key={h} style={{ padding: "12px 16px", textAlign: "left", fontSize: "0.68rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.1em", textTransform: "uppercase" }}>{h}</th>
               ))}
             </tr>
           </thead>
@@ -61,7 +61,7 @@ export default async function AccountInvoicesPage() {
               <tr><td colSpan={5} style={{ padding: 32, textAlign: "center", color: TEXT_MUTED }}>No invoices yet.</td></tr>
             )}
             {hospital.invoices.map((inv) => (
-              <tr key={inv.id} style={{ borderBottom: `1px solid rgba(0,212,255,0.04)` }}>
+              <tr key={inv.id} style={{ borderBottom: `1px solid var(--nyx-accent-dim)` }}>
                 <td style={{ padding: "13px 16px", fontWeight: 700, fontSize: "0.9rem", color: CYAN }}>{inv.invoiceNumber}</td>
                 <td style={{ padding: "13px 16px", fontSize: "1rem", fontWeight: 700, color: TEXT }}>{formatCurrency(Number(inv.totalAmount))}</td>
                 <td style={{ padding: "13px 16px" }}>

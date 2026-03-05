@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 
 const C = {
   bg:      "var(--nyx-bg)",
@@ -100,7 +100,7 @@ function DashboardMock() {
           ))}
         </div>
         {rows.map((r) => (
-          <div key={r.name} style={{ padding: "9px 16px", display: "grid", gridTemplateColumns: "1fr 120px 55px 55px 32px", gap: 8, borderBottom: `1px solid rgba(0,180,255,0.04)`, alignItems: "center" }}>
+          <div key={r.name} style={{ padding: "9px 16px", display: "grid", gridTemplateColumns: "1fr 120px 55px 55px 32px", gap: 8, borderBottom: `1px solid var(--nyx-accent-dim)`, alignItems: "center" }}>
             <div style={{ fontSize: "0.72rem", color: C.text, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.name}</div>
             <div style={{ fontSize: "0.65rem", color: C.muted }}>{r.type}</div>
             <div style={{ fontSize: "0.72rem", color: C.muted }}>{r.goal}</div>

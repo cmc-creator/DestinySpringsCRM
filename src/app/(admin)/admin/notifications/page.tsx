@@ -1,13 +1,13 @@
-import { prisma } from "@/lib/prisma";
+﻿import { prisma } from "@/lib/prisma";
 import { formatRelativeTime } from "@/lib/utils";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 
-const CYAN = "#00d4ff";
-const CARD = "rgba(255,255,255,0.03)";
-const BORDER = "rgba(0,212,255,0.08)";
-const TEXT = "#d8e8f4";
-const TEXT_MUTED = "rgba(216,232,244,0.55)";
+const CYAN = "var(--nyx-accent)";
+const CARD = "var(--nyx-card)";
+const BORDER = "var(--nyx-accent-dim)";
+const TEXT = "var(--nyx-text)";
+const TEXT_MUTED = "var(--nyx-text-muted)";
 
 export default async function NotificationsPage() {
   const session = await auth();
@@ -22,7 +22,7 @@ export default async function NotificationsPage() {
   return (
     <div>
       <div style={{ marginBottom: 28 }}>
-        <p style={{ color: "rgba(0,212,255,0.55)", fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 4 }}>COMMAND</p>
+        <p style={{ color: "var(--nyx-accent-label)", fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 4 }}>COMMAND</p>
         <h1 style={{ fontSize: "1.8rem", fontWeight: 900, color: TEXT }}>Notifications</h1>
       </div>
 
@@ -34,7 +34,7 @@ export default async function NotificationsPage() {
           </div>
         )}
         {notifications.map((n) => (
-          <div key={n.id} style={{ background: n.read ? CARD : "rgba(0,212,255,0.04)", border: `1px solid ${n.read ? BORDER : "rgba(0,212,255,0.15)"}`, borderRadius: 10, padding: "14px 18px", display: "flex", gap: 12, alignItems: "flex-start" }}>
+          <div key={n.id} style={{ background: n.read ? CARD : "var(--nyx-accent-dim)", border: `1px solid ${n.read ? BORDER : "var(--nyx-accent-mid)"}`, borderRadius: 10, padding: "14px 18px", display: "flex", gap: 12, alignItems: "flex-start" }}>
             <div style={{ width: 6, height: 6, borderRadius: "50%", background: n.read ? "rgba(216,232,244,0.15)" : CYAN, marginTop: 6, flexShrink: 0 }} />
             <div style={{ flex: 1 }}>
               <div style={{ fontWeight: n.read ? 400 : 600, fontSize: "0.875rem", color: TEXT, marginBottom: 3 }}>{n.title}</div>

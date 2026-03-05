@@ -1,9 +1,9 @@
 ﻿import Link from "next/link";
 
-const CARD = "rgba(255,255,255,0.03)";
-const BORDER = "rgba(0,212,255,0.08)";
-const TEXT = "#d8e8f4";
-const TEXT_MUTED = "rgba(216,232,244,0.55)";
+const CARD = "var(--nyx-card)";
+const BORDER = "var(--nyx-accent-dim)";
+const TEXT = "var(--nyx-text)";
+const TEXT_MUTED = "var(--nyx-text-muted)";
 
 const REPORTS = [
   {
@@ -12,7 +12,7 @@ const REPORTS = [
     desc: "Opportunity counts and values by stage, rep, and service line",
     icon: "",
     badge: "PIPELINE",
-    color: "#00d4ff",
+    color: "var(--nyx-accent)",
   },
   {
     id: "closed-won",
@@ -76,7 +76,7 @@ export default function ReportsPage() {
   return (
     <div>
       <div style={{ marginBottom: 28 }}>
-        <p style={{ color: "rgba(0,212,255,0.55)", fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 4 }}>INTELLIGENCE</p>
+        <p style={{ color: "var(--nyx-accent-label)", fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 4 }}>INTELLIGENCE</p>
         <h1 style={{ fontSize: "1.8rem", fontWeight: 900, color: TEXT, letterSpacing: "-0.02em" }}>Reports</h1>
         <p style={{ color: TEXT_MUTED, fontSize: "0.875rem", marginTop: 4 }}>Download live CSV exports straight from your database</p>
       </div>
@@ -111,7 +111,7 @@ export default function ReportsPage() {
               <Link
                 href={`/api/reports/${r.id}?format=json`}
                 style={{
-                  flex: 1, background: "rgba(0,0,0,0.2)", border: `1px solid rgba(0,212,255,0.1)`,
+                  flex: 1, background: "rgba(0,0,0,0.2)", border: `1px solid var(--nyx-accent-dim)`,
                   borderRadius: 6, padding: "8px", fontSize: "0.75rem", color: TEXT_MUTED,
                   cursor: "pointer", textAlign: "center", textDecoration: "none",
                   display: "flex", alignItems: "center", justifyContent: "center", gap: 5,

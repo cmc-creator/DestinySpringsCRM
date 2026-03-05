@@ -1,13 +1,13 @@
-import { prisma } from "@/lib/prisma";
+﻿import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { formatCurrency, formatDate } from "@/lib/utils";
 
-const CYAN = "#00d4ff";
-const CARD = "rgba(255,255,255,0.03)";
-const BORDER = "rgba(0,212,255,0.08)";
-const TEXT = "#d8e8f4";
-const TEXT_MUTED = "rgba(216,232,244,0.55)";
+const CYAN = "var(--nyx-accent)";
+const CARD = "var(--nyx-card)";
+const BORDER = "var(--nyx-accent-dim)";
+const TEXT = "var(--nyx-text)";
+const TEXT_MUTED = "var(--nyx-text-muted)";
 
 const statusColors: Record<string, string> = {
   PENDING: "#fbbf24", PROCESSING: "#60a5fa", PAID: "#34d399", FAILED: "#f87171", CANCELLED: "#94a3b8",
@@ -29,7 +29,7 @@ export default async function RepPaymentsPage() {
   return (
     <div>
       <div style={{ marginBottom: 28 }}>
-        <p style={{ color: "rgba(0,212,255,0.55)", fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 4 }}>REP PORTAL</p>
+        <p style={{ color: "var(--nyx-accent-label)", fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 4 }}>REP PORTAL</p>
         <h1 style={{ fontSize: "1.8rem", fontWeight: 900, color: TEXT }}>Payments & Compensation</h1>
         <p style={{ color: TEXT_MUTED, fontSize: "0.875rem", marginTop: 4 }}>Your commission and payment history</p>
       </div>
@@ -59,7 +59,7 @@ export default async function RepPaymentsPage() {
           <thead>
             <tr style={{ borderBottom: `1px solid ${BORDER}` }}>
               {["Description", "Amount", "Status", "Period", "Paid Date"].map((h) => (
-                <th key={h} style={{ padding: "12px 16px", textAlign: "left", fontSize: "0.68rem", fontWeight: 700, color: "rgba(0,212,255,0.45)", letterSpacing: "0.1em", textTransform: "uppercase" }}>{h}</th>
+                <th key={h} style={{ padding: "12px 16px", textAlign: "left", fontSize: "0.68rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.1em", textTransform: "uppercase" }}>{h}</th>
               ))}
             </tr>
           </thead>
@@ -68,7 +68,7 @@ export default async function RepPaymentsPage() {
               <tr><td colSpan={5} style={{ padding: 32, textAlign: "center", color: TEXT_MUTED }}>No payments yet.</td></tr>
             )}
             {rep.payments.map((p) => (
-              <tr key={p.id} style={{ borderBottom: `1px solid rgba(0,212,255,0.04)` }}>
+              <tr key={p.id} style={{ borderBottom: `1px solid var(--nyx-accent-dim)` }}>
                 <td style={{ padding: "13px 16px", fontSize: "0.85rem", color: TEXT }}>{p.description ?? "Commission payment"}</td>
                 <td style={{ padding: "13px 16px", fontSize: "0.95rem", fontWeight: 700, color: CYAN }}>{formatCurrency(Number(p.amount))}</td>
                 <td style={{ padding: "13px 16px" }}>

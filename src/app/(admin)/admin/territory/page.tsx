@@ -1,13 +1,13 @@
-import { prisma } from "@/lib/prisma";
+﻿import { prisma } from "@/lib/prisma";
 import { formatDate } from "@/lib/utils";
 import TerritoryMapWrapper from "@/components/maps/TerritoryMapWrapper";
 
-const REP_COLORS = ["#00d4ff","#34d399","#fbbf24","#a78bfa","#f59e0b","#60a5fa","#f87171","#fb923c"];
-const CYAN = "#00d4ff";
-const CARD = "rgba(255,255,255,0.03)";
-const BORDER = "rgba(0,212,255,0.08)";
-const TEXT = "#d8e8f4";
-const TEXT_MUTED = "rgba(216,232,244,0.55)";
+const REP_COLORS = ["var(--nyx-accent)","#34d399","#fbbf24","#a78bfa","#f59e0b","#60a5fa","#f87171","#fb923c"];
+const CYAN = "var(--nyx-accent)";
+const CARD = "var(--nyx-card)";
+const BORDER = "var(--nyx-accent-dim)";
+const TEXT = "var(--nyx-text)";
+const TEXT_MUTED = "var(--nyx-text-muted)";
 
 export default async function TerritoryPage() {
   const [reps, hospitals] = await Promise.all([
@@ -47,14 +47,14 @@ export default async function TerritoryPage() {
   return (
     <div>
       <div style={{ marginBottom: 28 }}>
-        <p style={{ color: "rgba(0,212,255,0.55)", fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 4 }}>BD TEAM</p>
+        <p style={{ color: "var(--nyx-accent-label)", fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 4 }}>BD TEAM</p>
         <h1 style={{ fontSize: "1.8rem", fontWeight: 900, color: TEXT, letterSpacing: "-0.02em" }}>Territory Management</h1>
         <p style={{ color: TEXT_MUTED, fontSize: "0.875rem", marginTop: 4 }}>Rep coverage and hospital locations across the US</p>
       </div>
 
       {/* Leaflet Map */}
       <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 14, padding: 24, marginBottom: 28 }}>
-        <p style={{ fontSize: "0.65rem", fontWeight: 700, color: "rgba(0,212,255,0.5)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 16 }}>INTERACTIVE COVERAGE MAP</p>
+        <p style={{ fontSize: "0.65rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 16 }}>INTERACTIVE COVERAGE MAP</p>
         <TerritoryMapWrapper hospitals={mapHospitals} repTerritories={repTerritories} />
         <div style={{ display: "flex", gap: 16, marginTop: 14, flexWrap: "wrap" }}>
           {repTerritories.map(r => (
@@ -126,13 +126,13 @@ export default async function TerritoryPage() {
       {/* Territory Table */}
       <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, overflow: "hidden" }}>
         <div style={{ padding: "16px 20px", borderBottom: `1px solid ${BORDER}` }}>
-          <p style={{ fontSize: "0.65rem", fontWeight: 700, color: "rgba(0,212,255,0.5)", letterSpacing: "0.12em", textTransform: "uppercase" }}>TERRITORY ASSIGNMENTS</p>
+          <p style={{ fontSize: "0.65rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.12em", textTransform: "uppercase" }}>TERRITORY ASSIGNMENTS</p>
         </div>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr style={{ borderBottom: `1px solid ${BORDER}` }}>
               {["State","Region","Rep","City","Title","Notes"].map(h => (
-                <th key={h} style={{ padding: "11px 16px", textAlign: "left", fontSize: "0.65rem", fontWeight: 700, color: "rgba(0,212,255,0.45)", letterSpacing: "0.1em", textTransform: "uppercase" }}>{h}</th>
+                <th key={h} style={{ padding: "11px 16px", textAlign: "left", fontSize: "0.65rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.1em", textTransform: "uppercase" }}>{h}</th>
               ))}
             </tr>
           </thead>
@@ -140,7 +140,7 @@ export default async function TerritoryPage() {
             {reps.flatMap(rep =>
               rep.territories.length > 0
                 ? rep.territories.map((t: { id: string; state: string; region?: string | null; city?: string | null; notes?: string | null }) => (
-                  <tr key={t.id} style={{ borderBottom: `1px solid rgba(0,212,255,0.04)` }}>
+                  <tr key={t.id} style={{ borderBottom: `1px solid var(--nyx-accent-dim)` }}>
                     <td style={{ padding: "11px 16px", fontWeight: 700, fontSize: "0.85rem", color: CYAN }}>{t.state}</td>
                     <td style={{ padding: "11px 16px", fontSize: "0.8rem", color: TEXT_MUTED }}>{t.region ?? ""}</td>
                     <td style={{ padding: "11px 16px", fontSize: "0.82rem", color: TEXT, fontWeight: 600 }}>{rep.user.name}</td>

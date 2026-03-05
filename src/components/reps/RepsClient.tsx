@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import { useState, useEffect, useCallback } from "react";
 
 type RepStatus = "ACTIVE"|"INACTIVE"|"PENDING_REVIEW"|"SUSPENDED";
@@ -14,7 +14,7 @@ interface Rep {
   createdAt: string;
 }
 
-const C = { card: "rgba(255,255,255,0.03)", border: "rgba(0,212,255,0.08)", cyan: "#00d4ff", text: "#d8e8f4", muted: "rgba(216,232,244,0.55)", input: "rgba(0,0,0,0.35)" };
+const C = { card: "var(--nyx-card)", border: "var(--nyx-border)", cyan: "var(--nyx-accent)", text: "var(--nyx-text)", muted: "var(--nyx-text-muted)", input: "var(--nyx-input-bg)" };
 const inp: React.CSSProperties = { width: "100%", background: C.input, border: `1px solid ${C.border}`, borderRadius: 7, padding: "8px 12px", color: C.text, fontSize: "0.875rem", outline: "none", boxSizing: "border-box" };
 const sel: React.CSSProperties = { ...inp, appearance: "none" };
 
@@ -54,7 +54,7 @@ function RepModal({ rep, onClose, onSave, onDelete }: {
 
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 16 }}>
-      <div style={{ background: "#0d1525", border: `1px solid rgba(0,212,255,0.15)`, borderRadius: 14, width: "100%", maxWidth: 700, maxHeight: "90vh", overflowY: "auto", padding: 28 }}>
+      <div style={{ background: "#0d1525", border: `1px solid var(--nyx-accent-mid)`, borderRadius: 14, width: "100%", maxWidth: 700, maxHeight: "90vh", overflowY: "auto", padding: 28 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
           <h2 style={{ fontSize: "1.2rem", fontWeight: 800, color: C.text }}>{isEdit ? "Edit BD Rep" : "Add New BD Rep"}</h2>
           <button onClick={onClose} style={{ background: "none", border: "none", color: C.muted, cursor: "pointer", fontSize: "1.4rem" }}>×</button>
@@ -62,7 +62,7 @@ function RepModal({ rep, onClose, onSave, onDelete }: {
         <form onSubmit={submit}>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
             <div style={{ gridColumn: "1/-1" }}>
-              <p style={{ fontSize: "0.65rem", fontWeight: 700, color: "rgba(0,212,255,0.45)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 10 }}>Account</p>
+              <p style={{ fontSize: "0.65rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 10 }}>Account</p>
             </div>
             <div>
               <label style={{ fontSize: "0.72rem", color: C.muted, display: "block", marginBottom: 4 }}>FULL NAME *</label>
@@ -80,7 +80,7 @@ function RepModal({ rep, onClose, onSave, onDelete }: {
             )}
 
             <div style={{ gridColumn: "1/-1", borderTop: `1px solid ${C.border}`, paddingTop: 14, marginTop: 4 }}>
-              <p style={{ fontSize: "0.65rem", fontWeight: 700, color: "rgba(0,212,255,0.45)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 10 }}>Profile</p>
+              <p style={{ fontSize: "0.65rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 10 }}>Profile</p>
             </div>
             <div>
               <label style={{ fontSize: "0.72rem", color: C.muted, display: "block", marginBottom: 4 }}>TITLE</label>
@@ -126,13 +126,13 @@ function RepModal({ rep, onClose, onSave, onDelete }: {
             </div>
 
             <div style={{ gridColumn: "1/-1", borderTop: `1px solid ${C.border}`, paddingTop: 14, marginTop: 4 }}>
-              <p style={{ fontSize: "0.65rem", fontWeight: 700, color: "rgba(0,212,255,0.45)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 10 }}>Licensed States</p>
+              <p style={{ fontSize: "0.65rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 10 }}>Licensed States</p>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                 {US_STATES.map(s => {
                   const active = (form.licensedStates ?? []).includes(s);
                   return (
                     <button type="button" key={s} onClick={() => toggleState(s)}
-                      style={{ padding: "4px 10px", borderRadius: 6, fontSize: "0.72rem", fontWeight: 700, cursor: "pointer", border: active ? "1px solid rgba(0,212,255,0.4)" : `1px solid ${C.border}`, background: active ? "rgba(0,212,255,0.12)" : C.input, color: active ? C.cyan : C.muted, transition: "all 0.1s" }}>
+                      style={{ padding: "4px 10px", borderRadius: 6, fontSize: "0.72rem", fontWeight: 700, cursor: "pointer", border: active ? "1px solid var(--nyx-accent-label)" : `1px solid ${C.border}`, background: active ? "var(--nyx-accent-mid)" : C.input, color: active ? C.cyan : C.muted, transition: "all 0.1s" }}>
                       {s}
                     </button>
                   );
@@ -160,7 +160,7 @@ function RepModal({ rep, onClose, onSave, onDelete }: {
             </div>
             <div style={{ display: "flex", gap: 10 }}>
               <button type="button" onClick={onClose} style={{ background: "none", border: `1px solid ${C.border}`, borderRadius: 7, padding: "8px 20px", color: C.muted, cursor: "pointer" }}>Cancel</button>
-              <button type="submit" disabled={saving} style={{ background: "rgba(0,212,255,0.12)", border: `1px solid rgba(0,212,255,0.25)`, borderRadius: 7, padding: "8px 24px", color: C.cyan, cursor: "pointer", fontWeight: 700 }}>{saving ? "Saving…" : isEdit ? "Save Changes" : "Add Rep"}</button>
+              <button type="submit" disabled={saving} style={{ background: "var(--nyx-accent-mid)", border: `1px solid var(--nyx-accent-str)`, borderRadius: 7, padding: "8px 24px", color: C.cyan, cursor: "pointer", fontWeight: 700 }}>{saving ? "Saving…" : isEdit ? "Save Changes" : "Add Rep"}</button>
             </div>
           </div>
         </form>
@@ -205,11 +205,11 @@ export default function RepsClient() {
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20, flexWrap: "wrap", gap: 12 }}>
         <div>
-          <p style={{ color: "rgba(0,212,255,0.55)", fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 4 }}>BD TEAM</p>
+          <p style={{ color: "var(--nyx-accent-label)", fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 4 }}>BD TEAM</p>
           <h1 style={{ fontSize: "1.8rem", fontWeight: 900, color: C.text }}>BD Representatives</h1>
           <p style={{ color: C.muted, fontSize: "0.875rem", marginTop: 4 }}>{reps.length} reps on your team</p>
         </div>
-        <button onClick={() => setModal("add")} style={{ background: "rgba(0,212,255,0.1)", border: "1px solid rgba(0,212,255,0.25)", borderRadius: 8, padding: "10px 20px", color: C.cyan, cursor: "pointer", fontWeight: 700, fontSize: "0.875rem" }}>+ Add Rep</button>
+        <button onClick={() => setModal("add")} style={{ background: "var(--nyx-accent-dim)", border: "1px solid var(--nyx-accent-str)", borderRadius: 8, padding: "10px 20px", color: C.cyan, cursor: "pointer", fontWeight: 700, fontSize: "0.875rem" }}>+ Add Rep</button>
       </div>
 
       <div style={{ marginBottom: 20 }}>
@@ -220,7 +220,7 @@ export default function RepsClient() {
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(290px, 1fr))", gap: 16 }}>
         {filtered.map((rep, i) => {
-          const colors = ["#00d4ff","#34d399","#fbbf24","#a78bfa","#f59e0b","#60a5fa","#f87171","#fb923c"];
+          const colors = ["var(--nyx-accent)","#34d399","#fbbf24","#a78bfa","#f59e0b","#60a5fa","#f87171","#fb923c"];
           const color = colors[i % colors.length];
           return (
             <div key={rep.id} onClick={() => setModal(rep)} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: 20, cursor: "pointer", transition: "border-color 0.15s" }}

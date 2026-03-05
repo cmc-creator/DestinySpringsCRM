@@ -1,14 +1,14 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 
 const C = {
-  cyan: "#00d4ff",
-  text: "#d8e8f4",
-  muted: "rgba(216,232,244,0.55)",
-  dim:   "rgba(216,232,244,0.3)",
-  card:  "rgba(255,255,255,0.03)",
-  border:"rgba(0,212,255,0.08)",
+  cyan: "var(--nyx-accent)",
+  text: "var(--nyx-text)",
+  muted: "var(--nyx-text-muted)",
+  dim: "var(--nyx-text-muted)",
+  card: "var(--nyx-card)",
+  border: "var(--nyx-border)",
   emerald:"#10b981",
   amber: "#f59e0b",
   red:   "#f87171",
@@ -83,7 +83,7 @@ export default function ReferralSourcesPage() {
         </div>
         <button
           onClick={() => { setShowAdd(true); setError(""); setForm(empty); }}
-          style={{ background:`linear-gradient(135deg,${C.cyan},#3b82f6)`, color:"#000", border:"none", borderRadius:8, padding:"10px 20px", fontWeight:800, fontSize:"0.85rem", cursor:"pointer" }}
+          style={{ background:`var(--nyx-accent)`, color:"#000", border:"none", borderRadius:8, padding:"10px 20px", fontWeight:800, fontSize:"0.85rem", cursor:"pointer" }}
         >
           + Add Source
         </button>
@@ -122,13 +122,13 @@ export default function ReferralSourcesPage() {
               {sources.map((s) => {
                 const pct = attainment(s.monthlyGoal, s._count.referrals);
                 return (
-                  <tr key={s.id} style={{ borderBottom:`1px solid rgba(0,212,255,0.04)` }}>
+                  <tr key={s.id} style={{ borderBottom:`1px solid var(--nyx-accent-dim)` }}>
                     <td style={{ padding:"12px 14px" }}>
                       <div style={{ fontWeight:700, fontSize:"0.875rem", color:C.text }}>{s.name}</div>
                       {s.specialty && <div style={{ fontSize:"0.7rem", color:C.muted }}>{s.specialty}</div>}
                     </td>
                     <td style={{ padding:"12px 14px" }}>
-                      <span style={{ background:"rgba(0,212,255,0.07)", border:`1px solid rgba(0,212,255,0.15)`, borderRadius:999, padding:"2px 8px", fontSize:"0.65rem", fontWeight:700, color:C.cyan, whiteSpace:"nowrap" }}>
+                      <span style={{ background:"var(--nyx-accent-dim)", border:`1px solid var(--nyx-accent-mid)`, borderRadius:999, padding:"2px 8px", fontSize:"0.65rem", fontWeight:700, color:C.cyan, whiteSpace:"nowrap" }}>
                         {LABEL[s.type] ?? s.type}
                       </span>
                     </td>
@@ -164,7 +164,7 @@ export default function ReferralSourcesPage() {
       {showAdd && (
         <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.7)", zIndex:200, display:"flex", alignItems:"center", justifyContent:"center", padding:16 }}
           onClick={(e) => { if (e.target === e.currentTarget) setShowAdd(false); }}>
-          <div style={{ background:"#04080f", border:`1px solid ${C.border}`, borderRadius:14, padding:32, width:"100%", maxWidth:520, maxHeight:"90vh", overflowY:"auto" }}>
+          <div style={{ background:"var(--nyx-bg)", border:`1px solid ${C.border}`, borderRadius:14, padding:32, width:"100%", maxWidth:520, maxHeight:"90vh", overflowY:"auto" }}>
             <h2 style={{ fontSize:"1.2rem", fontWeight:900, color:C.text, marginBottom:20 }}>Add Referral Source</h2>
             {error && <div style={{ background:"rgba(239,68,68,0.08)", border:"1px solid rgba(239,68,68,0.2)", borderRadius:8, padding:"10px 14px", color:C.red, fontSize:"0.82rem", marginBottom:16 }}>{error}</div>}
 
@@ -204,7 +204,7 @@ export default function ReferralSourcesPage() {
 
             <div style={{ display:"flex", gap:10, justifyContent:"flex-end" }}>
               <button onClick={() => setShowAdd(false)} style={{ background:"rgba(255,255,255,0.05)", border:`1px solid ${C.border}`, borderRadius:8, padding:"10px 20px", color:C.muted, cursor:"pointer", fontWeight:600, fontSize:"0.85rem" }}>Cancel</button>
-              <button onClick={handleAdd} disabled={saving} style={{ background:`linear-gradient(135deg,${C.cyan},#3b82f6)`, color:"#000", border:"none", borderRadius:8, padding:"10px 20px", fontWeight:800, fontSize:"0.85rem", cursor:"pointer", opacity: saving ? 0.7 : 1 }}>{saving ? "Saving…" : "Add Source"}</button>
+              <button onClick={handleAdd} disabled={saving} style={{ background:`var(--nyx-accent)`, color:"#000", border:"none", borderRadius:8, padding:"10px 20px", fontWeight:800, fontSize:"0.85rem", cursor:"pointer", opacity: saving ? 0.7 : 1 }}>{saving ? "Saving…" : "Add Source"}</button>
             </div>
           </div>
         </div>

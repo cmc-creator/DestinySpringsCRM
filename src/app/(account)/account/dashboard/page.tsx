@@ -1,13 +1,13 @@
-import { prisma } from "@/lib/prisma";
+﻿import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { formatCurrency, formatDate } from "@/lib/utils";
 
-const CYAN = "#00d4ff";
-const CARD = "rgba(255,255,255,0.03)";
-const BORDER = "rgba(0,212,255,0.08)";
-const TEXT = "#d8e8f4";
-const TEXT_MUTED = "rgba(216,232,244,0.55)";
+const CYAN = "var(--nyx-accent)";
+const CARD = "var(--nyx-card)";
+const BORDER = "var(--nyx-accent-dim)";
+const TEXT = "var(--nyx-text)";
+const TEXT_MUTED = "var(--nyx-text-muted)";
 
 export default async function AccountDashboard() {
   const session = await auth();
@@ -53,7 +53,7 @@ export default async function AccountDashboard() {
 
   const stageColors: Record<string, string> = {
     DISCOVERY: "#94a3b8", QUALIFICATION: "#fbbf24", DEMO: "#f59e0b",
-    PROPOSAL: "#00d4ff", NEGOTIATION: "#60a5fa", CLOSED_WON: "#34d399", CLOSED_LOST: "#f87171",
+    PROPOSAL: "var(--nyx-accent)", NEGOTIATION: "#60a5fa", CLOSED_WON: "#34d399", CLOSED_LOST: "#f87171",
   };
 
   const invoiceStatusColors: Record<string, string> = {
@@ -63,7 +63,7 @@ export default async function AccountDashboard() {
   return (
     <div>
       <div style={{ marginBottom: 28 }}>
-        <p style={{ color: "rgba(0,212,255,0.55)", fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 4 }}>ACCOUNT PORTAL</p>
+        <p style={{ color: "var(--nyx-accent-label)", fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 4 }}>ACCOUNT PORTAL</p>
         <h1 style={{ fontSize: "1.8rem", fontWeight: 900, color: TEXT }}>{hospital.hospitalName}</h1>
         <p style={{ color: TEXT_MUTED, fontSize: "0.875rem", marginTop: 4 }}>
           {hospital.systemName && `${hospital.systemName} · `}
@@ -90,7 +90,7 @@ export default async function AccountDashboard() {
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
         {/* Active Engagements */}
         <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: "20px" }}>
-          <p style={{ fontSize: "0.7rem", fontWeight: 700, color: "rgba(0,212,255,0.55)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 14 }}>ACTIVE ENGAGEMENTS</p>
+          <p style={{ fontSize: "0.7rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 14 }}>ACTIVE ENGAGEMENTS</p>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {activeOpps.length === 0 && <p style={{ color: TEXT_MUTED, fontSize: "0.85rem" }}>No active engagements.</p>}
             {activeOpps.map((opp) => (
@@ -107,7 +107,7 @@ export default async function AccountDashboard() {
 
         {/* Recent Invoices */}
         <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: "20px" }}>
-          <p style={{ fontSize: "0.7rem", fontWeight: 700, color: "rgba(0,212,255,0.55)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 14 }}>RECENT INVOICES</p>
+          <p style={{ fontSize: "0.7rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 14 }}>RECENT INVOICES</p>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {hospital.invoices.length === 0 && <p style={{ color: TEXT_MUTED, fontSize: "0.85rem" }}>No invoices yet.</p>}
             {hospital.invoices.map((inv) => (

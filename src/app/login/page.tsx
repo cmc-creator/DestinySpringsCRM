@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import { Suspense, useState } from "react";
 import { signIn, getSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -13,8 +13,8 @@ function getRoleHome(role?: string) {
   }
 }
 
-const CYAN = "#00d4ff";
-const BG = "#04080f";
+const CYAN = "var(--nyx-accent)";
+const BG = "var(--nyx-bg)";
 
 export default function LoginPage() {
   return (
@@ -58,12 +58,12 @@ function LoginForm() {
   return (
     <div style={{ background: BG, minHeight: "100vh", display: "flex", fontFamily: "system-ui, -apple-system, sans-serif" }}>
       {/* LEFT PANEL */}
-      <div style={{ flex: "0 0 45%", background: "rgba(0,212,255,0.03)", borderRight: "1px solid rgba(0,212,255,0.08)", padding: "60px 48px", display: "flex", flexDirection: "column", justifyContent: "space-between", position: "relative", overflow: "hidden" }}>
-        <div style={{ position: "absolute", top: "20%", left: "10%", width: 300, height: 300, borderRadius: "50%", background: "radial-gradient(circle, rgba(0,212,255,0.06) 0%, transparent 70%)", pointerEvents: "none" }} />
+      <div style={{ flex: "0 0 45%", background: "var(--nyx-accent-dim)", borderRight: "1px solid var(--nyx-accent-dim)", padding: "60px 48px", display: "flex", flexDirection: "column", justifyContent: "space-between", position: "relative", overflow: "hidden" }}>
+        <div style={{ position: "absolute", top: "20%", left: "10%", width: 300, height: 300, borderRadius: "50%", background: "radial-gradient(circle, var(--nyx-accent-dim) 0%, transparent 70%)", pointerEvents: "none" }} />
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 64 }}>
             <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-              <rect width="32" height="32" rx="8" fill="#04080f"/>
+              <rect width="32" height="32" rx="8" fill="var(--nyx-bg)"/>
               <rect x="1" y="1" width="30" height="30" rx="7" stroke={CYAN} strokeWidth="1" strokeOpacity="0.4"/>
               <path d="M16 6 L26 12 L26 20 L16 26 L6 20 L6 12 Z" stroke={CYAN} strokeWidth="1.5" fill="none" strokeOpacity="0.7"/>
               <circle cx="16" cy="16" r="4" fill={CYAN} fillOpacity="0.8"/>
@@ -95,7 +95,7 @@ function LoginForm() {
         </div>
         <div style={{ display: "flex", gap: 24 }}>
           {["HIPAA Ready", "SOC 2", "Healthcare BD"].map((badge) => (
-            <div key={badge} style={{ background: "rgba(0,212,255,0.06)", border: "1px solid rgba(0,212,255,0.15)", borderRadius: 6, padding: "6px 12px", fontSize: "0.7rem", color: CYAN, fontWeight: 600, letterSpacing: "0.08em" }}>{badge}</div>
+            <div key={badge} style={{ background: "var(--nyx-accent-dim)", border: "1px solid var(--nyx-accent-mid)", borderRadius: 6, padding: "6px 12px", fontSize: "0.7rem", color: CYAN, fontWeight: 600, letterSpacing: "0.08em" }}>{badge}</div>
           ))}
         </div>
       </div>
@@ -114,31 +114,31 @@ function LoginForm() {
 
           <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             <div>
-              <label style={{ display: "block", fontSize: "0.75rem", fontWeight: 600, color: "rgba(0,212,255,0.55)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>Email Address</label>
+              <label style={{ display: "block", fontSize: "0.75rem", fontWeight: 600, color: "var(--nyx-accent-label)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>Email Address</label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 placeholder="you@hospital.com"
-                style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(0,212,255,0.12)", borderRadius: 8, padding: "12px 16px", color: "#d8e8f4", fontSize: "0.9rem", outline: "none", boxSizing: "border-box" }}
+                style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: "1px solid var(--nyx-accent-mid)", borderRadius: 8, padding: "12px 16px", color: "#d8e8f4", fontSize: "0.9rem", outline: "none", boxSizing: "border-box" }}
               />
             </div>
             <div>
-              <label style={{ display: "block", fontSize: "0.75rem", fontWeight: 600, color: "rgba(0,212,255,0.55)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>Password</label>
+              <label style={{ display: "block", fontSize: "0.75rem", fontWeight: 600, color: "var(--nyx-accent-label)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>Password</label>
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 placeholder="••••••••"
-                style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(0,212,255,0.12)", borderRadius: 8, padding: "12px 16px", color: "#d8e8f4", fontSize: "0.9rem", outline: "none", boxSizing: "border-box" }}
+                style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: "1px solid var(--nyx-accent-mid)", borderRadius: 8, padding: "12px 16px", color: "#d8e8f4", fontSize: "0.9rem", outline: "none", boxSizing: "border-box" }}
               />
             </div>
             <button
               type="submit"
               disabled={loading}
-              style={{ background: loading ? "rgba(0,212,255,0.4)" : CYAN, color: BG, padding: "13px", borderRadius: 8, fontWeight: 800, fontSize: "0.95rem", border: "none", cursor: loading ? "not-allowed" : "pointer", marginTop: 4 }}
+              style={{ background: loading ? "var(--nyx-accent-label)" : CYAN, color: BG, padding: "13px", borderRadius: 8, fontWeight: 800, fontSize: "0.95rem", border: "none", cursor: loading ? "not-allowed" : "pointer", marginTop: 4 }}
             >
               {loading ? "Signing in..." : "Sign In →"}
             </button>
@@ -149,7 +149,7 @@ function LoginForm() {
             <Link href="/signup" style={{ color: CYAN, textDecoration: "none", fontWeight: 600 }}>Request Access</Link>
           </div>
 
-          <div style={{ marginTop: 40, padding: "16px", background: "rgba(0,212,255,0.03)", borderRadius: 8, border: "1px solid rgba(0,212,255,0.06)" }}>
+          <div style={{ marginTop: 40, padding: "16px", background: "var(--nyx-accent-dim)", borderRadius: 8, border: "1px solid var(--nyx-accent-dim)" }}>
             <p style={{ fontSize: "0.7rem", color: "rgba(216,232,244,0.35)", textAlign: "center", marginBottom: 8 }}>DEMO CREDENTIALS</p>
             <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
               {[

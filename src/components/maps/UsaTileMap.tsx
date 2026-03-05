@@ -1,9 +1,9 @@
-"use client";
+﻿"use client";
 
-const TEXT = "#d8e8f4";
-const TEXT_MUTED = "rgba(216,232,244,0.55)";
-const CARD = "rgba(255,255,255,0.03)";
-const BORDER = "rgba(0,212,255,0.08)";
+const TEXT = "var(--nyx-text)";
+const TEXT_MUTED = "var(--nyx-text-muted)";
+const CARD = "var(--nyx-card)";
+const BORDER = "var(--nyx-accent-dim)";
 
 // Standard US cartogram grid (row, col, abbreviation)
 // 11 columns × 8 rows
@@ -23,7 +23,7 @@ const COLS = 11;
 
 // Assign a stable color per rep (up to 8 reps before repeating)
 const REP_COLORS = [
-  "#00d4ff","#34d399","#fbbf24","#a78bfa","#f59e0b","#60a5fa","#f87171","#fb923c",
+  "var(--nyx-accent)","#34d399","#fbbf24","#a78bfa","#f59e0b","#60a5fa","#f87171","#fb923c",
 ];
 
 export type RepTerritory = {
@@ -124,7 +124,7 @@ export default function UsaTileMap({ repTerritories }: Props) {
       {/* Coverage stats */}
       <div style={{ display: "flex", gap: 16, marginTop: 20, flexWrap: "wrap" }}>
         <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 10, padding: "12px 16px", display: "flex", flexDirection: "column", gap: 2 }}>
-          <span style={{ fontSize: "1.3rem", fontWeight: 900, color: "#00d4ff" }}>
+          <span style={{ fontSize: "1.3rem", fontWeight: 900, color: "var(--nyx-accent)" }}>
             {stateMap.size}
           </span>
           <span style={{ fontSize: "0.7rem", color: TEXT_MUTED }}>States Covered</span>

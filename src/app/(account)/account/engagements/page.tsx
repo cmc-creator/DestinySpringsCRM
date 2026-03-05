@@ -1,17 +1,17 @@
-import { prisma } from "@/lib/prisma";
+﻿import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { formatCurrency, formatDate } from "@/lib/utils";
 
-const CYAN = "#00d4ff";
-const CARD = "rgba(255,255,255,0.03)";
-const BORDER = "rgba(0,212,255,0.08)";
-const TEXT = "#d8e8f4";
-const TEXT_MUTED = "rgba(216,232,244,0.55)";
+const CYAN = "var(--nyx-accent)";
+const CARD = "var(--nyx-card)";
+const BORDER = "var(--nyx-accent-dim)";
+const TEXT = "var(--nyx-text)";
+const TEXT_MUTED = "var(--nyx-text-muted)";
 
 const stageColors: Record<string, string> = {
   DISCOVERY: "#94a3b8", QUALIFICATION: "#fbbf24", DEMO: "#f59e0b",
-  PROPOSAL: "#00d4ff", NEGOTIATION: "#60a5fa", CLOSED_WON: "#34d399", CLOSED_LOST: "#f87171", ON_HOLD: "#94a3b8",
+  PROPOSAL: "var(--nyx-accent)", NEGOTIATION: "#60a5fa", CLOSED_WON: "#34d399", CLOSED_LOST: "#f87171", ON_HOLD: "#94a3b8",
 };
 
 export default async function AccountEngagementsPage() {
@@ -35,7 +35,7 @@ export default async function AccountEngagementsPage() {
   return (
     <div>
       <div style={{ marginBottom: 28 }}>
-        <p style={{ color: "rgba(0,212,255,0.55)", fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 4 }}>ACCOUNT PORTAL</p>
+        <p style={{ color: "var(--nyx-accent-label)", fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 4 }}>ACCOUNT PORTAL</p>
         <h1 style={{ fontSize: "1.8rem", fontWeight: 900, color: TEXT }}>My Engagements</h1>
         <p style={{ color: TEXT_MUTED, fontSize: "0.875rem", marginTop: 4 }}>All engagement activities with your BD team</p>
       </div>
@@ -58,7 +58,7 @@ export default async function AccountEngagementsPage() {
           <thead>
             <tr style={{ borderBottom: `1px solid ${BORDER}` }}>
               {["Engagement", "Stage", "Service Line", "BD Rep", "Value", "Close Date"].map((h) => (
-                <th key={h} style={{ padding: "12px 16px", textAlign: "left", fontSize: "0.68rem", fontWeight: 700, color: "rgba(0,212,255,0.45)", letterSpacing: "0.1em", textTransform: "uppercase" }}>{h}</th>
+                <th key={h} style={{ padding: "12px 16px", textAlign: "left", fontSize: "0.68rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.1em", textTransform: "uppercase" }}>{h}</th>
               ))}
             </tr>
           </thead>
@@ -67,7 +67,7 @@ export default async function AccountEngagementsPage() {
               <tr><td colSpan={6} style={{ padding: 32, textAlign: "center", color: TEXT_MUTED }}>No engagements yet.</td></tr>
             )}
             {hospital.opportunities.map((opp) => (
-              <tr key={opp.id} style={{ borderBottom: `1px solid rgba(0,212,255,0.04)` }}>
+              <tr key={opp.id} style={{ borderBottom: `1px solid var(--nyx-accent-dim)` }}>
                 <td style={{ padding: "13px 16px" }}>
                   <div style={{ fontWeight: 600, fontSize: "0.875rem", color: TEXT }}>{opp.title}</div>
                   {opp.description && <div style={{ fontSize: "0.72rem", color: TEXT_MUTED, marginTop: 2 }}>{opp.description.slice(0, 60)}{opp.description.length > 60 ? "…" : ""}</div>}

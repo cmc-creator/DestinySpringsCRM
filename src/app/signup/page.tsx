@@ -1,10 +1,10 @@
-"use client";
+﻿"use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
-const CYAN = "#00d4ff";
-const BG = "#04080f";
+const CYAN = "var(--nyx-accent)";
+const BG = "var(--nyx-bg)";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -37,8 +37,8 @@ export default function SignupPage() {
     }
   }
 
-  const inputStyle = { width: "100%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(0,212,255,0.12)", borderRadius: 8, padding: "11px 14px", color: "#d8e8f4", fontSize: "0.875rem", outline: "none", boxSizing: "border-box" as const };
-  const labelStyle = { display: "block", fontSize: "0.7rem", fontWeight: 600 as const, color: "rgba(0,212,255,0.55)", letterSpacing: "0.1em", textTransform: "uppercase" as const, marginBottom: 6 };
+  const inputStyle = { width: "100%", background: "rgba(255,255,255,0.04)", border: "1px solid var(--nyx-accent-mid)", borderRadius: 8, padding: "11px 14px", color: "#d8e8f4", fontSize: "0.875rem", outline: "none", boxSizing: "border-box" as const };
+  const labelStyle = { display: "block", fontSize: "0.7rem", fontWeight: 600 as const, color: "var(--nyx-accent-label)", letterSpacing: "0.1em", textTransform: "uppercase" as const, marginBottom: 6 };
 
   return (
     <div style={{ background: BG, minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: "40px 20px", fontFamily: "system-ui, -apple-system, sans-serif" }}>
@@ -46,7 +46,7 @@ export default function SignupPage() {
         <div style={{ textAlign: "center", marginBottom: 32 }}>
           <Link href="/" style={{ display: "inline-flex", alignItems: "center", gap: 8, textDecoration: "none", marginBottom: 24 }}>
             <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
-              <rect width="32" height="32" rx="8" fill="#04080f"/>
+              <rect width="32" height="32" rx="8" fill="var(--nyx-bg)"/>
               <rect x="1" y="1" width="30" height="30" rx="7" stroke={CYAN} strokeWidth="1" strokeOpacity="0.4"/>
               <path d="M16 6 L26 12 L26 20 L16 26 L6 20 L6 12 Z" stroke={CYAN} strokeWidth="1.5" fill="none" strokeOpacity="0.7"/>
               <circle cx="16" cy="16" r="4" fill={CYAN} fillOpacity="0.8"/>
@@ -57,7 +57,7 @@ export default function SignupPage() {
           <p style={{ color: "rgba(216,232,244,0.5)", fontSize: "0.9rem" }}>Join the hospital BD platform</p>
         </div>
 
-        <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(0,212,255,0.08)", borderRadius: 16, padding: "32px" }}>
+        <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid var(--nyx-accent-dim)", borderRadius: 16, padding: "32px" }}>
           {/* Role Toggle */}
           <div style={{ display: "flex", gap: 8, marginBottom: 24, background: "rgba(0,0,0,0.3)", borderRadius: 10, padding: 4 }}>
             {(["ACCOUNT", "REP"] as const).map((r) => (
@@ -104,7 +104,7 @@ export default function SignupPage() {
             <button
               type="submit"
               disabled={loading}
-              style={{ background: loading ? "rgba(0,212,255,0.4)" : CYAN, color: BG, padding: "12px", borderRadius: 8, fontWeight: 800, fontSize: "0.95rem", border: "none", cursor: loading ? "not-allowed" : "pointer", marginTop: 4 }}
+              style={{ background: loading ? "var(--nyx-accent-label)" : CYAN, color: BG, padding: "12px", borderRadius: 8, fontWeight: 800, fontSize: "0.95rem", border: "none", cursor: loading ? "not-allowed" : "pointer", marginTop: 4 }}
             >
               {loading ? "Creating account..." : "Create Account →"}
             </button>
@@ -118,8 +118,8 @@ export default function SignupPage() {
 
         <p style={{ marginTop: 20, textAlign: "center", fontSize: "0.75rem", color: "rgba(216,232,244,0.25)" }}>
           By signing up, you agree to our{" "}
-          <Link href="/terms" style={{ color: "rgba(0,212,255,0.5)" }}>Terms</Link> and{" "}
-          <Link href="/privacy" style={{ color: "rgba(0,212,255,0.5)" }}>Privacy Policy</Link>
+          <Link href="/terms" style={{ color: "var(--nyx-accent-label)" }}>Terms</Link> and{" "}
+          <Link href="/privacy" style={{ color: "var(--nyx-accent-label)" }}>Privacy Policy</Link>
         </p>
       </div>
     </div>

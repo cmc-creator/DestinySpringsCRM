@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import { useState, useEffect, useCallback } from "react";
 
 // ── Types ───────────────────────────────────────────────
@@ -18,10 +18,10 @@ interface Lead {
 }
 
 // ── Constants ───────────────────────────────────────────
-const C = { bg: "#0a0f1a", card: "rgba(255,255,255,0.03)", border: "rgba(0,212,255,0.08)", cyan: "#00d4ff", text: "#d8e8f4", muted: "rgba(216,232,244,0.55)", input: "rgba(0,0,0,0.35)" };
+const C = { bg: "#0a0f1a", card: "var(--nyx-card)", border: "var(--nyx-border)", cyan: "var(--nyx-accent)", text: "var(--nyx-text)", muted: "var(--nyx-text-muted)", input: "var(--nyx-input-bg)" };
 
 const STATUS_COLOR: Record<LeadStatus, string> = {
-  NEW: "#00d4ff", CONTACTED: "#fbbf24", QUALIFIED: "#f59e0b",
+  NEW: "var(--nyx-accent)", CONTACTED: "#fbbf24", QUALIFIED: "#f59e0b",
   PROPOSAL_SENT: "#60a5fa", NEGOTIATING: "#a78bfa", WON: "#34d399", LOST: "#f87171", UNQUALIFIED: "#94a3b8",
 };
 const STATUSES: LeadStatus[] = ["NEW","CONTACTED","QUALIFIED","PROPOSAL_SENT","NEGOTIATING","WON","LOST","UNQUALIFIED"];
@@ -64,7 +64,7 @@ function LeadModal({ lead, reps, onClose, onSave, onDelete }: {
 
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 16 }}>
-      <div style={{ background: "#0d1525", border: `1px solid rgba(0,212,255,0.15)`, borderRadius: 14, width: "100%", maxWidth: 680, maxHeight: "90vh", overflowY: "auto", padding: 28 }}>
+      <div style={{ background: "#0d1525", border: `1px solid var(--nyx-accent-mid)`, borderRadius: 14, width: "100%", maxWidth: 680, maxHeight: "90vh", overflowY: "auto", padding: 28 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
           <h2 style={{ fontSize: "1.2rem", fontWeight: 800, color: C.text }}>{isEdit ? "Edit Lead" : "New Lead"}</h2>
           <button onClick={onClose} style={{ background: "none", border: "none", color: C.muted, cursor: "pointer", fontSize: "1.4rem", lineHeight: 1 }}>×</button>
@@ -99,7 +99,7 @@ function LeadModal({ lead, reps, onClose, onSave, onDelete }: {
             </div>
 
             <div style={{ gridColumn: "1/-1", borderTop: `1px solid ${C.border}`, paddingTop: 14, marginTop: 4 }}>
-              <p style={{ fontSize: "0.68rem", fontWeight: 700, color: "rgba(0,212,255,0.45)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 10 }}>Primary Contact</p>
+              <p style={{ fontSize: "0.68rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 10 }}>Primary Contact</p>
             </div>
             <div>
               <label style={{ fontSize: "0.72rem", color: C.muted, display: "block", marginBottom: 4 }}>CONTACT NAME</label>
@@ -119,7 +119,7 @@ function LeadModal({ lead, reps, onClose, onSave, onDelete }: {
             </div>
 
             <div style={{ gridColumn: "1/-1", borderTop: `1px solid ${C.border}`, paddingTop: 14, marginTop: 4 }}>
-              <p style={{ fontSize: "0.68rem", fontWeight: 700, color: "rgba(0,212,255,0.45)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 10 }}>Pipeline Details</p>
+              <p style={{ fontSize: "0.68rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 10 }}>Pipeline Details</p>
             </div>
             <div>
               <label style={{ fontSize: "0.72rem", color: C.muted, display: "block", marginBottom: 4 }}>STATUS</label>
@@ -174,7 +174,7 @@ function LeadModal({ lead, reps, onClose, onSave, onDelete }: {
             </div>
             <div style={{ display: "flex", gap: 10 }}>
               <button type="button" onClick={onClose} style={{ background: "none", border: `1px solid ${C.border}`, borderRadius: 7, padding: "8px 20px", color: C.muted, cursor: "pointer" }}>Cancel</button>
-              <button type="submit" disabled={saving} style={{ background: "rgba(0,212,255,0.12)", border: `1px solid rgba(0,212,255,0.25)`, borderRadius: 7, padding: "8px 24px", color: C.cyan, cursor: "pointer", fontWeight: 700 }}>{saving ? "Saving…" : isEdit ? "Save Changes" : "Create Lead"}</button>
+              <button type="submit" disabled={saving} style={{ background: "var(--nyx-accent-mid)", border: `1px solid var(--nyx-accent-str)`, borderRadius: 7, padding: "8px 24px", color: C.cyan, cursor: "pointer", fontWeight: 700 }}>{saving ? "Saving…" : isEdit ? "Save Changes" : "Create Lead"}</button>
             </div>
           </div>
         </form>
@@ -234,11 +234,11 @@ export default function LeadsClient({ reps }: { reps: Rep[] }) {
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20, flexWrap: "wrap", gap: 12 }}>
         <div>
-          <p style={{ color: "rgba(0,212,255,0.55)", fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 4 }}>PIPELINE</p>
+          <p style={{ color: "var(--nyx-accent-label)", fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 4 }}>PIPELINE</p>
           <h1 style={{ fontSize: "1.8rem", fontWeight: 900, color: C.text }}>Lead Pipeline</h1>
           <p style={{ color: C.muted, fontSize: "0.875rem", marginTop: 4 }}>{leads.length} total leads</p>
         </div>
-        <button onClick={() => setModal("add")} style={{ background: "rgba(0,212,255,0.1)", border: "1px solid rgba(0,212,255,0.25)", borderRadius: 8, padding: "10px 20px", color: C.cyan, cursor: "pointer", fontWeight: 700, fontSize: "0.875rem", display: "flex", alignItems: "center", gap: 6 }}>
+        <button onClick={() => setModal("add")} style={{ background: "var(--nyx-accent-dim)", border: "1px solid var(--nyx-accent-str)", borderRadius: 8, padding: "10px 20px", color: C.cyan, cursor: "pointer", fontWeight: 700, fontSize: "0.875rem", display: "flex", alignItems: "center", gap: 6 }}>
           + New Lead
         </button>
       </div>
@@ -265,7 +265,7 @@ export default function LeadsClient({ reps }: { reps: Rep[] }) {
           <thead>
             <tr style={{ borderBottom: `1px solid ${C.border}` }}>
               {["Hospital", "Contact", "Status", "Priority", "Source", "Est. Value", "Rep", "Created", ""].map(h => (
-                <th key={h} style={{ padding: "12px 14px", textAlign: "left", fontSize: "0.65rem", fontWeight: 700, color: "rgba(0,212,255,0.45)", letterSpacing: "0.1em", textTransform: "uppercase", whiteSpace: "nowrap" }}>{h}</th>
+                <th key={h} style={{ padding: "12px 14px", textAlign: "left", fontSize: "0.65rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.1em", textTransform: "uppercase", whiteSpace: "nowrap" }}>{h}</th>
               ))}
             </tr>
           </thead>
@@ -273,8 +273,8 @@ export default function LeadsClient({ reps }: { reps: Rep[] }) {
             {loading && <tr><td colSpan={9} style={{ padding: 32, textAlign: "center", color: C.muted }}>Loading…</td></tr>}
             {!loading && filtered.length === 0 && <tr><td colSpan={9} style={{ padding: 32, textAlign: "center", color: C.muted }}>No leads match your filters.</td></tr>}
             {filtered.map(lead => (
-              <tr key={lead.id} onClick={() => setModal(lead)} style={{ borderBottom: `1px solid rgba(0,212,255,0.04)`, cursor: "pointer", transition: "background 0.15s" }}
-                onMouseEnter={e => (e.currentTarget.style.background = "rgba(0,212,255,0.03)")}
+              <tr key={lead.id} onClick={() => setModal(lead)} style={{ borderBottom: `1px solid var(--nyx-accent-dim)`, cursor: "pointer", transition: "background 0.15s" }}
+                onMouseEnter={e => (e.currentTarget.style.background = "var(--nyx-accent-dim)")}
                 onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
                 <td style={{ padding: "13px 14px" }}>
                   <div style={{ fontWeight: 600, fontSize: "0.875rem", color: C.text }}>{lead.hospitalName}</div>

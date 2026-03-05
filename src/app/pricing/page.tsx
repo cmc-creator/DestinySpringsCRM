@@ -1,9 +1,9 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 
-const CYAN = "#00d4ff";
-const BG = "#04080f";
-const BORDER = "rgba(0,212,255,0.08)";
-const TEXT = "#d8e8f4";
+const CYAN = "var(--nyx-accent)";
+const BG = "var(--nyx-bg)";
+const BORDER = "var(--nyx-accent-dim)";
+const TEXT = "var(--nyx-text)";
 
 const tiers = [
   {
@@ -85,10 +85,10 @@ export default function PricingPage() {
   return (
     <div style={{ background: BG, color: TEXT, fontFamily: "system-ui, -apple-system, sans-serif", minHeight: "100vh" }}>
       {/* NAV */}
-      <nav style={{ borderBottom: `1px solid ${BORDER}`, padding: "0 2rem", display: "flex", alignItems: "center", justifyContent: "space-between", height: 60, background: "rgba(4,8,15,0.92)", backdropFilter: "blur(12px)" }}>
+      <nav style={{ borderBottom: `1px solid ${BORDER}`, padding: "0 2rem", display: "flex", alignItems: "center", justifyContent: "space-between", height: 60, background: "var(--nyx-bg)", backdropFilter: "blur(12px)" }}>
         <Link href="/" style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none" }}>
           <svg width="24" height="24" viewBox="0 0 32 32" fill="none">
-            <rect width="32" height="32" rx="8" fill="#04080f"/>
+            <rect width="32" height="32" rx="8" fill="var(--nyx-bg)"/>
             <path d="M16 6 L26 12 L26 20 L16 26 L6 20 L6 12 Z" stroke={CYAN} strokeWidth="1.5" fill="none" strokeOpacity="0.7"/>
             <circle cx="16" cy="16" r="4" fill={CYAN} fillOpacity="0.8"/>
           </svg>
@@ -110,7 +110,7 @@ export default function PricingPage() {
       {/* TIERS */}
       <section style={{ maxWidth: 1060, margin: "0 auto", padding: "0 2rem 72px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 24 }}>
         {tiers.map((t) => (
-          <div key={t.name} style={{ background: t.highlight ? "rgba(0,212,255,0.04)" : "rgba(255,255,255,0.02)", border: `1px solid ${t.highlight ? "rgba(0,212,255,0.25)" : BORDER}`, borderRadius: 14, padding: "32px 28px", display: "flex", flexDirection: "column", position: "relative" }}>
+          <div key={t.name} style={{ background: t.highlight ? "var(--nyx-accent-dim)" : "rgba(255,255,255,0.02)", border: `1px solid ${t.highlight ? "var(--nyx-accent-str)" : BORDER}`, borderRadius: 14, padding: "32px 28px", display: "flex", flexDirection: "column", position: "relative" }}>
             {t.highlight && <div style={{ position: "absolute", top: -1, left: "50%", transform: "translateX(-50%)", background: CYAN, color: BG, padding: "3px 14px", borderRadius: "0 0 8px 8px", fontSize: "0.68rem", fontWeight: 800, letterSpacing: "0.1em", whiteSpace: "nowrap" }}>MOST POPULAR</div>}
             <div>
               <div style={{ fontSize: "0.75rem", fontWeight: 700, color: CYAN, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 6 }}>{t.name}</div>

@@ -1,15 +1,15 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState, useCallback } from "react";
 
 const C = {
-  cyan:"#00d4ff", text:"#d8e8f4", muted:"rgba(216,232,244,0.55)",
-  dim:"rgba(216,232,244,0.3)", card:"rgba(255,255,255,0.03)",
-  border:"rgba(0,212,255,0.08)", emerald:"#10b981", amber:"#f59e0b",
+  cyan: "var(--nyx-accent)", text: "var(--nyx-text)", muted: "var(--nyx-text-muted)",
+  dim: "var(--nyx-text-muted)", card: "var(--nyx-card)",
+  border: "var(--nyx-border)", emerald:"#10b981", amber:"#f59e0b",
 };
 
 const STATUS_COLORS: Record<string, string> = {
-  RECEIVED:"rgba(0,212,255,0.15)", ADMITTED:"rgba(16,185,129,0.15)",
+  RECEIVED:"var(--nyx-accent-mid)", ADMITTED:"rgba(16,185,129,0.15)",
   DECLINED:"rgba(239,68,68,0.15)", PENDING:"rgba(245,158,11,0.15)",
   DUPLICATE:"rgba(148,163,184,0.1)",
 };
@@ -139,13 +139,13 @@ export default function ReferralsPage() {
                 </td></tr>
               )}
               {referrals.map((r) => (
-                <tr key={r.id} style={{ borderBottom:`1px solid rgba(0,212,255,0.04)` }}>
+                <tr key={r.id} style={{ borderBottom:`1px solid var(--nyx-accent-dim)` }}>
                   <td style={{ padding:"12px 14px" }}>
                     <div style={{ fontWeight:700, fontSize:"0.875rem", color:C.text }}>{r.referralSource.name}</div>
                     {r.referralSource.specialty && <div style={{ fontSize:"0.7rem", color:C.muted }}>{r.referralSource.specialty}</div>}
                   </td>
                   <td style={{ padding:"12px 14px" }}>
-                    <span style={{ background:"rgba(0,212,255,0.07)", border:`1px solid rgba(0,212,255,0.15)`, borderRadius:999, padding:"2px 8px", fontSize:"0.65rem", fontWeight:700, color:C.cyan }}>
+                    <span style={{ background:"var(--nyx-accent-dim)", border:`1px solid var(--nyx-accent-mid)`, borderRadius:999, padding:"2px 8px", fontSize:"0.65rem", fontWeight:700, color:C.cyan }}>
                       {r.referralSource.type.replace("_"," ")}
                     </span>
                   </td>

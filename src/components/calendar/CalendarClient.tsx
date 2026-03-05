@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import { useState, useCallback, useEffect } from "react";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -29,12 +29,12 @@ type View = "month" | "week" | "list";
 // ─── Constants ───────────────────────────────────────────────────────────────
 
 const C = {
-  cyan:   "#00d4ff",
-  text:   "#d8e8f4",
-  muted:  "rgba(216,232,244,0.55)",
-  dim:    "rgba(216,232,244,0.25)",
-  card:   "rgba(255,255,255,0.03)",
-  border: "rgba(0,212,255,0.08)",
+  cyan: "var(--nyx-accent)",
+  text: "var(--nyx-text)",
+  muted: "var(--nyx-text-muted)",
+  dim: "var(--nyx-text-muted)",
+  card: "var(--nyx-card)",
+  border: "var(--nyx-border)",
 };
 
 const A_TYPES: AType[] = [
@@ -50,7 +50,7 @@ const TYPE_LABEL: Record<string, string> = {
 };
 
 const TYPE_COLOR: Record<string, string> = {
-  MEETING:"#60a5fa", CALL:"#00d4ff", DEMO_COMPLETED:"#fbbf24",
+  MEETING:"#60a5fa", CALL:"var(--nyx-accent)", DEMO_COMPLETED:"#fbbf24",
   SITE_VISIT:"#34d399", EMAIL:"#94a3b8", NOTE:"#f97316",
   TASK:"#f59e0b", PROPOSAL_SENT:"#a78bfa", CONTRACT_SENT:"#c084fc",
   CONFERENCE:"#f472b6", FOLLOW_UP:"#38bdf8",
@@ -226,12 +226,12 @@ function ActivityModal({ activity, defaultDate, hospitals, reps, onSave, onDelet
 
   return (
     <div
-      style={{ position:"fixed", inset:0, background:"rgba(4,8,15,0.88)", zIndex:1000,
+      style={{ position:"fixed", inset:0, background:"var(--nyx-bg)", zIndex:1000,
                display:"flex", alignItems:"center", justifyContent:"center", padding:16 }}
       onClick={onClose}
     >
       <div
-        style={{ background:"#070d18", border:"1px solid rgba(0,212,255,0.2)", borderRadius:16,
+        style={{ background:"var(--nyx-bg)", border:"1px solid var(--nyx-accent-str)", borderRadius:16,
                  padding:"28px 28px 24px", width:"100%", maxWidth:500, maxHeight:"92vh", overflowY:"auto" }}
         onClick={e => e.stopPropagation()}
       >
@@ -311,7 +311,7 @@ function ActivityModal({ activity, defaultDate, hospitals, reps, onSave, onDelet
               style={{
                 width:18, height:18, borderRadius:4, flexShrink:0,
                 border:`1.5px solid ${done ? C.cyan : C.border}`,
-                background: done ? "rgba(0,212,255,0.15)" : "rgba(0,0,0,0.3)",
+                background: done ? "var(--nyx-accent-mid)" : "rgba(0,0,0,0.3)",
                 display:"flex", alignItems:"center", justifyContent:"center",
               }}
             >
@@ -355,8 +355,8 @@ function ActivityModal({ activity, defaultDate, hospitals, reps, onSave, onDelet
             </button>
             <button onClick={handleSave} disabled={!title.trim() || saving}
               style={{
-                background: title.trim() ? "rgba(0,212,255,0.1)" : "rgba(0,0,0,0.2)",
-                border: `1px solid ${title.trim() ? "rgba(0,212,255,0.3)" : C.border}`,
+                background: title.trim() ? "var(--nyx-accent-dim)" : "rgba(0,0,0,0.2)",
+                border: `1px solid ${title.trim() ? "var(--nyx-accent-str)" : C.border}`,
                 borderRadius:8, padding:"8px 20px",
                 color: title.trim() ? C.cyan : C.muted,
                 fontSize:"0.82rem", fontWeight:700,
@@ -396,7 +396,7 @@ function MonthView({
       <div style={{ display:"grid", gridTemplateColumns:"repeat(7,1fr)", marginBottom:2 }}>
         {DAYS_SHORT.map(d => (
           <div key={d} style={{ textAlign:"center", fontSize:"0.62rem", fontWeight:700,
-            color:"rgba(0,212,255,0.45)", letterSpacing:"0.1em", textTransform:"uppercase",
+            color:"var(--nyx-accent-label)", letterSpacing:"0.1em", textTransform:"uppercase",
             padding:"8px 0" }}>
             {d}
           </div>
@@ -418,8 +418,8 @@ function MonthView({
               key={i}
               onClick={() => onDayClick(day)}
               style={{
-                background: isToday ? "rgba(0,212,255,0.06)" : "rgba(4,8,15,0.95)",
-                borderTop: isToday ? `2px solid rgba(0,212,255,0.5)` : "2px solid transparent",
+                background: isToday ? "var(--nyx-accent-dim)" : "var(--nyx-bg)",
+                borderTop: isToday ? `2px solid var(--nyx-accent-label)` : "2px solid transparent",
                 minHeight:96, padding:"6px 6px 4px",
                 cursor:"pointer",
                 transition:"background 0.15s",
@@ -430,7 +430,7 @@ function MonthView({
                 color: isToday ? C.cyan : isThisMonth ? C.text : C.dim,
                 marginBottom:4, lineHeight:1,
                 width:22, height:22, borderRadius:"50%",
-                background: isToday ? "rgba(0,212,255,0.15)" : "transparent",
+                background: isToday ? "var(--nyx-accent-mid)" : "transparent",
                 display:"flex", alignItems:"center", justifyContent:"center",
               }}>
                 {day.getDate()}
@@ -481,12 +481,12 @@ function WeekView({
         return (
           <div key={i}
             onClick={() => onDayClick(day)}
-            style={{ background:C.card, border:`1px solid ${isToday ? "rgba(0,212,255,0.25)" : C.border}`,
-                     borderTop: isToday ? `2px solid rgba(0,212,255,0.5)` : `2px solid transparent`,
+            style={{ background:C.card, border:`1px solid ${isToday ? "var(--nyx-accent-str)" : C.border}`,
+                     borderTop: isToday ? `2px solid var(--nyx-accent-label)` : `2px solid transparent`,
                      borderRadius:10, padding:"10px 8px", minHeight:200, cursor:"pointer" }}>
             {/* Header */}
             <div style={{ marginBottom:10, textAlign:"center" }}>
-              <div style={{ fontSize:"0.62rem", fontWeight:700, color:"rgba(0,212,255,0.45)",
+              <div style={{ fontSize:"0.62rem", fontWeight:700, color:"var(--nyx-accent-label)",
                             letterSpacing:"0.1em", textTransform:"uppercase" }}>
                 {DAYS_SHORT[day.getDay()]}
               </div>
@@ -494,7 +494,7 @@ function WeekView({
                 fontSize:"1.3rem", fontWeight:900,
                 color: isToday ? C.cyan : C.text,
                 width:36, height:36, borderRadius:"50%",
-                background: isToday ? "rgba(0,212,255,0.1)" : "transparent",
+                background: isToday ? "var(--nyx-accent-dim)" : "transparent",
                 display:"flex", alignItems:"center", justifyContent:"center", margin:"4px auto 0",
               }}>
                 {day.getDate()}
@@ -629,7 +629,7 @@ function ListView({
         <div>
           <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:16 }}>
             <span style={{ fontSize:"0.65rem", fontWeight:700, color:C.dim, letterSpacing:"0.1em", textTransform:"uppercase" }}>PAST</span>
-            <div style={{ flex:1, height:1, background:"rgba(0,212,255,0.04)" }} />
+            <div style={{ flex:1, height:1, background:"var(--nyx-accent-dim)" }} />
           </div>
           {past.map(k => renderDayGroup(k, byDay.get(k)!))}
         </div>
@@ -639,7 +639,7 @@ function ListView({
         <div style={{ marginTop:24 }}>
           <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:12 }}>
             <span style={{ fontSize:"0.65rem", fontWeight:700, color:C.dim, letterSpacing:"0.1em", textTransform:"uppercase" }}>UNSCHEDULED</span>
-            <div style={{ flex:1, height:1, background:"rgba(0,212,255,0.04)" }} />
+            <div style={{ flex:1, height:1, background:"var(--nyx-accent-dim)" }} />
           </div>
           <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
             {unscheduled.map(a => {
@@ -787,7 +787,7 @@ export default function CalendarClient({
         <div style={{ display:"flex", alignItems:"center", gap:8 }}>
           <button onClick={prev} style={btnBase}>◀</button>
           <button onClick={today}
-            style={{ ...btnBase, borderColor:"rgba(0,212,255,0.2)", color:C.cyan }}>
+            style={{ ...btnBase, borderColor:"var(--nyx-accent-str)", color:C.cyan }}>
             Today
           </button>
           <button onClick={next} style={btnBase}>▶</button>
@@ -801,7 +801,7 @@ export default function CalendarClient({
           {(["month","week","list"] as View[]).map(v => (
             <button key={v} onClick={() => setView(v)}
               style={{
-                background: view===v ? "rgba(0,212,255,0.1)" : "none",
+                background: view===v ? "var(--nyx-accent-dim)" : "none",
                 border:"none", borderRight: v!=="list" ? `1px solid ${C.border}` : "none",
                 padding:"7px 16px",
                 color: view===v ? C.cyan : C.muted,
@@ -816,14 +816,14 @@ export default function CalendarClient({
         {/* Right: today count + add */}
         <div style={{ display:"flex", alignItems:"center", gap:10 }}>
           {todayCount > 0 && (
-            <span style={{ fontSize:"0.72rem", color:C.cyan, background:"rgba(0,212,255,0.08)",
-                           border:`1px solid rgba(0,212,255,0.2)`, borderRadius:6,
+            <span style={{ fontSize:"0.72rem", color:C.cyan, background:"var(--nyx-accent-dim)",
+                           border:`1px solid var(--nyx-accent-str)`, borderRadius:6,
                            padding:"4px 10px", fontWeight:700 }}>
               {todayCount} today
             </span>
           )}
           <button onClick={() => openAdd()}
-            style={{ background:"rgba(0,212,255,0.1)", border:"1px solid rgba(0,212,255,0.25)",
+            style={{ background:"var(--nyx-accent-dim)", border:"1px solid var(--nyx-accent-str)",
                      borderRadius:8, padding:"8px 16px", color:C.cyan,
                      fontSize:"0.82rem", fontWeight:700, cursor:"pointer", whiteSpace:"nowrap" }}>
             + Add Activity

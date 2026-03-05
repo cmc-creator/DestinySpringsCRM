@@ -1,14 +1,14 @@
-import { prisma } from "@/lib/prisma";
+﻿import { prisma } from "@/lib/prisma";
 import { formatDate } from "@/lib/utils";
 
-const CYAN = "#00d4ff";
-const CARD = "rgba(255,255,255,0.03)";
-const BORDER = "rgba(0,212,255,0.08)";
-const TEXT = "#d8e8f4";
-const TEXT_MUTED = "rgba(216,232,244,0.55)";
+const CYAN = "var(--nyx-accent)";
+const CARD = "var(--nyx-card)";
+const BORDER = "var(--nyx-accent-dim)";
+const TEXT = "var(--nyx-text)";
+const TEXT_MUTED = "var(--nyx-text-muted)";
 
 const statusColor: Record<string, string> = {
-  ACTIVE: "#34d399", INACTIVE: "#94a3b8", PROSPECT: "#00d4ff", CHURNED: "#f87171",
+  ACTIVE: "#34d399", INACTIVE: "#94a3b8", PROSPECT: "var(--nyx-accent)", CHURNED: "#f87171",
 };
 
 export default async function HospitalsPage() {
@@ -21,7 +21,7 @@ export default async function HospitalsPage() {
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 28 }}>
         <div>
-          <p style={{ color: "rgba(0,212,255,0.55)", fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 4 }}>ACCOUNTS</p>
+          <p style={{ color: "var(--nyx-accent-label)", fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 4 }}>ACCOUNTS</p>
           <h1 style={{ fontSize: "1.8rem", fontWeight: 900, color: TEXT }}>Hospitals</h1>
           <p style={{ color: TEXT_MUTED, fontSize: "0.875rem", marginTop: 4 }}>{hospitals.length} hospital accounts</p>
         </div>
@@ -32,7 +32,7 @@ export default async function HospitalsPage() {
           <thead>
             <tr style={{ borderBottom: `1px solid ${BORDER}` }}>
               {["Hospital", "System", "Type", "Status", "Opportunities", "Contacts", "Added"].map((h) => (
-                <th key={h} style={{ padding: "12px 16px", textAlign: "left", fontSize: "0.68rem", fontWeight: 700, color: "rgba(0,212,255,0.45)", letterSpacing: "0.12em", textTransform: "uppercase" }}>{h}</th>
+                <th key={h} style={{ padding: "12px 16px", textAlign: "left", fontSize: "0.68rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.12em", textTransform: "uppercase" }}>{h}</th>
               ))}
             </tr>
           </thead>
@@ -41,7 +41,7 @@ export default async function HospitalsPage() {
               <tr><td colSpan={7} style={{ padding: 32, textAlign: "center", color: TEXT_MUTED, fontSize: "0.9rem" }}>No hospitals yet. Add your first hospital account.</td></tr>
             )}
             {hospitals.map((h) => (
-              <tr key={h.id} style={{ borderBottom: `1px solid rgba(0,212,255,0.04)` }}>
+              <tr key={h.id} style={{ borderBottom: `1px solid var(--nyx-accent-dim)` }}>
                 <td style={{ padding: "14px 16px" }}>
                   <div style={{ fontWeight: 600, fontSize: "0.875rem", color: TEXT }}>{h.hospitalName}</div>
                   <div style={{ fontSize: "0.75rem", color: TEXT_MUTED }}>{h.city}{h.city && h.state ? ", " : ""}{h.state}</div>

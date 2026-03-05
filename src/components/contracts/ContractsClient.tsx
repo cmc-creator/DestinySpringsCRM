@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import { useState, useEffect, useCallback } from "react";
 
 type ContractStatus = "DRAFT"|"SENT"|"SIGNED"|"ACTIVE"|"EXPIRED"|"TERMINATED";
@@ -14,7 +14,7 @@ interface Contract {
   createdAt: string;
 }
 
-const C = { card: "rgba(255,255,255,0.03)", border: "rgba(0,212,255,0.08)", cyan: "#00d4ff", text: "#d8e8f4", muted: "rgba(216,232,244,0.55)", input: "rgba(0,0,0,0.35)" };
+const C = { card: "var(--nyx-card)", border: "var(--nyx-border)", cyan: "var(--nyx-accent)", text: "var(--nyx-text)", muted: "var(--nyx-text-muted)", input: "var(--nyx-input-bg)" };
 const inp: React.CSSProperties = { width: "100%", background: C.input, border: `1px solid ${C.border}`, borderRadius: 7, padding: "8px 12px", color: C.text, fontSize: "0.875rem", outline: "none", boxSizing: "border-box" };
 const sel: React.CSSProperties = { ...inp, appearance: "none" };
 
@@ -40,7 +40,7 @@ function ContractModal({ contract, hospitals, reps, onClose, onSave, onDelete }:
 
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 16 }}>
-      <div style={{ background: "#0d1525", border: `1px solid rgba(0,212,255,0.15)`, borderRadius: 14, width: "100%", maxWidth: 680, maxHeight: "90vh", overflowY: "auto", padding: 28 }}>
+      <div style={{ background: "#0d1525", border: `1px solid var(--nyx-accent-mid)`, borderRadius: 14, width: "100%", maxWidth: 680, maxHeight: "90vh", overflowY: "auto", padding: 28 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
           <h2 style={{ fontSize: "1.2rem", fontWeight: 800, color: C.text }}>{isEdit ? "Edit Contract" : "New Contract"}</h2>
           <button onClick={onClose} style={{ background: "none", border: "none", color: C.muted, cursor: "pointer", fontSize: "1.4rem" }}>×</button>
@@ -107,7 +107,7 @@ function ContractModal({ contract, hospitals, reps, onClose, onSave, onDelete }:
             </div>
             <div style={{ display: "flex", gap: 10 }}>
               <button type="button" onClick={onClose} style={{ background: "none", border: `1px solid ${C.border}`, borderRadius: 7, padding: "8px 20px", color: C.muted, cursor: "pointer" }}>Cancel</button>
-              <button type="submit" disabled={saving} style={{ background: "rgba(0,212,255,0.12)", border: `1px solid rgba(0,212,255,0.25)`, borderRadius: 7, padding: "8px 24px", color: C.cyan, cursor: "pointer", fontWeight: 700 }}>{saving ? "Saving…" : isEdit ? "Save Changes" : "Create Contract"}</button>
+              <button type="submit" disabled={saving} style={{ background: "var(--nyx-accent-mid)", border: `1px solid var(--nyx-accent-str)`, borderRadius: 7, padding: "8px 24px", color: C.cyan, cursor: "pointer", fontWeight: 700 }}>{saving ? "Saving…" : isEdit ? "Save Changes" : "Create Contract"}</button>
             </div>
           </div>
         </form>
@@ -150,16 +150,16 @@ export default function ContractsClient({ hospitals, reps }: { hospitals: Hospit
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20, flexWrap: "wrap", gap: 12 }}>
         <div>
-          <p style={{ color: "rgba(0,212,255,0.55)", fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 4 }}>AGREEMENTS</p>
+          <p style={{ color: "var(--nyx-accent-label)", fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 4 }}>AGREEMENTS</p>
           <h1 style={{ fontSize: "1.8rem", fontWeight: 900, color: C.text }}>Contracts</h1>
           <p style={{ color: C.muted, fontSize: "0.875rem", marginTop: 4 }}>{contracts.length} contracts — {fmt(totalActive)} active value</p>
         </div>
-        <button onClick={() => setModal("add")} style={{ background: "rgba(0,212,255,0.1)", border: "1px solid rgba(0,212,255,0.25)", borderRadius: 8, padding: "10px 20px", color: C.cyan, cursor: "pointer", fontWeight: 700 }}>+ New Contract</button>
+        <button onClick={() => setModal("add")} style={{ background: "var(--nyx-accent-dim)", border: "1px solid var(--nyx-accent-str)", borderRadius: 8, padding: "10px 20px", color: C.cyan, cursor: "pointer", fontWeight: 700 }}>+ New Contract</button>
       </div>
 
       <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
         {["ALL",...STATUSES].map(s => (
-          <button key={s} onClick={() => setFilterStatus(s)} style={{ background: filterStatus === s ? "rgba(0,212,255,0.1)" : C.card, border: `1px solid ${filterStatus === s ? "rgba(0,212,255,0.3)" : C.border}`, borderRadius: 6, padding: "5px 14px", color: filterStatus === s ? C.cyan : C.muted, cursor: "pointer", fontSize: "0.75rem", fontWeight: filterStatus === s ? 700 : 400 }}>{s}</button>
+          <button key={s} onClick={() => setFilterStatus(s)} style={{ background: filterStatus === s ? "var(--nyx-accent-dim)" : C.card, border: `1px solid ${filterStatus === s ? "var(--nyx-accent-str)" : C.border}`, borderRadius: 6, padding: "5px 14px", color: filterStatus === s ? C.cyan : C.muted, cursor: "pointer", fontSize: "0.75rem", fontWeight: filterStatus === s ? 700 : 400 }}>{s}</button>
         ))}
       </div>
 
@@ -168,7 +168,7 @@ export default function ContractsClient({ hospitals, reps }: { hospitals: Hospit
           <thead>
             <tr style={{ borderBottom: `1px solid ${C.border}` }}>
               {["Title","Hospital","Status","Value","Start","End","Rep",""].map(h => (
-                <th key={h} style={{ padding: "12px 14px", textAlign: "left", fontSize: "0.65rem", fontWeight: 700, color: "rgba(0,212,255,0.45)", letterSpacing: "0.1em", textTransform: "uppercase" }}>{h}</th>
+                <th key={h} style={{ padding: "12px 14px", textAlign: "left", fontSize: "0.65rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.1em", textTransform: "uppercase" }}>{h}</th>
               ))}
             </tr>
           </thead>
@@ -176,8 +176,8 @@ export default function ContractsClient({ hospitals, reps }: { hospitals: Hospit
             {loading && <tr><td colSpan={8} style={{ padding: 32, textAlign: "center", color: C.muted }}>Loading…</td></tr>}
             {!loading && filtered.length === 0 && <tr><td colSpan={8} style={{ padding: 32, textAlign: "center", color: C.muted }}>No contracts. Create one to get started.</td></tr>}
             {filtered.map(c => (
-              <tr key={c.id} onClick={() => setModal(c)} style={{ borderBottom: `1px solid rgba(0,212,255,0.04)`, cursor: "pointer" }}
-                onMouseEnter={e => (e.currentTarget.style.background = "rgba(0,212,255,0.03)")}
+              <tr key={c.id} onClick={() => setModal(c)} style={{ borderBottom: `1px solid var(--nyx-accent-dim)`, cursor: "pointer" }}
+                onMouseEnter={e => (e.currentTarget.style.background = "var(--nyx-accent-dim)")}
                 onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
                 <td style={{ padding: "12px 14px", fontWeight: 600, fontSize: "0.875rem", color: C.text }}>{c.title}</td>
                 <td style={{ padding: "12px 14px", fontSize: "0.82rem", color: C.muted }}>{c.hospital.hospitalName}</td>

@@ -1,10 +1,10 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 
-const BG = "#04080f";
-const CYAN = "#00d4ff";
-const BORDER = "rgba(0,212,255,0.08)";
-const TEXT = "#d8e8f4";
-const TEXT_MUTED = "rgba(216,232,244,0.55)";
+const BG = "var(--nyx-bg)";
+const CYAN = "var(--nyx-accent)";
+const BORDER = "var(--nyx-accent-dim)";
+const TEXT = "var(--nyx-text)";
+const TEXT_MUTED = "var(--nyx-text-muted)";
 
 export default function PrivacyPage() {
   return (
@@ -12,7 +12,7 @@ export default function PrivacyPage() {
       <nav style={{ borderBottom: `1px solid ${BORDER}`, padding: "0 2rem", display: "flex", alignItems: "center", height: 60 }}>
         <Link href="/" style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none" }}>
           <svg width="24" height="24" viewBox="0 0 32 32" fill="none">
-            <rect width="32" height="32" rx="8" fill="#04080f"/>
+            <rect width="32" height="32" rx="8" fill="var(--nyx-bg)"/>
             <path d="M16 6 L26 12 L26 20 L16 26 L6 20 L6 12 Z" stroke={CYAN} strokeWidth="1.5" fill="none" strokeOpacity="0.7"/>
             <circle cx="16" cy="16" r="4" fill={CYAN} fillOpacity="0.8"/>
           </svg>

@@ -1,16 +1,16 @@
-"use client";
+﻿"use client";
 
-const CYAN = "#00d4ff";
-const TEXT = "#d8e8f4";
-const TEXT_MUTED = "rgba(216,232,244,0.55)";
-const CARD = "rgba(255,255,255,0.03)";
-const BORDER = "rgba(0,212,255,0.08)";
+const CYAN = "var(--nyx-accent)";
+const TEXT = "var(--nyx-text)";
+const TEXT_MUTED = "var(--nyx-text-muted)";
+const CARD = "var(--nyx-card)";
+const BORDER = "var(--nyx-accent-dim)";
 
 const stageColors: Record<string, string> = {
   DISCOVERY:    "#94a3b8",
   QUALIFICATION:"#fbbf24",
   DEMO:         "#f59e0b",
-  PROPOSAL:     "#00d4ff",
+  PROPOSAL:     "var(--nyx-accent)",
   NEGOTIATION:  "#60a5fa",
   CLOSED_WON:   "#34d399",
   CLOSED_LOST:  "#f87171",
@@ -18,7 +18,7 @@ const stageColors: Record<string, string> = {
 };
 
 const statusColors: Record<string, string> = {
-  NEW:           "#00d4ff",
+  NEW:           "var(--nyx-accent)",
   CONTACTED:     "#fbbf24",
   QUALIFIED:     "#f59e0b",
   PROPOSAL_SENT: "#60a5fa",
@@ -108,7 +108,7 @@ export default function AnalyticsCharts({
 
         {/* Pipeline by Stage — horizontal bars */}
         <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 20 }}>
-          <p style={{ fontSize: "0.65rem", fontWeight: 700, color: "rgba(0,212,255,0.5)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 18 }}>PIPELINE FUNNEL</p>
+          <p style={{ fontSize: "0.65rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 18 }}>PIPELINE FUNNEL</p>
           {oppsByStage.length === 0
             ? <p style={{ color: TEXT_MUTED, fontSize: "0.85rem" }}>No opportunity data yet.</p>
             : oppsByStage.map(o => (
@@ -126,7 +126,7 @@ export default function AnalyticsCharts({
 
         {/* Monthly Revenue — vertical bars */}
         <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 20 }}>
-          <p style={{ fontSize: "0.65rem", fontWeight: 700, color: "rgba(0,212,255,0.5)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 18 }}>REVENUE TREND</p>
+          <p style={{ fontSize: "0.65rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 18 }}>REVENUE TREND</p>
           {monthlyRevenue.length === 0
             ? <p style={{ color: TEXT_MUTED, fontSize: "0.85rem" }}>No invoice data yet.</p>
             : (
@@ -165,7 +165,7 @@ export default function AnalyticsCharts({
 
         {/* Lead Conversion Funnel */}
         <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 20 }}>
-          <p style={{ fontSize: "0.65rem", fontWeight: 700, color: "rgba(0,212,255,0.5)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 18 }}>LEAD PIPELINE</p>
+          <p style={{ fontSize: "0.65rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 18 }}>LEAD PIPELINE</p>
           {leadsByStatus.length === 0
             ? <p style={{ color: TEXT_MUTED, fontSize: "0.85rem" }}>No lead data yet.</p>
             : leadsByStatus.map(l => (
@@ -183,13 +183,13 @@ export default function AnalyticsCharts({
 
         {/* Rep Leaderboard */}
         <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 20 }}>
-          <p style={{ fontSize: "0.65rem", fontWeight: 700, color: "rgba(0,212,255,0.5)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 18 }}>REP LEADERBOARD</p>
+          <p style={{ fontSize: "0.65rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 18 }}>REP LEADERBOARD</p>
           {topReps.length === 0
             ? <p style={{ color: TEXT_MUTED, fontSize: "0.85rem" }}>No rep data yet.</p>
             : topReps.map((rep, i) => {
                 const medal = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `${i + 1}.`;
                 return (
-                  <div key={rep.id} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12, padding: "10px 12px", background: i === 0 ? "rgba(0,212,255,0.04)" : "transparent", borderRadius: 8, border: i === 0 ? `1px solid rgba(0,212,255,0.12)` : "1px solid transparent" }}>
+                  <div key={rep.id} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12, padding: "10px 12px", background: i === 0 ? "var(--nyx-accent-dim)" : "transparent", borderRadius: 8, border: i === 0 ? `1px solid var(--nyx-accent-mid)` : "1px solid transparent" }}>
                     <span style={{ fontSize: "1rem", minWidth: 24 }}>{medal}</span>
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: "0.82rem", fontWeight: 700, color: TEXT }}>{rep.name}</div>
@@ -211,7 +211,7 @@ export default function AnalyticsCharts({
 
         {/* Hospital Mix */}
         <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 20 }}>
-          <p style={{ fontSize: "0.65rem", fontWeight: 700, color: "rgba(0,212,255,0.5)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 18 }}>ACCOUNT MIX BY TYPE</p>
+          <p style={{ fontSize: "0.65rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 18 }}>ACCOUNT MIX BY TYPE</p>
           {hospitalMix.length === 0
             ? <p style={{ color: TEXT_MUTED, fontSize: "0.85rem" }}>No account data yet.</p>
             : hospitalMix.map((h, i) => {
@@ -232,7 +232,7 @@ export default function AnalyticsCharts({
 
         {/* Outcome Summary */}
         <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 20 }}>
-          <p style={{ fontSize: "0.65rem", fontWeight: 700, color: "rgba(0,212,255,0.5)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 18 }}>WIN / LOSS SUMMARY</p>
+          <p style={{ fontSize: "0.65rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 18 }}>WIN / LOSS SUMMARY</p>
           {(() => {
             const won  = oppsByStage.find(o => o.stage === "CLOSED_WON");
             const lost = oppsByStage.find(o => o.stage === "CLOSED_LOST");
@@ -253,7 +253,7 @@ export default function AnalyticsCharts({
                     <div style={{ fontSize: "0.7rem", color: TEXT_MUTED, marginTop: 2 }}>LOST</div>
                     <div style={{ fontSize: "0.75rem", color: "#f87171", marginTop: 4 }}>{fmt(lost?.value ?? 0)}</div>
                   </div>
-                  <div style={{ flex: 1, background: "rgba(0,212,255,0.05)", border: "1px solid rgba(0,212,255,0.12)", borderRadius: 10, padding: "16px 14px", textAlign: "center" }}>
+                  <div style={{ flex: 1, background: "var(--nyx-accent-dim)", border: "1px solid var(--nyx-accent-mid)", borderRadius: 10, padding: "16px 14px", textAlign: "center" }}>
                     <div style={{ fontSize: "2rem", fontWeight: 900, color: CYAN }}>{openCount}</div>
                     <div style={{ fontSize: "0.7rem", color: TEXT_MUTED, marginTop: 2 }}>OPEN</div>
                     <div style={{ fontSize: "0.75rem", color: CYAN, marginTop: 4 }}>{fmt(openValue)}</div>

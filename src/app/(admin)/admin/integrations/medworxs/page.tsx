@@ -1,11 +1,11 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 
 const C = {
-  cyan:"#00d4ff", blue:"#3b82f6", text:"#d8e8f4", muted:"rgba(216,232,244,0.55)",
-  dim:"rgba(216,232,244,0.3)", card:"rgba(255,255,255,0.03)",
-  border:"rgba(0,212,255,0.08)", borderHover:"rgba(0,212,255,0.22)",
+  cyan: "var(--nyx-accent)", blue: "var(--nyx-accent)", text: "var(--nyx-text)", muted: "var(--nyx-text-muted)",
+  dim: "var(--nyx-text-muted)", card: "var(--nyx-card)",
+  border: "var(--nyx-border)", borderHover:"var(--nyx-accent-str)",
   emerald:"#10b981", amber:"#f59e0b", red:"#f87171",
 };
 
@@ -82,7 +82,7 @@ export default function MedworxsIntegrationPage() {
     <div>
       {/* Header */}
       <div style={{ display:"flex", alignItems:"flex-start", gap:16, marginBottom:28, flexWrap:"wrap" }}>
-        <div style={{ width:52, height:52, borderRadius:12, background:"rgba(0,212,255,0.07)", border:`1px solid rgba(0,212,255,0.2)`, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+        <div style={{ width:52, height:52, borderRadius:12, background:"var(--nyx-accent-dim)", border:`1px solid var(--nyx-accent-str)`, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
           <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke={C.cyan} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
             <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
             <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
@@ -151,7 +151,7 @@ export default function MedworxsIntegrationPage() {
             onDragLeave={() => setDragging(false)}
             onDrop={handleDrop}
             onClick={() => document.getElementById("csv-file-input")?.click()}
-            style={{ border:`2px dashed ${dragging ? C.cyan : C.borderHover}`, borderRadius:12, padding:"36px 24px", textAlign:"center", cursor:"pointer", background: dragging ? "rgba(0,212,255,0.04)" : "transparent", transition:"border-color 0.2s, background 0.2s", marginBottom:20 }}>
+            style={{ border:`2px dashed ${dragging ? C.cyan : C.borderHover}`, borderRadius:12, padding:"36px 24px", textAlign:"center", cursor:"pointer", background: dragging ? "var(--nyx-accent-dim)" : "transparent", transition:"border-color 0.2s, background 0.2s", marginBottom:20 }}>
             <input id="csv-file-input" type="file" accept=".csv" style={{ display:"none" }}
               onChange={(e) => { const f = e.target.files?.[0]; if (f) setFile(f); }} />
             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke={dragging ? C.cyan : C.muted} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ margin:"0 auto 12px" }}>
@@ -226,7 +226,7 @@ export default function MedworxsIntegrationPage() {
               <input readOnly value={webhookUrl}
                 style={{ flex:1, background:C.card, border:`1px solid ${C.border}`, borderRadius:8, padding:"10px 14px", color:C.cyan, fontSize:"0.82rem", outline:"none", fontFamily:"monospace" }} />
               <button onClick={() => navigator.clipboard.writeText(webhookUrl)}
-                style={{ background:"rgba(0,212,255,0.07)", border:`1px solid rgba(0,212,255,0.2)`, borderRadius:8, padding:"10px 16px", color:C.cyan, cursor:"pointer", fontWeight:700, fontSize:"0.8rem" }}>
+                style={{ background:"var(--nyx-accent-dim)", border:`1px solid var(--nyx-accent-str)`, borderRadius:8, padding:"10px 16px", color:C.cyan, cursor:"pointer", fontWeight:700, fontSize:"0.8rem" }}>
                 Copy
               </button>
             </div>
@@ -266,7 +266,7 @@ export default function MedworxsIntegrationPage() {
                 { seg:"PID-5",  label:"Patient Name",        desc:"Converted to initials only" },
               ].map((item) => (
                 <div key={item.seg} style={{ display:"flex", gap:10, alignItems:"flex-start" }}>
-                  <span style={{ background:"rgba(0,212,255,0.08)", border:`1px solid rgba(0,212,255,0.15)`, borderRadius:6, padding:"2px 8px", fontFamily:"monospace", fontSize:"0.7rem", color:C.cyan, flexShrink:0, marginTop:1 }}>{item.seg}</span>
+                  <span style={{ background:"var(--nyx-accent-dim)", border:`1px solid var(--nyx-accent-mid)`, borderRadius:6, padding:"2px 8px", fontFamily:"monospace", fontSize:"0.7rem", color:C.cyan, flexShrink:0, marginTop:1 }}>{item.seg}</span>
                   <div>
                     <div style={{ fontSize:"0.8rem", fontWeight:700, color:C.text }}>{item.label}</div>
                     <div style={{ fontSize:"0.72rem", color:C.muted }}>{item.desc}</div>
@@ -316,7 +316,7 @@ PV1|1|I|ICU^101^A|3|||1234567890^Mitchell^Sarah^A^^^&NPI&ISO^NPI|1234567890^Mitc
               ))}
             </div>
           </div>
-          <div style={{ background:"rgba(0,212,255,0.04)", border:`1px solid rgba(0,212,255,0.15)`, borderRadius:12, padding:20 }}>
+          <div style={{ background:"var(--nyx-accent-dim)", border:`1px solid var(--nyx-accent-mid)`, borderRadius:12, padding:20 }}>
             <p style={{ fontSize:"0.82rem", color:C.muted, lineHeight:1.7 }}>
               <strong style={{ color:C.cyan }}>MedWorxs contact:</strong>{" "}
               <a href="tel:866-539-0874" style={{ color:C.cyan }}>866-539-0874</a>

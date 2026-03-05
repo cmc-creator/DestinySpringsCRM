@@ -1,11 +1,11 @@
-import { prisma } from "@/lib/prisma";
+﻿import { prisma } from "@/lib/prisma";
 import { formatDate } from "@/lib/utils";
 
-const CYAN = "#00d4ff";
-const CARD = "rgba(255,255,255,0.03)";
-const BORDER = "rgba(0,212,255,0.08)";
-const TEXT = "#d8e8f4";
-const TEXT_MUTED = "rgba(216,232,244,0.55)";
+const CYAN = "var(--nyx-accent)";
+const CARD = "var(--nyx-card)";
+const BORDER = "var(--nyx-accent-dim)";
+const TEXT = "var(--nyx-text)";
+const TEXT_MUTED = "var(--nyx-text-muted)";
 
 export default async function CompliancePage() {
   const docs = await prisma.complianceDoc.findMany({
@@ -25,7 +25,7 @@ export default async function CompliancePage() {
   return (
     <div>
       <div style={{ marginBottom: 28 }}>
-        <p style={{ color: "rgba(0,212,255,0.55)", fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 4 }}>INTELLIGENCE</p>
+        <p style={{ color: "var(--nyx-accent-label)", fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 4 }}>INTELLIGENCE</p>
         <h1 style={{ fontSize: "1.8rem", fontWeight: 900, color: TEXT }}>Healthcare Compliance</h1>
         <p style={{ color: TEXT_MUTED, fontSize: "0.875rem", marginTop: 4 }}>HIPAA training, licenses, and compliance document management</p>
       </div>
@@ -45,7 +45,7 @@ export default async function CompliancePage() {
 
       {/* Rep compliance status */}
       <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: "20px", marginBottom: 24 }}>
-        <p style={{ fontSize: "0.7rem", fontWeight: 700, color: "rgba(0,212,255,0.55)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 14 }}>REP COMPLIANCE STATUS</p>
+        <p style={{ fontSize: "0.7rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 14 }}>REP COMPLIANCE STATUS</p>
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {reps.length === 0 && <p style={{ color: TEXT_MUTED, fontSize: "0.85rem" }}>No active reps.</p>}
           {reps.map((rep) => {
@@ -71,7 +71,7 @@ export default async function CompliancePage() {
           <thead>
             <tr style={{ borderBottom: `1px solid ${BORDER}` }}>
               {["Rep", "Document Type", "Title", "Status", "Expires", "Added"].map((h) => (
-                <th key={h} style={{ padding: "12px 16px", textAlign: "left", fontSize: "0.68rem", fontWeight: 700, color: "rgba(0,212,255,0.45)", letterSpacing: "0.1em", textTransform: "uppercase" }}>{h}</th>
+                <th key={h} style={{ padding: "12px 16px", textAlign: "left", fontSize: "0.68rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.1em", textTransform: "uppercase" }}>{h}</th>
               ))}
             </tr>
           </thead>
@@ -80,7 +80,7 @@ export default async function CompliancePage() {
               <tr><td colSpan={6} style={{ padding: 32, textAlign: "center", color: TEXT_MUTED }}>No compliance documents yet.</td></tr>
             )}
             {docs.map((doc) => (
-              <tr key={doc.id} style={{ borderBottom: `1px solid rgba(0,212,255,0.04)` }}>
+              <tr key={doc.id} style={{ borderBottom: `1px solid var(--nyx-accent-dim)` }}>
                 <td style={{ padding: "12px 16px", fontSize: "0.85rem", color: TEXT }}>{doc.rep.user.name}</td>
                 <td style={{ padding: "12px 16px", fontSize: "0.78rem", color: TEXT_MUTED }}>{doc.type.replace(/_/g, " ")}</td>
                 <td style={{ padding: "12px 16px", fontSize: "0.85rem", color: TEXT }}>{doc.title}</td>

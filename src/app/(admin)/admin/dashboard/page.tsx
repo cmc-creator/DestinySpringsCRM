@@ -1,12 +1,12 @@
-import { prisma } from "@/lib/prisma";
+﻿import { prisma } from "@/lib/prisma";
 import { formatCurrency, formatRelativeTime } from "@/lib/utils";
 import Link from "next/link";
 
-const CYAN = "#00d4ff";
-const CARD = "rgba(255,255,255,0.03)";
-const BORDER = "rgba(0,212,255,0.08)";
-const TEXT = "#d8e8f4";
-const TEXT_MUTED = "rgba(216,232,244,0.55)";
+const CYAN = "var(--nyx-accent)";
+const CARD = "var(--nyx-card)";
+const BORDER = "var(--nyx-accent-dim)";
+const TEXT = "var(--nyx-text)";
+const TEXT_MUTED = "var(--nyx-text-muted)";
 
 export default async function AdminDashboard() {
   const [
@@ -41,14 +41,14 @@ export default async function AdminDashboard() {
 
   const stageColor: Record<string, string> = {
     DISCOVERY: "#94a3b8", QUALIFICATION: "#fbbf24", DEMO: "#f59e0b",
-    PROPOSAL: "#00d4ff", NEGOTIATION: "#60a5fa", CLOSED_WON: "#34d399", CLOSED_LOST: "#f87171", ON_HOLD: "#94a3b8",
+    PROPOSAL: "var(--nyx-accent)", NEGOTIATION: "#60a5fa", CLOSED_WON: "#34d399", CLOSED_LOST: "#f87171", ON_HOLD: "#94a3b8",
   };
 
   return (
     <div>
       {/* Header */}
       <div style={{ marginBottom: 28 }}>
-        <p style={{ color: "rgba(0,212,255,0.55)", fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 4 }}>NYXAEGIS</p>
+        <p style={{ color: "var(--nyx-accent-label)", fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 4 }}>NYXAEGIS</p>
         <h1 style={{ fontSize: "1.8rem", fontWeight: 900, color: TEXT, letterSpacing: "-0.02em" }}>Command Center</h1>
         <p style={{ color: TEXT_MUTED, fontSize: "0.875rem", marginTop: 4 }}>Hospital Business Development Overview</p>
       </div>
@@ -59,7 +59,7 @@ export default async function AdminDashboard() {
           <Link key={s.label} href={s.href} style={{ textDecoration: "none" }}>
             <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: "20px 18px", cursor: "pointer", transition: "border-color 0.2s" }}>
               <div style={{ fontSize: "1.4rem", marginBottom: 8 }}>{s.icon}</div>
-              <div style={{ fontSize: "1.8rem", fontWeight: 900, color: CYAN, textShadow: "0 0 20px rgba(0,212,255,0.4)", lineHeight: 1, marginBottom: 4 }}>{s.value}</div>
+              <div style={{ fontSize: "1.8rem", fontWeight: 900, color: CYAN, textShadow: "0 0 20px var(--nyx-accent-label)", lineHeight: 1, marginBottom: 4 }}>{s.value}</div>
               <div style={{ fontSize: "0.75rem", color: TEXT_MUTED, fontWeight: 500 }}>{s.label}</div>
             </div>
           </Link>
@@ -68,10 +68,10 @@ export default async function AdminDashboard() {
 
       {/* Quick Actions */}
       <div style={{ marginBottom: 32 }}>
-        <p style={{ fontSize: "0.7rem", fontWeight: 700, color: "rgba(0,212,255,0.55)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 12 }}>QUICK ACTIONS</p>
+        <p style={{ fontSize: "0.7rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 12 }}>QUICK ACTIONS</p>
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
           {quickActions.map((a) => (
-            <Link key={a.label} href={a.href} style={{ display: "inline-flex", alignItems: "center", gap: 7, background: "rgba(0,212,255,0.06)", border: `1px solid rgba(0,212,255,0.15)`, borderRadius: 8, padding: "8px 14px", textDecoration: "none", color: CYAN, fontSize: "0.8rem", fontWeight: 600 }}>
+            <Link key={a.label} href={a.href} style={{ display: "inline-flex", alignItems: "center", gap: 7, background: "var(--nyx-accent-dim)", border: `1px solid var(--nyx-accent-mid)`, borderRadius: 8, padding: "8px 14px", textDecoration: "none", color: CYAN, fontSize: "0.8rem", fontWeight: 600 }}>
               <span>{a.icon}</span> {a.label}
             </Link>
           ))}
@@ -82,7 +82,7 @@ export default async function AdminDashboard() {
         {/* Recent Opportunities */}
         <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: "20px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-            <p style={{ fontSize: "0.75rem", fontWeight: 700, color: "rgba(0,212,255,0.55)", letterSpacing: "0.12em", textTransform: "uppercase" }}>RECENT OPPORTUNITIES</p>
+            <p style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.12em", textTransform: "uppercase" }}>RECENT OPPORTUNITIES</p>
             <Link href="/admin/opportunities" style={{ fontSize: "0.75rem", color: CYAN, textDecoration: "none", opacity: 0.7 }}>View all →</Link>
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -105,7 +105,7 @@ export default async function AdminDashboard() {
         {/* Activity Feed */}
         <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: "20px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-            <p style={{ fontSize: "0.75rem", fontWeight: 700, color: "rgba(0,212,255,0.55)", letterSpacing: "0.12em", textTransform: "uppercase" }}>RECENT ACTIVITY</p>
+            <p style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.12em", textTransform: "uppercase" }}>RECENT ACTIVITY</p>
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {recentActivities.length === 0 && <p style={{ color: TEXT_MUTED, fontSize: "0.85rem" }}>No activity yet.</p>}

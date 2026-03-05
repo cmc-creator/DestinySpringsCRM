@@ -1,12 +1,12 @@
-import { prisma } from "@/lib/prisma";
+﻿import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 
-const CYAN = "#00d4ff";
-const CARD = "rgba(255,255,255,0.03)";
-const BORDER = "rgba(0,212,255,0.08)";
-const TEXT = "#d8e8f4";
-const TEXT_MUTED = "rgba(216,232,244,0.55)";
+const CYAN = "var(--nyx-accent)";
+const CARD = "var(--nyx-card)";
+const BORDER = "var(--nyx-accent-dim)";
+const TEXT = "var(--nyx-text)";
+const TEXT_MUTED = "var(--nyx-text-muted)";
 
 export default async function RepTerritoryPage() {
   const session = await auth();
@@ -21,7 +21,7 @@ export default async function RepTerritoryPage() {
   return (
     <div>
       <div style={{ marginBottom: 28 }}>
-        <p style={{ color: "rgba(0,212,255,0.55)", fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 4 }}>REP PORTAL</p>
+        <p style={{ color: "var(--nyx-accent-label)", fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 4 }}>REP PORTAL</p>
         <h1 style={{ fontSize: "1.8rem", fontWeight: 900, color: TEXT }}>My Territory</h1>
         <p style={{ color: TEXT_MUTED, fontSize: "0.875rem", marginTop: 4 }}>{rep.territory ?? "No territory assigned"}</p>
       </div>
@@ -39,10 +39,10 @@ export default async function RepTerritoryPage() {
 
       {rep.licensedStates && rep.licensedStates.length > 0 && (
         <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: "20px", marginBottom: 20 }}>
-          <p style={{ fontSize: "0.7rem", fontWeight: 700, color: "rgba(0,212,255,0.55)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 14 }}>LICENSED STATES</p>
+          <p style={{ fontSize: "0.7rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 14 }}>LICENSED STATES</p>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
             {rep.licensedStates.map(state => (
-              <span key={state} style={{ background: "rgba(0,212,255,0.08)", border: "1px solid rgba(0,212,255,0.2)", borderRadius: 6, padding: "4px 12px", fontSize: "0.8rem", fontWeight: 700, color: CYAN }}>{state}</span>
+              <span key={state} style={{ background: "var(--nyx-accent-dim)", border: "1px solid var(--nyx-accent-str)", borderRadius: 6, padding: "4px 12px", fontSize: "0.8rem", fontWeight: 700, color: CYAN }}>{state}</span>
             ))}
           </div>
         </div>
@@ -53,7 +53,7 @@ export default async function RepTerritoryPage() {
           <thead>
             <tr style={{ borderBottom: `1px solid ${BORDER}` }}>
               {["State", "Region", "City", "Notes"].map((h) => (
-                <th key={h} style={{ padding: "12px 16px", textAlign: "left", fontSize: "0.68rem", fontWeight: 700, color: "rgba(0,212,255,0.45)", letterSpacing: "0.1em", textTransform: "uppercase" }}>{h}</th>
+                <th key={h} style={{ padding: "12px 16px", textAlign: "left", fontSize: "0.68rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.1em", textTransform: "uppercase" }}>{h}</th>
               ))}
             </tr>
           </thead>
@@ -62,7 +62,7 @@ export default async function RepTerritoryPage() {
               <tr><td colSpan={4} style={{ padding: 32, textAlign: "center", color: TEXT_MUTED }}>No territory assignments yet. Contact your admin.</td></tr>
             )}
             {rep.territories.map((t) => (
-              <tr key={t.id} style={{ borderBottom: `1px solid rgba(0,212,255,0.04)` }}>
+              <tr key={t.id} style={{ borderBottom: `1px solid var(--nyx-accent-dim)` }}>
                 <td style={{ padding: "12px 16px", fontWeight: 700, fontSize: "0.85rem", color: CYAN }}>{t.state}</td>
                 <td style={{ padding: "12px 16px", fontSize: "0.82rem", color: TEXT_MUTED }}>{t.region ?? "-"}</td>
                 <td style={{ padding: "12px 16px", fontSize: "0.82rem", color: TEXT_MUTED }}>{t.city ?? "-"}</td>
