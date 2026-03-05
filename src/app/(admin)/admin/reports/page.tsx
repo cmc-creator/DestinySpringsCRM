@@ -1,6 +1,5 @@
 ﻿import Link from "next/link";
 
-const CYAN = "#00d4ff";
 const CARD = "rgba(255,255,255,0.03)";
 const BORDER = "rgba(0,212,255,0.08)";
 const TEXT = "#d8e8f4";

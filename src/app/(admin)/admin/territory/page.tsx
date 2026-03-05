@@ -25,8 +25,6 @@ export default async function TerritoryPage() {
     }),
   ]);
 
-  const repColorMap = new Map(reps.map((r, i) => [r.id, REP_COLORS[i % REP_COLORS.length]]));
-
   const repTerritories = reps.map((rep, i) => ({
     id: rep.id,
     name: rep.user.name ?? rep.user.email ?? "Unknown",

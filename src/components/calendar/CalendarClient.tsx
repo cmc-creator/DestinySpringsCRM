@@ -744,8 +744,8 @@ export default function CalendarClient({
     const isNew = !data.id;
     const method  = isNew ? "POST" : "PATCH";
     const url     = isNew ? "/api/activities" : `/api/activities/${data.id}`;
-    const { id, ...rest } = data;
-    const body = isNew ? rest : rest;
+    const { id: _id, ...rest } = data;
+    const body = isNew ? rest : { ...rest, id: data.id };
 
     const res = await fetch(url, {
       method,

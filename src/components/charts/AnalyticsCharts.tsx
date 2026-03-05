@@ -49,18 +49,7 @@ function HBar({ label, value, max, color, sub }: { label: string; value: number;
   );
 }
 
-function VBar({ label, value, max, color }: { label: string; value: number; max: number; color: string }) {
-  const pct = max > 0 ? Math.max(4, (value / max) * 100) : 4;
-  return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, flex: 1 }}>
-      <span style={{ fontSize: "0.72rem", color: color, fontWeight: 700 }}>{fmt(value)}</span>
-      <div style={{ width: "100%", height: 120, display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
-        <div style={{ width: "60%", height: `${pct}%`, background: `linear-gradient(180deg, ${color} 0%, ${color}66 100%)`, borderRadius: "3px 3px 0 0", boxShadow: `0 0 12px ${color}44` }} />
-      </div>
-      <span style={{ fontSize: "0.62rem", color: TEXT_MUTED, textAlign: "center", lineHeight: 1.3, maxWidth: 52 }}>{label.replace(/_/g, " ")}</span>
-    </div>
-  );
-}
+
 
 export type OppStageRow  = { stage: string; count: number; value: number };
 export type LeadRow      = { status: string; count: number };
@@ -89,7 +78,6 @@ export default function AnalyticsCharts({
 }: Props) {
   const maxOppValue  = Math.max(...oppsByStage.map(o => o.value), 1);
   const maxLeadCount = Math.max(...leadsByStatus.map(l => l.count), 1);
-  const maxRepValue  = Math.max(...topReps.map(r => r.value), 1);
   const maxMonthRev  = Math.max(...monthlyRevenue.map(m => m.value), 1);
   const maxHospCount = Math.max(...hospitalMix.map(h => h.count), 1);
 

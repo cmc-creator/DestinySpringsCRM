@@ -1,15 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
 
-/*  CSS-variable-driven style constants  */
-const C = {
-  card:   "var(--nyx-card)",
-  border: "var(--nyx-border)",
-  cyan:   "var(--nyx-accent)",
-  text:   "var(--nyx-text)",
-  muted:  "var(--nyx-text-muted)",
-  input:  "var(--nyx-input-bg)",
-};
 const inp: React.CSSProperties = {
   width: "100%", background: "var(--nyx-input-bg)", border: "1px solid var(--nyx-border)",
   borderRadius: 7, padding: "8px 12px", color: "var(--nyx-text)", fontSize: "0.875rem",
