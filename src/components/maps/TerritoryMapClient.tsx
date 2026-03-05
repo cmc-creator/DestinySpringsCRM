@@ -138,21 +138,22 @@ export default function TerritoryMapClient({ hospitals, repTerritories }: Props)
       });
 
       // Legend
-      const legend = L.control({ position: "bottomright" as L.ControlPosition });
-      legend.onAdd = () => {
-        const div = L.DomUtil.create("div");
-        div.style.cssText = "background:rgba(10,18,35,0.9);padding:12px 16px;border-radius:8px;border:1px solid rgba(0,212,255,0.15);font-size:0.75rem;color:#d8e8f4;min-width:150px";
-        div.innerHTML = `
-          <div style="font-weight:700;font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;color:rgba(0,212,255,0.55);margin-bottom:8px">Hospital Status</div>
-          ${[["ACTIVE","#00d4ff"],["PROSPECT","#fbbf24"],["INACTIVE","#64748b"]].map(([s,c]) =>
-            `<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
-              <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${c}"></span>${s}
-            </div>`
-          ).join("")}
-        `;
-        return div;
-      };
-      legend.addTo(map);
+      const LegendControl = L.Control.extend({
+        onAdd() {
+          const div = L.DomUtil.create("div");
+          div.style.cssText = "background:rgba(10,18,35,0.9);padding:12px 16px;border-radius:8px;border:1px solid rgba(0,212,255,0.15);font-size:0.75rem;color:#d8e8f4;min-width:150px";
+          div.innerHTML = `
+            <div style="font-weight:700;font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;color:rgba(0,212,255,0.55);margin-bottom:8px">Hospital Status</div>
+            ${[["ACTIVE","#00d4ff"],["PROSPECT","#fbbf24"],["INACTIVE","#64748b"]].map(([s,c]) =>
+              `<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+                <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${c}"></span>${s}
+              </div>`
+            ).join("")}
+          `;
+          return div;
+        },
+      });
+      new LegendControl({ position: "bottomright" as L.ControlPosition }).addTo(map);
 
       mapRef.current = map;
     });
