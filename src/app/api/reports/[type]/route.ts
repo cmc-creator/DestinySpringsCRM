@@ -71,7 +71,7 @@ async function getRows(type: string) {
           user: { select: { name: true, email: true } },
           _count: { select: { opportunities: true, leads: true } },
           opportunities: { select: { value: true, stage: true } },
-          repPayments: { where: { status: "PAID" }, select: { amount: true } },
+          payments: { where: { status: "PAID" }, select: { amount: true } },
         },
       });
       return reps.map(r => {
@@ -83,7 +83,7 @@ async function getRows(type: string) {
         const pipeline  = r.opportunities
           .filter(o => !["CLOSED_WON","CLOSED_LOST"].includes(o.stage))
           .reduce((s, o) => s + Number(o.value ?? 0), 0);
-        const totalPaid = r.repPayments.reduce((s, p) => s + Number(p.amount), 0);
+        const totalPaid = r.payments.reduce((s, p) => s + Number(p.amount), 0);
         return {
           Name: r.user.name ?? "",
           Email: r.user.email,
