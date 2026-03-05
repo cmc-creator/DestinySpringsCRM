@@ -6,7 +6,7 @@ import { Providers } from "@/components/providers";
 const inter = Inter({ subsets: ["latin"] });
 
 export const viewport: Viewport = {
-  themeColor: "#00d4ff",
+  themeColor: "#C9A84C",
 };
 
 export const metadata: Metadata = {
@@ -20,7 +20,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <head>
         <link rel="icon" href="/icon.svg" type="image/svg+xml" />
-        <meta name="theme-color" content="#00d4ff" />
+        <meta name="theme-color" content="#C9A84C" />
+        {/* Apply saved theme immediately — prevents flash of wrong theme */}
+        <script dangerouslySetInnerHTML={{ __html: `(function(){try{var t=localStorage.getItem('nyxaegis-theme')||'luxury';document.documentElement.setAttribute('data-theme',t);}catch(e){}})();` }} />
       </head>
       <body className={inter.className}>
         <Providers>{children}</Providers>

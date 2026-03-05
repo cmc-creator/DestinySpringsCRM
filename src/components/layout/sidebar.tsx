@@ -3,11 +3,14 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 
-const CYAN = "#00d4ff";
-const BG_SIDEBAR = "rgba(4,6,12,0.98)";
-const BORDER = "rgba(0,212,255,0.07)";
-const TEXT_MUTED = "rgba(216,232,244,0.5)";
-const TEXT = "#d8e8f4";
+const CYAN       = "var(--nyx-accent)";
+const BG_SIDEBAR = "var(--nyx-sidebar-bg)";
+const BORDER     = "var(--nyx-border)";
+const TEXT_MUTED = "var(--nyx-text-muted)";
+const TEXT       = "var(--nyx-text)";
+const ACCENT_DIM = "var(--nyx-accent-dim)";
+const ACCENT_MID = "var(--nyx-accent-mid)";
+const ACCENT_STR = "var(--nyx-accent-str)";
 
 type NavItem = { href: string; label: string; icon: string };
 type NavGroup = { group: string; items: NavItem[] };
@@ -138,10 +141,25 @@ export function Sidebar({ role, userName, userEmail }: SidebarProps) {
       <div style={{ padding: "20px 18px 16px", borderBottom: `1px solid ${BORDER}` }}>
         <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
           <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
-            <rect width="32" height="32" rx="8" fill="#04080f"/>
-            <rect x="1" y="1" width="30" height="30" rx="7" stroke={CYAN} strokeWidth="1" strokeOpacity="0.4"/>
-            <path d="M16 6 L26 12 L26 20 L16 26 L6 20 L6 12 Z" stroke={CYAN} strokeWidth="1.5" fill="none" strokeOpacity="0.7"/>
-            <circle cx="16" cy="16" r="4" fill={CYAN} fillOpacity="0.8"/>
+            {/* Diamond gem — faceted */}
+            <polygon points="16,2 30,14 16,30 2,14"
+              style={{ fill: ACCENT_DIM, stroke: CYAN, strokeWidth: "1.15", strokeOpacity: "0.75" }} />
+            {/* Girdle line */}
+            <line x1="2" y1="14" x2="30" y2="14"
+              style={{ stroke: CYAN, strokeWidth: "0.65", strokeOpacity: "0.45" }} />
+            {/* Crown facets */}
+            <line x1="16" y1="2" x2="9" y2="14"  style={{ stroke: CYAN, strokeWidth: "0.55", strokeOpacity: "0.35" }} />
+            <line x1="16" y1="2" x2="23" y2="14" style={{ stroke: CYAN, strokeWidth: "0.55", strokeOpacity: "0.35" }} />
+            <line x1="16" y1="2" x2="8" y2="8"   style={{ stroke: CYAN, strokeWidth: "0.5",  strokeOpacity: "0.28" }} />
+            <line x1="16" y1="2" x2="24" y2="8"  style={{ stroke: CYAN, strokeWidth: "0.5",  strokeOpacity: "0.28" }} />
+            {/* Table highlight */}
+            <polygon points="11,8 16,3 21,8"
+              style={{ fill: ACCENT_MID, stroke: "none" }} />
+            {/* Pavillon facets */}
+            <line x1="2"  y1="14" x2="10" y2="24" style={{ stroke: CYAN, strokeWidth: "0.5", strokeOpacity: "0.22" }} />
+            <line x1="30" y1="14" x2="22" y2="24" style={{ stroke: CYAN, strokeWidth: "0.5", strokeOpacity: "0.22" }} />
+            {/* Culet sparkle */}
+            <circle cx="16" cy="10" r="1.4" style={{ fill: CYAN, fillOpacity: "0.92" }} />
           </svg>
           <div>
             <div style={{ fontWeight: 900, fontSize: "0.95rem", color: TEXT, letterSpacing: "-0.01em", lineHeight: 1 }}>NyxAegis</div>
@@ -154,7 +172,7 @@ export function Sidebar({ role, userName, userEmail }: SidebarProps) {
       <nav style={{ flex: 1, padding: "12px 10px", overflowY: "auto" }}>
         {nav.map((group) => (
           <div key={group.group} style={{ marginBottom: 20 }}>
-            <div style={{ fontSize: "0.62rem", fontWeight: 700, color: "rgba(0,212,255,0.35)", letterSpacing: "0.14em", textTransform: "uppercase", padding: "0 8px", marginBottom: 4 }}>{group.group}</div>
+            <div style={{ fontSize: "0.62rem", fontWeight: 700, color: ACCENT_MID, letterSpacing: "0.14em", textTransform: "uppercase", padding: "0 8px", marginBottom: 4 }}>{group.group}</div>
             {group.items.map((item) => {
               const active = pathname === item.href || pathname.startsWith(item.href + "/");
               return (
@@ -169,7 +187,7 @@ export function Sidebar({ role, userName, userEmail }: SidebarProps) {
                     borderRadius: 7,
                     marginBottom: 1,
                     textDecoration: "none",
-                    background: active ? "rgba(0,212,255,0.08)" : "transparent",
+                    background: active ? ACCENT_DIM : "transparent",
                     color: active ? CYAN : TEXT_MUTED,
                     fontSize: "0.82rem",
                     fontWeight: active ? 600 : 400,
@@ -189,7 +207,7 @@ export function Sidebar({ role, userName, userEmail }: SidebarProps) {
       {/* User footer */}
       <div style={{ padding: "12px 10px", borderTop: `1px solid ${BORDER}` }}>
         <div style={{ display: "flex", alignItems: "center", gap: 9, padding: "8px", marginBottom: 6 }}>
-          <div style={{ width: 30, height: 30, borderRadius: "50%", background: "rgba(0,212,255,0.15)", border: `1px solid rgba(0,212,255,0.3)`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.7rem", fontWeight: 700, color: CYAN, flexShrink: 0 }}>
+          <div style={{ width: 30, height: 30, borderRadius: "50%", background: ACCENT_MID, border: `1px solid ${ACCENT_STR}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.7rem", fontWeight: 700, color: CYAN, flexShrink: 0 }}>
             {getInitials(userName)}
           </div>
           <div style={{ overflow: "hidden" }}>

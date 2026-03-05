@@ -10,7 +10,7 @@ export default async function AccountLayout({ children }: { children: React.Reac
   if (!session || (session.user.role !== "ACCOUNT" && session.user.role !== "ADMIN")) redirect("/login");
 
   return (
-    <div className="flex min-h-screen" style={{ background: "#04080f" }}>
+    <div className="flex min-h-screen" style={{ background: "var(--nyx-bg)", color: "var(--nyx-text)" }}>
       <Sidebar role="ACCOUNT" userName={session.user.name} userEmail={session.user.email} />
       <main className="flex-1 overflow-auto">
         <div className="p-6 md:p-8 page-enter">{children}</div>
