@@ -131,7 +131,6 @@ async function getRows(type: string) {
     case "hospitals": {
       const hospitals = await prisma.hospital.findMany({
         include: {
-          assignedRep: { include: { user: { select: { name: true } } } },
           _count: { select: { opportunities: true, contracts: true, invoices: true } },
           contracts: { where: { status: "ACTIVE" }, select: { value: true } },
         },
@@ -156,7 +155,7 @@ async function getRows(type: string) {
         "# Opportunities": h._count.opportunities,
         "# Contracts": h._count.contracts,
         "# Invoices": h._count.invoices,
-        "Assigned Rep": h.assignedRep?.user?.name ?? "",
+        "Assigned Rep ID": h.assignedRepId ?? "",
         "Service Lines": (h.serviceLines ?? []).join("; "),
         "Created": fmt(h.createdAt),
       }));
