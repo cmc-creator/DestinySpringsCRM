@@ -12,7 +12,7 @@ const inp: React.CSSProperties = {
 type NyxVars = {
   "--nyx-accent": string; "--nyx-accent-glow": string; "--nyx-accent-dim": string;
   "--nyx-accent-mid": string; "--nyx-accent-str": string; "--nyx-bg": string;
-  "--nyx-card": string; "--nyx-border": string; "--nyx-sidebar-bg": string;
+  "--nyx-card": string; "--nyx-bg-scrim": string; "--nyx-border": string; "--nyx-sidebar-bg": string;
   "--nyx-text": string; "--nyx-text-muted": string; "--nyx-input-bg": string;
   "--nyx-scrollbar": string; "--nyx-accent-label": string; "--nyx-texture": string; "--nyx-sidebar-tex": string; "--nyx-card-texture": string; "--nyx-card-border": string;
 };
