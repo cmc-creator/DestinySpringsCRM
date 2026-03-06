@@ -415,6 +415,7 @@ export default function SettingsClient() {
   const [bgAssets, setBgAssets]         = useState<string[]>([]);
   const [bgLoading, setBgLoading]       = useState(false);
   const [bgSelections, setBgSelections] = useState<Record<string, string>>({});
+  const [bgTile, setBgTile]             = useState(false);
 
   useEffect(() => {
     const stored = typeof window !== "undefined" ? localStorage.getItem("nyxaegis-theme") ?? "luxury" : "luxury";
@@ -436,6 +437,10 @@ export default function SettingsClient() {
       });
     });
     setBgSelections(sels);
+    // Load tile mode for current theme
+    const tile = localStorage.getItem(`nyxaegis-bg-tile-${stored}`) === "1";
+    setBgTile(tile);
+    applyTileMode(tile);
   }, []);
 
   // Fetch available images whenever theme or tab changes
@@ -451,6 +456,9 @@ export default function SettingsClient() {
     setActiveTheme(key);
     localStorage.setItem("nyxaegis-theme", key);
     applyTheme(key);
+    const tile = localStorage.getItem(`nyxaegis-bg-tile-${key}`) === "1";
+    setBgTile(tile);
+    applyTileMode(tile);
   }
 
   function selectBg(url: string) {
@@ -472,6 +480,17 @@ export default function SettingsClient() {
       }
     }
     setBgSelections((prev: Record<string, string>) => ({ ...prev, [lsKey]: url }));
+  }
+
+  function applyTileMode(tiled: boolean) {
+    document.documentElement.style.setProperty("--nyx-page-bg-size", tiled ? "400px 400px" : "cover");
+    document.documentElement.style.setProperty("--nyx-page-bg-repeat", tiled ? "repeat" : "no-repeat");
+  }
+
+  function selectTile(tiled: boolean) {
+    setBgTile(tiled);
+    localStorage.setItem(`nyxaegis-bg-tile-${activeTheme}`, tiled ? "1" : "0");
+    applyTileMode(tiled);
   }
 
   function saveOrg() {
@@ -567,6 +586,18 @@ export default function SettingsClient() {
                   {tab === "backgrounds" ? "Body" : tab === "sidebar" ? "Sidebar" : "Cards"}
                 </button>
               ))}
+              {bgTab === "backgrounds" && (<>
+                <div style={{ width: 1, background: "var(--nyx-border)", margin: "4px 2px", alignSelf: "stretch" }} />
+                {([{ k: false, l: "Cover" }, { k: true, l: "Tile" }] as const).map(({ k, l }) => (
+                  <button key={l} type="button" onClick={() => selectTile(k)} style={{
+                    background: bgTile === k ? "var(--nyx-accent-dim)" : "transparent",
+                    border: `1px solid ${bgTile === k ? "var(--nyx-accent-mid)" : "var(--nyx-border)"}`,
+                    borderRadius: 7, padding: "5px 12px", cursor: "pointer", fontSize: "0.75rem",
+                    color: bgTile === k ? "var(--nyx-accent)" : "var(--nyx-text-muted)",
+                    fontWeight: bgTile === k ? 700 : 400, transition: "all 0.15s",
+                  }}>{l}</button>
+                ))}
+              </>)}
             </div>
           </div>
           {bgLoading ? (

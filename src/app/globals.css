@@ -189,7 +189,8 @@
   body {
     background-color: var(--nyx-bg);
     background-image: var(--nyx-page-bg, none), var(--nyx-texture, none);
-    background-size: cover, 600px 600px;
+    background-size: var(--nyx-page-bg-size, cover), 600px 600px;
+    background-repeat: var(--nyx-page-bg-repeat, no-repeat), repeat;
     background-position: center top, 0 0;
     background-attachment: fixed, scroll;
     background-blend-mode: normal, overlay;
