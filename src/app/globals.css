@@ -1,4 +1,4 @@
-@tailwind base;
+﻿@tailwind base;
 @tailwind components;
 @tailwind utilities;
 
@@ -25,8 +25,8 @@
   --nyx-accent-label: rgba(201,168,76,0.60);
   --nyx-input-bg:     rgba(0,0,0,0.45);
   --nyx-scrollbar:    rgba(201,168,76,0.20);
-  --nyx-texture:      url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='256' height='256'><filter id='g'><feTurbulence type='fractalNoise' baseFrequency='.52 .38' numOctaves='7' seed='19' stitchTiles='stitch'/><feColorMatrix type='matrix' values='0.22 0 0 0 0.08  0.11 0 0 0 0.04  0 0 0 0 0  0 0 0 0.10 0'/></filter><filter id='w'><feTurbulence type='turbulence' baseFrequency='.028 .022' numOctaves='5' seed='8' stitchTiles='stitch'/><feColorMatrix type='matrix' values='0.15 0 0 0 0.06  0.07 0 0 0 0.025  0 0 0 0 0  0 0 0 0.07 0'/></filter><rect width='256' height='256' filter='url(%23g)'/><rect width='256' height='256' filter='url(%23w)'/></svg>");
-  --nyx-card-texture: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='512' height='512'><filter id='c'><feTurbulence type='fractalNoise' baseFrequency='.015 .010' numOctaves='8' seed='23' stitchTiles='stitch'/><feColorMatrix type='matrix' values='0.18 0 0 0 0.10  0.14 0 0 0 0.07  0.04 0 0 0 0.02  0 0 0 0.12 0'/></filter><filter id='v'><feTurbulence type='turbulence' baseFrequency='.004 .002' numOctaves='4' seed='7' stitchTiles='stitch'/><feColorMatrix type='matrix' values='0.30 0 0 0 0.15  0.18 0 0 0 0.08  0 0 0 0 0  0 0 0 0.08 0'/></filter><rect width='512' height='512' filter='url(%23c)'/><rect width='512' height='512' filter='url(%23v)'/></svg>");
+  --nyx-texture:      url('/luxury/leather1.jpg');
+  --nyx-card-texture: url('/luxury/marble2.png');
   --nyx-card-border: linear-gradient(135deg, #2e1800 0%, #7a5210 8%, #C9A84C 18%, #f0d060 26%, #fffce0 33%, #e8c840 41%, #c09030 50%, #e8c840 58%, #fffce0 66%, #f0d060 74%, #C9A84C 82%, #7a5210 91%, #2e1800 100%);
   /* Tailwind compat */
   --background:        30 20% 3%;
@@ -51,7 +51,7 @@
   --nyx-accent-label: rgba(0,212,255,0.60);
   --nyx-input-bg:     rgba(0,0,0,0.35);
   --nyx-scrollbar:    rgba(0,212,255,0.15);
-  --nyx-texture:      url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='256' height='256'><filter id='l'><feTurbulence type='fractalNoise' baseFrequency='.65 .60' numOctaves='5' seed='7' stitchTiles='stitch'/><feColorMatrix type='matrix' values='0 0 0 0 0  0.05 0 0 0 0.02  0.10 0 0 0 0.04  0 0 0 0.05 0'/></filter><rect width='256' height='256' filter='url(%23l)'/></svg>");
+  --nyx-texture:      url('/luxury/bluelux.jpg');
   --nyx-card-border:  linear-gradient(135deg, #001428 0%, #00486a 12%, #00b8e8 22%, #40d8ff 30%, #d8f8ff 38%, #00c8f0 48%, #0098c0 58%, #40d8ff 68%, #d8f8ff 77%, #00486a 90%, #001428 100%);
   --background:        220 62% 3%;
   --foreground:        210 35% 90%;
@@ -75,7 +75,7 @@
   --nyx-accent-label: rgba(52,211,153,0.60);
   --nyx-input-bg:     rgba(0,0,0,0.40);
   --nyx-scrollbar:    rgba(52,211,153,0.18);
-  --nyx-texture:      url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='256' height='256'><filter id='l'><feTurbulence type='fractalNoise' baseFrequency='.70 .65' numOctaves='5' seed='11' stitchTiles='stitch'/><feColorMatrix type='matrix' values='0 0 0 0 0  0.10 0 0 0 0.04  0.05 0 0 0 0.02  0 0 0 0.05 0'/></filter><rect width='256' height='256' filter='url(%23l)'/></svg>");
+  --nyx-texture:      url('/luxury/greenluxx.jpg');
   --nyx-card-border:  linear-gradient(135deg, #001208 0%, #0a4820 12%, #34d399 22%, #70f0c0 30%, #dfffef 38%, #28c880 48%, #10a060 58%, #70f0c0 68%, #dfffef 77%, #0a4820 90%, #001208 100%);
   --background:        145 30% 3%;
   --foreground:        155 30% 88%;
@@ -189,7 +189,8 @@
   body {
     background-color: var(--nyx-bg);
     background-image: var(--nyx-texture, none);
-    background-size: 256px 256px;
+    background-size: 600px 600px;
+    background-blend-mode: overlay;
     color: var(--nyx-text);
     transition: background-color 0.3s ease, color 0.3s ease;
   }
@@ -221,9 +222,23 @@
 /* Sidebar leather texture overlay */
 .nyx-sidebar {
   background-color: var(--nyx-sidebar-bg);
+  position: relative;
+  isolation: isolate;
+}
+.nyx-sidebar::before {
+  content: '';
+  position: absolute;
+  inset: 0;
   background-image: var(--nyx-texture, none);
-  background-size: 192px 192px;
-  background-blend-mode: screen;
+  background-size: 600px auto;
+  background-repeat: repeat;
+  opacity: 0.22;
+  pointer-events: none;
+  z-index: 0;
+}
+.nyx-sidebar > * {
+  position: relative;
+  z-index: 1;
 }
 
 /* Gradient border — looks like polished metal at any radius */
@@ -232,8 +247,6 @@
   border: 1px solid transparent !important;
   background-clip: padding-box;
   background-color: var(--nyx-card);
-  background-image: var(--nyx-card-texture, none);
-  background-size: 512px 512px;
   border-radius: 12px;
   box-shadow:
     0 0 0 1px var(--nyx-accent-dim),
@@ -253,6 +266,19 @@
   pointer-events: none;
 }
 .gold-card > * { position: relative; z-index: 1; }
+.gold-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background-image: var(--nyx-card-texture, none);
+  background-size: 600px auto;
+  background-repeat: no-repeat;
+  background-position: center;
+  opacity: 0.10;
+  pointer-events: none;
+  z-index: 0;
+}
 
 @keyframes gold-shimmer-sweep {
   0%        { background-position: 0% 0%; opacity: 0.75; }
