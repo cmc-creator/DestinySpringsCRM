@@ -3,8 +3,6 @@
 const CYAN = "var(--nyx-accent)";
 const TEXT = "var(--nyx-text)";
 const TEXT_MUTED = "var(--nyx-text-muted)";
-const CARD = "var(--nyx-card)";
-const BORDER = "var(--nyx-accent-dim)";
 
 const stageColors: Record<string, string> = {
   DISCOVERY:    "#94a3b8",

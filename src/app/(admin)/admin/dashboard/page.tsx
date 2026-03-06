@@ -3,7 +3,6 @@ import { formatCurrency, formatRelativeTime } from "@/lib/utils";
 import Link from "next/link";
 
 const CYAN = "var(--nyx-accent)";
-const CARD = "var(--nyx-card)";
 const BORDER = "var(--nyx-accent-dim)";
 const TEXT = "var(--nyx-text)";
 const TEXT_MUTED = "var(--nyx-text-muted)";
