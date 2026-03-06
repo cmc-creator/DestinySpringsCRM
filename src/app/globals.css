@@ -236,6 +236,531 @@
   --ring:              217 91% 60%;
 }
 
+/* ── Midnight Goddess — Obsidian & Amethyst ── */
+:root[data-theme="goddess"] {
+  --nyx-accent:       #9D4EDD;
+  --nyx-accent-glow:  rgba(157,78,221,0.22);
+  --nyx-accent-dim:   rgba(157,78,221,0.08);
+  --nyx-accent-mid:   rgba(157,78,221,0.15);
+  --nyx-accent-str:   rgba(157,78,221,0.30);
+  --nyx-bg:           #0A0612;
+  --nyx-card:         rgba(10,6,18,0.90);
+  --nyx-bg-scrim:     rgba(10,6,18,0.72);
+  --nyx-border:       rgba(157,78,221,0.14);
+  --nyx-sidebar-bg:   rgba(6,3,12,0.99);
+  --nyx-text:         #E8D8FF;
+  --nyx-text-muted:   rgba(232,216,255,0.65);
+  --nyx-accent-label: rgba(157,78,221,0.70);
+  --nyx-input-bg:     rgba(0,0,0,0.45);
+  --nyx-scrollbar:    rgba(157,78,221,0.22);
+  --nyx-texture:      none;
+  --nyx-card-border:  linear-gradient(135deg, #0f0220 0%, #4a0a90 12%, #9D4EDD 22%, #c084ff 30%, #f0e0ff 38%, #8a32c8 48%, #6018a8 58%, #c084ff 68%, #f0e0ff 77%, #4a0a90 90%, #0f0220 100%);
+  --background:        262 50% 4%;
+  --foreground:        265 100% 93%;
+  --border:            265 30% 16%;
+  --ring:              277 65% 59%;
+}
+
+/* ── Imperial Gold — Charcoal & Polished Gold ── */
+:root[data-theme="imperial"] {
+  --nyx-accent:       #D4AF37;
+  --nyx-accent-glow:  rgba(212,175,55,0.22);
+  --nyx-accent-dim:   rgba(212,175,55,0.08);
+  --nyx-accent-mid:   rgba(212,175,55,0.15);
+  --nyx-accent-str:   rgba(212,175,55,0.30);
+  --nyx-bg:           #0C0A06;
+  --nyx-card:         rgba(12,10,6,0.90);
+  --nyx-bg-scrim:     rgba(12,10,6,0.72);
+  --nyx-border:       rgba(212,175,55,0.14);
+  --nyx-sidebar-bg:   rgba(8,6,2,0.99);
+  --nyx-text:         #F5E8C8;
+  --nyx-text-muted:   rgba(245,232,200,0.65);
+  --nyx-accent-label: rgba(212,175,55,0.70);
+  --nyx-input-bg:     rgba(0,0,0,0.45);
+  --nyx-scrollbar:    rgba(212,175,55,0.22);
+  --nyx-texture:      none;
+  --nyx-card-border:  linear-gradient(135deg, #1c0e00 0%, #7a5c10 10%, #D4AF37 20%, #f0d060 28%, #fffee0 36%, #e8c840 44%, #b89020 52%, #e8c840 60%, #fffee0 68%, #f0d060 76%, #D4AF37 84%, #7a5c10 92%, #1c0e00 100%);
+  --background:        38 33% 4%;
+  --foreground:        40 70% 87%;
+  --border:            38 28% 14%;
+  --ring:              44 68% 52%;
+}
+
+/* ── Stellar Chrome — Deep Navy & Chrome ── */
+:root[data-theme="chrome"] {
+  --nyx-accent:       #B8C8D8;
+  --nyx-accent-glow:  rgba(184,200,216,0.20);
+  --nyx-accent-dim:   rgba(184,200,216,0.08);
+  --nyx-accent-mid:   rgba(184,200,216,0.15);
+  --nyx-accent-str:   rgba(184,200,216,0.28);
+  --nyx-bg:           #060C18;
+  --nyx-card:         rgba(6,12,24,0.90);
+  --nyx-bg-scrim:     rgba(6,12,24,0.72);
+  --nyx-border:       rgba(184,200,216,0.14);
+  --nyx-sidebar-bg:   rgba(4,8,15,0.99);
+  --nyx-text:         #D8E8F4;
+  --nyx-text-muted:   rgba(216,232,244,0.65);
+  --nyx-accent-label: rgba(184,200,216,0.70);
+  --nyx-input-bg:     rgba(0,0,0,0.42);
+  --nyx-scrollbar:    rgba(184,200,216,0.20);
+  --nyx-texture:      none;
+  --nyx-card-border:  linear-gradient(135deg, #0a1020 0%, #283858 12%, #6888a8 22%, #B8C8D8 30%, #e8f0f8 38%, #90a8c0 48%, #607890 58%, #B8C8D8 68%, #e8f0f8 77%, #283858 90%, #0a1020 100%);
+  --background:        218 43% 4%;
+  --foreground:        210 35% 90%;
+  --border:            220 28% 16%;
+  --ring:              210 25% 78%;
+}
+
+/* ── Bespoke Walnut — Dark Wood & Brushed Bronze ── */
+:root[data-theme="walnut"] {
+  --nyx-accent:       #A07848;
+  --nyx-accent-glow:  rgba(160,120,72,0.22);
+  --nyx-accent-dim:   rgba(160,120,72,0.08);
+  --nyx-accent-mid:   rgba(160,120,72,0.15);
+  --nyx-accent-str:   rgba(160,120,72,0.30);
+  --nyx-bg:           #120D05;
+  --nyx-card:         rgba(18,13,5,0.90);
+  --nyx-bg-scrim:     rgba(18,13,5,0.72);
+  --nyx-border:       rgba(160,120,72,0.14);
+  --nyx-sidebar-bg:   rgba(8,5,1,0.99);
+  --nyx-text:         #F0ECD8;
+  --nyx-text-muted:   rgba(240,236,216,0.65);
+  --nyx-accent-label: rgba(160,120,72,0.70);
+  --nyx-input-bg:     rgba(0,0,0,0.45);
+  --nyx-scrollbar:    rgba(160,120,72,0.22);
+  --nyx-texture:      none;
+  --nyx-card-border:  linear-gradient(135deg, #180a00 0%, #5a3810 12%, #A07848 22%, #c89a60 30%, #eeddb0 38%, #907030 48%, #684c18 58%, #c89a60 68%, #eeddb0 77%, #5a3810 90%, #180a00 100%);
+  --background:        32 44% 4%;
+  --foreground:        38 52% 90%;
+  --border:            32 28% 14%;
+  --ring:              32 38% 46%;
+}
+
+/* ── Argentum — Platinum Dark & Ice Blue ── */
+:root[data-theme="argentum"] {
+  --nyx-accent:       #7EC8E3;
+  --nyx-accent-glow:  rgba(126,200,227,0.20);
+  --nyx-accent-dim:   rgba(126,200,227,0.08);
+  --nyx-accent-mid:   rgba(126,200,227,0.15);
+  --nyx-accent-str:   rgba(126,200,227,0.28);
+  --nyx-bg:           #080A0E;
+  --nyx-card:         rgba(8,10,14,0.90);
+  --nyx-bg-scrim:     rgba(8,10,14,0.72);
+  --nyx-border:       rgba(126,200,227,0.14);
+  --nyx-sidebar-bg:   rgba(5,6,10,0.99);
+  --nyx-text:         #E0ECF4;
+  --nyx-text-muted:   rgba(224,236,244,0.65);
+  --nyx-accent-label: rgba(126,200,227,0.70);
+  --nyx-input-bg:     rgba(0,0,0,0.40);
+  --nyx-scrollbar:    rgba(126,200,227,0.20);
+  --nyx-texture:      none;
+  --nyx-card-border:  linear-gradient(135deg, #080e18 0%, #204060 12%, #4898b8 22%, #7EC8E3 30%, #d8f4ff 38%, #58a8cc 48%, #306888 58%, #7EC8E3 68%, #d8f4ff 77%, #204060 90%, #080e18 100%);
+  --background:        218 28% 4%;
+  --foreground:        200 40% 92%;
+  --border:            210 20% 16%;
+  --ring:              196 60% 70%;
+}
+
+/* ── The Alchemist — Dark Nebula & Electric Violet ── */
+:root[data-theme="alchemist"] {
+  --nyx-accent:       #7C3AED;
+  --nyx-accent-glow:  rgba(124,58,237,0.25);
+  --nyx-accent-dim:   rgba(124,58,237,0.09);
+  --nyx-accent-mid:   rgba(124,58,237,0.17);
+  --nyx-accent-str:   rgba(124,58,237,0.33);
+  --nyx-bg:           #070614;
+  --nyx-card:         rgba(20,16,40,0.85);
+  --nyx-bg-scrim:     rgba(7,6,20,0.68);
+  --nyx-border:       rgba(124,58,237,0.18);
+  --nyx-sidebar-bg:   rgba(5,4,12,0.98);
+  --nyx-text:         #E0D8F0;
+  --nyx-text-muted:   rgba(224,216,240,0.65);
+  --nyx-accent-label: rgba(124,58,237,0.70);
+  --nyx-input-bg:     rgba(0,0,0,0.42);
+  --nyx-scrollbar:    rgba(124,58,237,0.22);
+  --nyx-texture:      none;
+  --nyx-card-border:  linear-gradient(135deg, #0a0420 0%, #380880 12%, #7C3AED 22%, #a070ff 30%, #e0d0ff 38%, #6820d0 48%, #4c10b0 58%, #a070ff 68%, #e0d0ff 77%, #380880 90%, #0a0420 100%);
+  --background:        252 42% 4%;
+  --foreground:        258 55% 90%;
+  --border:            252 32% 18%;
+  --ring:              262 83% 58%;
+}
+
+/* ── Executive Slate — Matte Grey & Emerald ── */
+:root[data-theme="slate"] {
+  --nyx-accent:       #10B981;
+  --nyx-accent-glow:  rgba(16,185,129,0.20);
+  --nyx-accent-dim:   rgba(16,185,129,0.08);
+  --nyx-accent-mid:   rgba(16,185,129,0.15);
+  --nyx-accent-str:   rgba(16,185,129,0.28);
+  --nyx-bg:           #0C0F12;
+  --nyx-card:         rgba(12,15,18,0.90);
+  --nyx-bg-scrim:     rgba(12,15,18,0.72);
+  --nyx-border:       rgba(16,185,129,0.14);
+  --nyx-sidebar-bg:   rgba(7,9,11,0.99);
+  --nyx-text:         #D4DDE4;
+  --nyx-text-muted:   rgba(212,221,228,0.65);
+  --nyx-accent-label: rgba(16,185,129,0.70);
+  --nyx-input-bg:     rgba(0,0,0,0.38);
+  --nyx-scrollbar:    rgba(16,185,129,0.20);
+  --nyx-texture:      none;
+  --nyx-card-border:  linear-gradient(135deg, #001808 0%, #085030 12%, #10B981 22%, #40d8a0 30%, #c0fff0 38%, #0a9068 48%, #087050 58%, #40d8a0 68%, #c0fff0 77%, #085030 90%, #001808 100%);
+  --background:        214 18% 5%;
+  --foreground:        210 18% 86%;
+  --border:            214 14% 16%;
+  --ring:              160 84% 39%;
+}
+
+/* ── Ivory Estate — Warm Ivory & Rose Gold ── */
+:root[data-theme="ivory"] {
+  --nyx-accent:       #C47A5A;
+  --nyx-accent-glow:  rgba(196,122,90,0.20);
+  --nyx-accent-dim:   rgba(196,122,90,0.10);
+  --nyx-accent-mid:   rgba(196,122,90,0.18);
+  --nyx-accent-str:   rgba(196,122,90,0.32);
+  --nyx-bg:           #F8F4EE;
+  --nyx-card:         rgba(255,255,255,0.94);
+  --nyx-bg-scrim:     rgba(248,244,238,0.82);
+  --nyx-border:       rgba(196,122,90,0.22);
+  --nyx-sidebar-bg:   #EDE8E0;
+  --nyx-text:         #2D1E14;
+  --nyx-text-muted:   rgba(45,30,20,0.55);
+  --nyx-accent-label: rgba(196,122,90,0.70);
+  --nyx-input-bg:     rgba(0,0,0,0.05);
+  --nyx-scrollbar:    rgba(196,122,90,0.25);
+  --nyx-texture:      none;
+  --nyx-card-border:  linear-gradient(135deg, #6a2808 0%, #a85030 12%, #C47A5A 22%, #e0a888 30%, #fff0e8 38%, #b06040 48%, #904830 58%, #e0a888 68%, #fff0e8 77%, #a85030 90%, #6a2808 100%);
+  --background:        34 40% 96%;
+  --foreground:        20 44% 18%;
+  --border:            30 40% 85%;
+  --ring:              18 44% 56%;
+}
+
+/* ── Carbon Fiber — Matte Black & Racing Red ── */
+:root[data-theme="carbon"] {
+  --nyx-accent:       #DC2626;
+  --nyx-accent-glow:  rgba(220,38,38,0.22);
+  --nyx-accent-dim:   rgba(220,38,38,0.08);
+  --nyx-accent-mid:   rgba(220,38,38,0.15);
+  --nyx-accent-str:   rgba(220,38,38,0.30);
+  --nyx-bg:           #080808;
+  --nyx-card:         rgba(8,8,8,0.90);
+  --nyx-bg-scrim:     rgba(8,8,8,0.72);
+  --nyx-border:       rgba(220,38,38,0.14);
+  --nyx-sidebar-bg:   rgba(4,4,4,0.99);
+  --nyx-text:         #E0E0E0;
+  --nyx-text-muted:   rgba(224,224,224,0.60);
+  --nyx-accent-label: rgba(220,38,38,0.70);
+  --nyx-input-bg:     rgba(255,255,255,0.06);
+  --nyx-scrollbar:    rgba(220,38,38,0.22);
+  --nyx-texture:      none;
+  --nyx-card-border:  linear-gradient(135deg, #1a0000 0%, #600000 12%, #DC2626 22%, #ff5050 30%, #ffe0e0 38%, #c01010 48%, #900000 58%, #ff5050 68%, #ffe0e0 77%, #600000 90%, #1a0000 100%);
+  --background:        0 0% 3%;
+  --foreground:        0 0% 88%;
+  --border:            0 10% 14%;
+  --ring:              0 84% 52%;
+}
+
+/* ── Alabaster Estate — White Marble & Gold Leaf ── */
+:root[data-theme="alabaster"] {
+  --nyx-accent:       #B8960C;
+  --nyx-accent-glow:  rgba(184,150,12,0.18);
+  --nyx-accent-dim:   rgba(184,150,12,0.10);
+  --nyx-accent-mid:   rgba(184,150,12,0.18);
+  --nyx-accent-str:   rgba(184,150,12,0.32);
+  --nyx-bg:           #F5F0E8;
+  --nyx-card:         rgba(255,255,255,0.94);
+  --nyx-bg-scrim:     rgba(245,240,232,0.82);
+  --nyx-border:       rgba(184,150,12,0.22);
+  --nyx-sidebar-bg:   #EAE4D8;
+  --nyx-text:         #2A2018;
+  --nyx-text-muted:   rgba(42,32,24,0.55);
+  --nyx-accent-label: rgba(184,150,12,0.72);
+  --nyx-input-bg:     rgba(0,0,0,0.05);
+  --nyx-scrollbar:    rgba(184,150,12,0.25);
+  --nyx-texture:      none;
+  --nyx-card-border:  linear-gradient(135deg, #2e1800 0%, #7a5210 8%, #B8960C 18%, #e0c040 26%, #fffce0 33%, #d0a820 41%, #a07808 50%, #d0a820 58%, #fffce0 66%, #e0c040 74%, #B8960C 82%, #7a5210 91%, #2e1800 100%);
+  --background:        36 36% 93%;
+  --foreground:        30 28% 16%;
+  --border:            38 28% 82%;
+  --ring:              42 87% 37%;
+}
+
+/* ── Obsidian Sovereign — Void Black & Lava Red ── */
+:root[data-theme="obsidian"] {
+  --nyx-accent:       #FF3520;
+  --nyx-accent-glow:  rgba(255,53,32,0.24);
+  --nyx-accent-dim:   rgba(255,53,32,0.08);
+  --nyx-accent-mid:   rgba(255,53,32,0.15);
+  --nyx-accent-str:   rgba(255,53,32,0.32);
+  --nyx-bg:           #040404;
+  --nyx-card:         rgba(4,4,4,0.90);
+  --nyx-bg-scrim:     rgba(4,4,4,0.72);
+  --nyx-border:       rgba(255,53,32,0.14);
+  --nyx-sidebar-bg:   rgba(2,2,2,0.99);
+  --nyx-text:         #EEEEEE;
+  --nyx-text-muted:   rgba(238,238,238,0.60);
+  --nyx-accent-label: rgba(255,53,32,0.70);
+  --nyx-input-bg:     rgba(255,255,255,0.06);
+  --nyx-scrollbar:    rgba(255,53,32,0.22);
+  --nyx-texture:      none;
+  --nyx-card-border:  linear-gradient(135deg, #200000 0%, #700000 12%, #FF3520 22%, #ff7060 30%, #ffe8e0 38%, #e01800 48%, #b00000 58%, #ff7060 68%, #ffe8e0 77%, #700000 90%, #200000 100%);
+  --background:        0 0% 2%;
+  --foreground:        0 0% 93%;
+  --border:            5 20% 12%;
+  --ring:              6 100% 56%;
+}
+
+/* ── Jade Dynasty — Deep Jade & Rose Quartz ── */
+:root[data-theme="jade"] {
+  --nyx-accent:       #E891A4;
+  --nyx-accent-glow:  rgba(232,145,164,0.20);
+  --nyx-accent-dim:   rgba(232,145,164,0.08);
+  --nyx-accent-mid:   rgba(232,145,164,0.15);
+  --nyx-accent-str:   rgba(232,145,164,0.28);
+  --nyx-bg:           #041408;
+  --nyx-card:         rgba(4,20,8,0.90);
+  --nyx-bg-scrim:     rgba(4,20,8,0.72);
+  --nyx-border:       rgba(232,145,164,0.14);
+  --nyx-sidebar-bg:   rgba(2,10,4,0.99);
+  --nyx-text:         #D4EED8;
+  --nyx-text-muted:   rgba(212,238,216,0.65);
+  --nyx-accent-label: rgba(232,145,164,0.70);
+  --nyx-input-bg:     rgba(0,0,0,0.42);
+  --nyx-scrollbar:    rgba(232,145,164,0.20);
+  --nyx-texture:      none;
+  --nyx-card-border:  linear-gradient(135deg, #1a0010 0%, #602040 12%, #E891A4 22%, #ffb8c8 30%, #ffe8f0 38%, #d06880 48%, #a84860 58%, #ffb8c8 68%, #ffe8f0 77%, #602040 90%, #1a0010 100%);
+  --background:        142 50% 4%;
+  --foreground:        138 30% 88%;
+  --border:            142 25% 14%;
+  --ring:              345 65% 74%;
+}
+
+/* ── Sovereign Grove — Dark Bronze & Moss Green ── */
+:root[data-theme="grove"] {
+  --nyx-accent:       #6B8E4E;
+  --nyx-accent-glow:  rgba(107,142,78,0.20);
+  --nyx-accent-dim:   rgba(107,142,78,0.08);
+  --nyx-accent-mid:   rgba(107,142,78,0.15);
+  --nyx-accent-str:   rgba(107,142,78,0.28);
+  --nyx-bg:           #0A0C06;
+  --nyx-card:         rgba(10,12,6,0.90);
+  --nyx-bg-scrim:     rgba(10,12,6,0.72);
+  --nyx-border:       rgba(107,142,78,0.14);
+  --nyx-sidebar-bg:   rgba(5,6,2,0.99);
+  --nyx-text:         #DDD8C8;
+  --nyx-text-muted:   rgba(221,216,200,0.65);
+  --nyx-accent-label: rgba(107,142,78,0.70);
+  --nyx-input-bg:     rgba(0,0,0,0.42);
+  --nyx-scrollbar:    rgba(107,142,78,0.20);
+  --nyx-texture:      none;
+  --nyx-card-border:  linear-gradient(135deg, #081000 0%, #283c08 12%, #6B8E4E 22%, #90b870 30%, #d8f0c0 38%, #508038 48%, #386020 58%, #90b870 68%, #d8f0c0 77%, #283c08 90%, #081000 100%);
+  --background:        88 28% 4%;
+  --foreground:        44 22% 85%;
+  --border:            88 20% 14%;
+  --ring:              96 29% 43%;
+}
+
+/* ── Lotus Core — Deep Violet Water & Pearl ── */
+:root[data-theme="lotus"] {
+  --nyx-accent:       #EDE0DC;
+  --nyx-accent-glow:  rgba(237,224,220,0.18);
+  --nyx-accent-dim:   rgba(237,224,220,0.08);
+  --nyx-accent-mid:   rgba(237,224,220,0.15);
+  --nyx-accent-str:   rgba(237,224,220,0.28);
+  --nyx-bg:           #070614;
+  --nyx-card:         rgba(18,14,30,0.88);
+  --nyx-bg-scrim:     rgba(7,6,20,0.68);
+  --nyx-border:       rgba(237,224,220,0.16);
+  --nyx-sidebar-bg:   rgba(5,4,12,0.99);
+  --nyx-text:         #E8E0F0;
+  --nyx-text-muted:   rgba(232,224,240,0.65);
+  --nyx-accent-label: rgba(237,224,220,0.65);
+  --nyx-input-bg:     rgba(255,255,255,0.06);
+  --nyx-scrollbar:    rgba(237,224,220,0.20);
+  --nyx-texture:      none;
+  --nyx-card-border:  linear-gradient(135deg, #0a0820 0%, #302060 12%, #8060a8 22%, #EDE0DC 30%, #ffffff 38%, #a080c0 48%, #806090 58%, #EDE0DC 68%, #ffffff 77%, #302060 90%, #0a0820 100%);
+  --background:        254 42% 4%;
+  --foreground:        262 40% 91%;
+  --border:            254 28% 18%;
+  --ring:              26 30% 90%;
+}
+
+/* ── Carbon Evolution — Carbon & Fern Green ── */
+:root[data-theme="evolution"] {
+  --nyx-accent:       #4CAF50;
+  --nyx-accent-glow:  rgba(76,175,80,0.20);
+  --nyx-accent-dim:   rgba(76,175,80,0.08);
+  --nyx-accent-mid:   rgba(76,175,80,0.15);
+  --nyx-accent-str:   rgba(76,175,80,0.28);
+  --nyx-bg:           #080C08;
+  --nyx-card:         rgba(8,12,8,0.90);
+  --nyx-bg-scrim:     rgba(8,12,8,0.72);
+  --nyx-border:       rgba(76,175,80,0.14);
+  --nyx-sidebar-bg:   rgba(4,6,4,0.99);
+  --nyx-text:         #D8E8D8;
+  --nyx-text-muted:   rgba(216,232,216,0.65);
+  --nyx-accent-label: rgba(76,175,80,0.70);
+  --nyx-input-bg:     rgba(0,0,0,0.40);
+  --nyx-scrollbar:    rgba(76,175,80,0.20);
+  --nyx-texture:      none;
+  --nyx-card-border:  linear-gradient(135deg, #001800 0%, #184818 12%, #4CAF50 22%, #80d880 30%, #d8ffd8 38%, #309030 48%, #187018 58%, #80d880 68%, #d8ffd8 77%, #184818 90%, #001800 100%);
+  --background:        120 20% 4%;
+  --foreground:        120 20% 88%;
+  --border:            120 16% 14%;
+  --ring:              122 39% 49%;
+}
+
+/* ── Deep Abyss — Midnight Ocean & Bioluminescent Teal ── */
+:root[data-theme="abyss"] {
+  --nyx-accent:       #00D4B4;
+  --nyx-accent-glow:  rgba(0,212,180,0.22);
+  --nyx-accent-dim:   rgba(0,212,180,0.08);
+  --nyx-accent-mid:   rgba(0,212,180,0.15);
+  --nyx-accent-str:   rgba(0,212,180,0.30);
+  --nyx-bg:           #010812;
+  --nyx-card:         rgba(1,8,18,0.90);
+  --nyx-bg-scrim:     rgba(1,8,18,0.72);
+  --nyx-border:       rgba(0,212,180,0.14);
+  --nyx-sidebar-bg:   rgba(1,4,10,0.99);
+  --nyx-text:         #C8DCF0;
+  --nyx-text-muted:   rgba(200,220,240,0.65);
+  --nyx-accent-label: rgba(0,212,180,0.70);
+  --nyx-input-bg:     rgba(0,0,0,0.44);
+  --nyx-scrollbar:    rgba(0,212,180,0.22);
+  --nyx-texture:      none;
+  --nyx-card-border:  linear-gradient(135deg, #001418 0%, #004848 12%, #00D4B4 22%, #40fff0 30%, #d0fffa 38%, #00b898 48%, #009070 58%, #40fff0 68%, #d0fffa 77%, #004848 90%, #001418 100%);
+  --background:        208 88% 3%;
+  --foreground:        200 38% 86%;
+  --border:            200 38% 14%;
+  --ring:              172 100% 42%;
+}
+
+/* ── The Riviera — Mediterranean & White Gold ── */
+:root[data-theme="riviera"] {
+  --nyx-accent:       #E8D890;
+  --nyx-accent-glow:  rgba(232,216,144,0.20);
+  --nyx-accent-dim:   rgba(232,216,144,0.08);
+  --nyx-accent-mid:   rgba(232,216,144,0.15);
+  --nyx-accent-str:   rgba(232,216,144,0.28);
+  --nyx-bg:           #041A18;
+  --nyx-card:         rgba(4,26,24,0.90);
+  --nyx-bg-scrim:     rgba(4,26,24,0.72);
+  --nyx-border:       rgba(232,216,144,0.14);
+  --nyx-sidebar-bg:   rgba(2,12,10,0.99);
+  --nyx-text:         #D8EEF0;
+  --nyx-text-muted:   rgba(216,238,240,0.65);
+  --nyx-accent-label: rgba(232,216,144,0.70);
+  --nyx-input-bg:     rgba(0,0,0,0.42);
+  --nyx-scrollbar:    rgba(232,216,144,0.20);
+  --nyx-texture:      none;
+  --nyx-card-border:  linear-gradient(135deg, #101800 0%, #484808 12%, #E8D890 22%, #fff8c0 30%, #fffff0 38%, #c8b860 48%, #a8980 58%, #fff8c0 68%, #fffff0 77%, #484808 90%, #101800 100%);
+  --background:        178 72% 5%;
+  --foreground:        185 38% 89%;
+  --border:            178 30% 16%;
+  --ring:              50 60% 74%;
+}
+
+/* ── Glacial Pure — Frosted Platinum & Ice Crystal ── */
+:root[data-theme="glacial"] {
+  --nyx-accent:       #4A9ECC;
+  --nyx-accent-glow:  rgba(74,158,204,0.18);
+  --nyx-accent-dim:   rgba(74,158,204,0.10);
+  --nyx-accent-mid:   rgba(74,158,204,0.18);
+  --nyx-accent-str:   rgba(74,158,204,0.32);
+  --nyx-bg:           #EFF3F8;
+  --nyx-card:         rgba(255,255,255,0.94);
+  --nyx-bg-scrim:     rgba(239,243,248,0.82);
+  --nyx-border:       rgba(74,158,204,0.22);
+  --nyx-sidebar-bg:   #E2EAF2;
+  --nyx-text:         #1A2632;
+  --nyx-text-muted:   rgba(26,38,50,0.55);
+  --nyx-accent-label: rgba(74,158,204,0.72);
+  --nyx-input-bg:     rgba(0,0,0,0.04);
+  --nyx-scrollbar:    rgba(74,158,204,0.25);
+  --nyx-texture:      none;
+  --nyx-card-border:  linear-gradient(135deg, #083060 0%, #2068a0 12%, #4A9ECC 22%, #80c8e8 30%, #e8f8ff 38%, #3088c0 48%, #1870a8 58%, #80c8e8 68%, #e8f8ff 77%, #2068a0 90%, #083060 100%);
+  --background:        210 26% 96%;
+  --foreground:        210 32% 19%;
+  --border:            210 28% 84%;
+  --ring:              204 55% 55%;
+}
+
+/* ── Alabaster Peak — Silver-White & Cool Platinum ── */
+:root[data-theme="peak"] {
+  --nyx-accent:       #8899AA;
+  --nyx-accent-glow:  rgba(136,153,170,0.18);
+  --nyx-accent-dim:   rgba(136,153,170,0.10);
+  --nyx-accent-mid:   rgba(136,153,170,0.18);
+  --nyx-accent-str:   rgba(136,153,170,0.32);
+  --nyx-bg:           #E4EAF0;
+  --nyx-card:         rgba(255,255,255,0.94);
+  --nyx-bg-scrim:     rgba(228,234,240,0.82);
+  --nyx-border:       rgba(136,153,170,0.24);
+  --nyx-sidebar-bg:   #D8E0E8;
+  --nyx-text:         #1C2430;
+  --nyx-text-muted:   rgba(28,36,48,0.55);
+  --nyx-accent-label: rgba(136,153,170,0.72);
+  --nyx-input-bg:     rgba(0,0,0,0.04);
+  --nyx-scrollbar:    rgba(136,153,170,0.28);
+  --nyx-texture:      none;
+  --nyx-card-border:  linear-gradient(135deg, #283848 0%, #506880 12%, #8899AA 22%, #b0c0d0 30%, #e8f0f8 38%, #7090a8 48%, #586880 58%, #b0c0d0 68%, #e8f0f8 77%, #506880 90%, #283848 100%);
+  --background:        212 22% 91%;
+  --foreground:        215 28% 19%;
+  --border:            214 20% 80%;
+  --ring:              210 18% 60%;
+}
+
+/* ── Tectonic Gold — Matte Slate & Gold Veins ── */
+:root[data-theme="tectonic"] {
+  --nyx-accent:       #C9A84C;
+  --nyx-accent-glow:  rgba(201,168,76,0.22);
+  --nyx-accent-dim:   rgba(201,168,76,0.08);
+  --nyx-accent-mid:   rgba(201,168,76,0.15);
+  --nyx-accent-str:   rgba(201,168,76,0.30);
+  --nyx-bg:           #090C0F;
+  --nyx-card:         rgba(9,12,15,0.90);
+  --nyx-bg-scrim:     rgba(9,12,15,0.72);
+  --nyx-border:       rgba(201,168,76,0.14);
+  --nyx-sidebar-bg:   rgba(5,7,9,0.99);
+  --nyx-text:         #D8D4CC;
+  --nyx-text-muted:   rgba(216,212,204,0.65);
+  --nyx-accent-label: rgba(201,168,76,0.70);
+  --nyx-input-bg:     rgba(0,0,0,0.40);
+  --nyx-scrollbar:    rgba(201,168,76,0.22);
+  --nyx-texture:      none;
+  --nyx-card-border:  linear-gradient(135deg, #1a1000 0%, #604c08 10%, #C9A84C 20%, #e8c860 28%, #fff8d8 36%, #d0a020 44%, #a07800 52%, #d0a020 60%, #fff8d8 68%, #e8c860 76%, #C9A84C 84%, #604c08 92%, #1a1000 100%);
+  --background:        216 24% 5%;
+  --foreground:        38 14% 85%;
+  --border:            216 18% 16%;
+  --ring:              42 55% 52%;
+}
+
+/* ── High Altitude — Twilight Mountain & Soft Amethyst ── */
+:root[data-theme="altitude"] {
+  --nyx-accent:       #9B7FCC;
+  --nyx-accent-glow:  rgba(155,127,204,0.20);
+  --nyx-accent-dim:   rgba(155,127,204,0.08);
+  --nyx-accent-mid:   rgba(155,127,204,0.15);
+  --nyx-accent-str:   rgba(155,127,204,0.28);
+  --nyx-bg:           #060810;
+  --nyx-card:         rgba(6,8,16,0.90);
+  --nyx-bg-scrim:     rgba(6,8,16,0.72);
+  --nyx-border:       rgba(155,127,204,0.14);
+  --nyx-sidebar-bg:   rgba(3,4,10,0.99);
+  --nyx-text:         #D8D0EC;
+  --nyx-text-muted:   rgba(216,208,236,0.65);
+  --nyx-accent-label: rgba(155,127,204,0.70);
+  --nyx-input-bg:     rgba(0,0,0,0.42);
+  --nyx-scrollbar:    rgba(155,127,204,0.20);
+  --nyx-texture:      none;
+  --nyx-card-border:  linear-gradient(135deg, #0a0618 0%, #302060 12%, #9B7FCC 22%, #c0a0f0 30%, #e8e0ff 38%, #7858b0 48%, #584090 58%, #c0a0f0 68%, #e8e0ff 77%, #302060 90%, #0a0618 100%);
+  --background:        236 44% 4%;
+  --foreground:        255 32% 89%;
+  --border:            240 28% 16%;
+  --ring:              266 40% 65%;
+}
+
 @layer base {
   :root {
     --card:              var(--background);
