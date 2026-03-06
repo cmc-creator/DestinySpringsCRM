@@ -14,7 +14,7 @@ type NyxVars = {
   "--nyx-accent-mid": string; "--nyx-accent-str": string; "--nyx-bg": string;
   "--nyx-card": string; "--nyx-border": string; "--nyx-sidebar-bg": string;
   "--nyx-text": string; "--nyx-text-muted": string; "--nyx-input-bg": string;
-  "--nyx-scrollbar": string; "--nyx-accent-label": string; "--nyx-texture": string; "--nyx-card-texture": string; "--nyx-card-border": string;
+  "--nyx-scrollbar": string; "--nyx-accent-label": string; "--nyx-texture": string; "--nyx-sidebar-tex": string; "--nyx-card-texture": string; "--nyx-card-border": string;
 };
 interface Theme { key: string; label: string; desc: string; accent: string; vars: NyxVars; }
 
@@ -38,6 +38,7 @@ const THEMES: Theme[] = [
       "--nyx-scrollbar":   "rgba(201,168,76,0.20)",
       "--nyx-accent-label":"rgba(201,168,76,0.60)",
       "--nyx-texture":     "url('/luxury/leather1.jpg')",
+      "--nyx-sidebar-tex": "",
       "--nyx-card-texture": "url('/luxury/marble2.png')",
       "--nyx-card-border": "linear-gradient(135deg, #2e1800 0%, #7a5210 8%, #C9A84C 18%, #f0d060 26%, #fffce0 33%, #e8c840 41%, #c09030 50%, #e8c840 58%, #fffce0 66%, #f0d060 74%, #C9A84C 82%, #7a5210 91%, #2e1800 100%)",
     },
@@ -61,6 +62,7 @@ const THEMES: Theme[] = [
       "--nyx-scrollbar":   "rgba(0,212,255,0.18)",
       "--nyx-accent-label":"rgba(0,212,255,0.60)",
       "--nyx-texture":     "url('/luxury/bluelux.jpg')",
+      "--nyx-sidebar-tex": "",
       "--nyx-card-texture": "none",
       "--nyx-card-border": "linear-gradient(135deg, #001428 0%, #00486a 12%, #00b8e8 22%, #40d8ff 30%, #d8f8ff 38%, #00c8f0 48%, #0098c0 58%, #40d8ff 68%, #d8f8ff 77%, #00486a 90%, #001428 100%)",
     },
@@ -84,6 +86,7 @@ const THEMES: Theme[] = [
       "--nyx-scrollbar":   "rgba(52,211,153,0.18)",
       "--nyx-accent-label":"rgba(52,211,153,0.60)",
       "--nyx-texture":     "url('/luxury/greenluxx.jpg')",
+      "--nyx-sidebar-tex": "",
       "--nyx-card-texture": "none",
       "--nyx-card-border": "linear-gradient(135deg, #001208 0%, #0a4820 12%, #34d399 22%, #70f0c0 30%, #dfffef 38%, #28c880 48%, #10a060 58%, #70f0c0 68%, #dfffef 77%, #0a4820 90%, #001208 100%)",
     },
@@ -107,6 +110,7 @@ const THEMES: Theme[] = [
       "--nyx-scrollbar":   "rgba(167,139,250,0.18)",
       "--nyx-accent-label":"rgba(167,139,250,0.60)",
       "--nyx-texture":     "url(\"data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='256' height='256'><filter id='l'><feTurbulence type='fractalNoise' baseFrequency='.66 .60' numOctaves='5' seed='5' stitchTiles='stitch'/><feColorMatrix type='matrix' values='0.06 0 0 0 0.03  0 0 0 0 0.01  0.08 0 0 0 0.04  0 0 0 0.05 0'/></filter><rect width='256' height='256' filter='url(%23l)'/></svg>\")",
+      "--nyx-sidebar-tex": "",
       "--nyx-card-texture": "none",
       "--nyx-card-border": "linear-gradient(135deg, #0a0218 0%, #340880 12%, #a78bfa 22%, #c8b0ff 30%, #f0e8ff 38%, #9868f0 48%, #7040d0 58%, #c8b0ff 68%, #f0e8ff 77%, #340880 90%, #0a0218 100%)",
     },
@@ -130,6 +134,7 @@ const THEMES: Theme[] = [
       "--nyx-scrollbar":   "rgba(236,72,153,0.18)",
       "--nyx-accent-label":"rgba(236,72,153,0.60)",
       "--nyx-texture":     "url(\"data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='256' height='256'><filter id='l'><feTurbulence type='fractalNoise' baseFrequency='.67 .61' numOctaves='5' seed='13' stitchTiles='stitch'/><feColorMatrix type='matrix' values='0.15 0 0 0 0.07  0 0 0 0 0.01  0.08 0 0 0 0.04  0 0 0 0.055 0'/></filter><rect width='256' height='256' filter='url(%23l)'/></svg>\")",
+      "--nyx-sidebar-tex": "",
       "--nyx-card-texture": "none",
       "--nyx-card-border": "linear-gradient(135deg, #1a0010 0%, #6a0040 12%, #ec4899 22%, #ff80c8 30%, #ffe8f4 38%, #d82880 48%, #a81860 58%, #ff80c8 68%, #ffe8f4 77%, #6a0040 90%, #1a0010 100%)",
     },
@@ -153,6 +158,7 @@ const THEMES: Theme[] = [
       "--nyx-scrollbar":   "rgba(248,113,113,0.18)",
       "--nyx-accent-label":"rgba(248,113,113,0.60)",
       "--nyx-texture":     "url(\"data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='256' height='256'><filter id='l'><feTurbulence type='fractalNoise' baseFrequency='.68 .63' numOctaves='5' seed='9' stitchTiles='stitch'/><feColorMatrix type='matrix' values='0.12 0 0 0 0.06  0 0 0 0 0.01  0.02 0 0 0 0.01  0 0 0 0.05 0'/></filter><rect width='256' height='256' filter='url(%23l)'/></svg>\")",
+      "--nyx-sidebar-tex": "",
       "--nyx-card-texture": "none",
       "--nyx-card-border": "linear-gradient(135deg, #180008 0%, #5a0020 12%, #f87171 22%, #ffa0a0 30%, #ffe8e8 38%, #e84040 48%, #c02020 58%, #ffa0a0 68%, #ffe8e8 77%, #5a0020 90%, #180008 100%)",
     },
@@ -176,6 +182,7 @@ const THEMES: Theme[] = [
       "--nyx-scrollbar":   "rgba(99,102,241,0.25)",
       "--nyx-accent-label":"rgba(99,102,241,0.70)",
       "--nyx-texture":     "none",
+      "--nyx-sidebar-tex": "",
       "--nyx-card-texture": "none",
       "--nyx-card-border": "linear-gradient(135deg, #6080a0 0%, #90a8c0 12%, #b8d0e8 22%, #d8eaf8 30%, #f8fbff 38%, #c0d8f0 48%, #a0c0d8 58%, #d8eaf8 68%, #f8fbff 77%, #90a8c0 90%, #6080a0 100%)",
     },
@@ -199,6 +206,7 @@ const THEMES: Theme[] = [
       "--nyx-scrollbar":   "rgba(190,24,93,0.22)",
       "--nyx-accent-label":"rgba(190,24,93,0.65)",
       "--nyx-texture":     "none",
+      "--nyx-sidebar-tex": "",
       "--nyx-card-texture": "none",
       "--nyx-card-border": "linear-gradient(135deg, #2a0018 0%, #8c1050 12%, #be185d 22%, #e060a8 30%, #ffd4e8 38%, #c82870 48%, #9e1248 58%, #e060a8 68%, #ffd4e8 77%, #8c1050 90%, #2a0018 100%)",
     },
@@ -206,14 +214,39 @@ const THEMES: Theme[] = [
 ];
 
 /*  Helpers  */
+const BG_VAR_MAP: Record<string, string> = {
+  backgrounds: "--nyx-texture",
+  sidebar:     "--nyx-sidebar-tex",
+  cards:       "--nyx-card-texture",
+};
+function applyStoredBgs(themeKey: string) {
+  if (typeof document === "undefined") return;
+  const theme = THEMES.find(t => t.key === themeKey);
+  const html  = document.documentElement;
+  (["backgrounds", "sidebar", "cards"] as const).forEach(type => {
+    const stored = localStorage.getItem(`nyxaegis-bg-${themeKey}-${type}`);
+    const cssVar = BG_VAR_MAP[type];
+    if (stored) {
+      html.style.setProperty(cssVar, `url('${stored}')`);
+    } else if (theme) {
+      // Reset to theme default
+      const def: Record<string, string> = {
+        backgrounds: theme.vars["--nyx-texture"],
+        sidebar:     theme.vars["--nyx-sidebar-tex"],
+        cards:       theme.vars["--nyx-card-texture"],
+      };
+      html.style.setProperty(cssVar, def[type] || "");
+    }
+  });
+}
 function applyTheme(key: string) {
   if (typeof document === "undefined") return;
   const theme = THEMES.find(t => t.key === key);
   if (!theme) return;
   const html = document.documentElement;
   html.setAttribute("data-theme", key);
-  // Also set vars directly so re-render is instant without waiting for CSS cascade
   Object.entries(theme.vars).forEach(([k, v]) => html.style.setProperty(k, v));
+  applyStoredBgs(key);
 }
 
 // ─── Elegant per-theme icon — replaces the old gem/diamond cartoon ─────────
@@ -343,14 +376,19 @@ function SettingRow({ label, desc, children }: { label: string; desc?: string; c
 export default function SettingsClient() {
   const { data: session } = useSession();
   const isAdmin = session?.user?.role === "ADMIN";
-  const [activeTheme, setActiveTheme] = useState("luxury");
-  const [orgName, setOrgName] = useState("NyxAegis");
-  const [supportEmail, setSupportEmail] = useState("support@nyxaegis.com");
-  const [notifs, setNotifs] = useState({ email: true, push: false, digest: true, leads: true, contracts: false });
-  const [devMsg, setDevMsg] = useState("");
-  const [devLoading, setDevLoading] = useState<string | null>(null);
+  const [activeTheme, setActiveTheme]     = useState("luxury");
+  const [orgName, setOrgName]             = useState("NyxAegis");
+  const [supportEmail, setSupportEmail]   = useState("support@nyxaegis.com");
+  const [notifs, setNotifs]               = useState({ email: true, push: false, digest: true, leads: true, contracts: false });
+  const [devMsg, setDevMsg]               = useState("");
+  const [devLoading, setDevLoading]       = useState<string | null>(null);
   const [confirmAction, setConfirmAction] = useState<string | null>(null);
-  const [saved, setSaved] = useState(false);
+  const [saved, setSaved]                 = useState(false);
+  // Background picker state
+  const [bgTab, setBgTab]               = useState<"backgrounds" | "sidebar" | "cards">("backgrounds");
+  const [bgAssets, setBgAssets]         = useState<string[]>([]);
+  const [bgLoading, setBgLoading]       = useState(false);
+  const [bgSelections, setBgSelections] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const stored = typeof window !== "undefined" ? localStorage.getItem("nyxaegis-theme") ?? "luxury" : "luxury";
@@ -362,12 +400,50 @@ export default function SettingsClient() {
     if (em) setSupportEmail(em);
     const n = localStorage.getItem("nyxaegis-notifs");
     if (n) try { setNotifs(JSON.parse(n)); } catch { /* ignore */ }
+    // Load stored bg selections
+    const sels: Record<string, string> = {};
+    THEMES.forEach(t => {
+      ["backgrounds", "sidebar", "cards"].forEach(type => {
+        const k = `nyxaegis-bg-${t.key}-${type}`;
+        const v = localStorage.getItem(k);
+        if (v) sels[k] = v;
+      });
+    });
+    setBgSelections(sels);
   }, []);
+
+  // Fetch available images whenever theme or tab changes
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    setBgLoading(true);
+    fetch(`/api/theme-assets?theme=${activeTheme}&type=${bgTab}`)
+      .then(r => r.json()).then(setBgAssets).catch(() => setBgAssets([]))
+      .finally(() => setBgLoading(false));
+  }, [activeTheme, bgTab]);
 
   function selectTheme(key: string) {
     setActiveTheme(key);
     localStorage.setItem("nyxaegis-theme", key);
     applyTheme(key);
+  }
+
+  function selectBg(url: string) {
+    const lsKey  = `nyxaegis-bg-${activeTheme}-${bgTab}`;
+    const cssVar = BG_VAR_MAP[bgTab];
+    const theme  = THEMES.find(t => t.key === activeTheme);
+    if (url) {
+      localStorage.setItem(lsKey, url);
+      document.documentElement.style.setProperty(cssVar, `url('${url}')`);
+    } else {
+      localStorage.removeItem(lsKey);
+      const def: Record<string, string> = {
+        backgrounds: theme?.vars["--nyx-texture"]     ?? "none",
+        sidebar:     theme?.vars["--nyx-sidebar-tex"] ?? "",
+        cards:       theme?.vars["--nyx-card-texture"] ?? "none",
+      };
+      document.documentElement.style.setProperty(cssVar, def[bgTab]);
+    }
+    setBgSelections((prev: Record<string, string>) => ({ ...prev, [lsKey]: url }));
   }
 
   function saveOrg() {
@@ -440,6 +516,71 @@ export default function SettingsClient() {
             Active: <strong style={{ color: curTheme.accent }}>{curTheme.label}</strong>
             <span style={{ marginLeft: 8, fontFamily: "monospace", fontSize: "0.72rem", opacity: 0.7 }}>{curTheme.accent}</span>
           </span>
+        </div>
+      </Section>
+
+      {/* BACKGROUNDS */}
+      <Section title="Backgrounds &amp; Textures">
+        <p style={{ fontSize: "0.78rem", color: "var(--nyx-text-muted)", marginBottom: 14 }}>
+          Customize the body, sidebar, and card textures for{" "}
+          <strong style={{ color: curTheme.accent }}>{curTheme.label}</strong>.{" "}
+          Drop images into{" "}
+          <code style={{ fontFamily: "monospace", fontSize: "0.7rem", opacity: 0.8 }}>public/themes/{activeTheme}/</code>{" "}
+          to add more options.
+        </p>
+        {/* Tabs */}
+        <div style={{ display: "flex", gap: 6, marginBottom: 14 }}>
+          {(["backgrounds", "sidebar", "cards"] as const).map(tab => (
+            <button key={tab} type="button" onClick={() => setBgTab(tab)} style={{
+              background: bgTab === tab ? "var(--nyx-accent-dim)" : "transparent",
+              border: `1px solid ${bgTab === tab ? "var(--nyx-accent-mid)" : "var(--nyx-border)"}`,
+              borderRadius: 7, padding: "5px 14px", cursor: "pointer", fontSize: "0.78rem",
+              color: bgTab === tab ? "var(--nyx-accent)" : "var(--nyx-text-muted)",
+              fontWeight: bgTab === tab ? 700 : 400, transition: "all 0.15s",
+            }}>
+              {tab === "backgrounds" ? "Body" : tab === "sidebar" ? "Sidebar" : "Cards"}
+            </button>
+          ))}
+        </div>
+        {/* Thumbnails */}
+        {bgLoading ? (
+          <div style={{ fontSize: "0.78rem", color: "var(--nyx-text-muted)", padding: "16px 0" }}>Loading…</div>
+        ) : (
+          <div style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 8, alignItems: "flex-start" }}>
+            {/* Clear / default */}
+            <button type="button" onClick={() => selectBg("")} style={{
+              flexShrink: 0, width: 72, height: 72, borderRadius: 8, display: "flex", flexDirection: "column",
+              alignItems: "center", justifyContent: "center", gap: 4, cursor: "pointer",
+              background: !bgSelections[`nyxaegis-bg-${activeTheme}-${bgTab}`] ? "var(--nyx-accent-dim)" : "rgba(0,0,0,0.25)",
+              border: `2px solid ${!bgSelections[`nyxaegis-bg-${activeTheme}-${bgTab}`] ? "var(--nyx-accent)" : "var(--nyx-border)"}`,
+              color: "var(--nyx-text-muted)", fontSize: "0.65rem", fontWeight: 600, transition: "all 0.15s",
+            }}>
+              <span style={{ fontSize: "1.1rem", lineHeight: 1 }}>∅</span>
+              Default
+            </button>
+            {bgAssets.length === 0 ? (
+              <div style={{ fontSize: "0.75rem", color: "var(--nyx-text-muted)", padding: "22px 10px", lineHeight: 1.7, alignSelf: "center" }}>
+                No images yet. Add images to{" "}
+                <code style={{ fontFamily: "monospace", fontSize: "0.7rem" }}>public/themes/{activeTheme}/{bgTab}/</code>
+              </div>
+            ) : bgAssets.map(url => {
+              const isSelected = bgSelections[`nyxaegis-bg-${activeTheme}-${bgTab}`] === url;
+              return (
+                <button key={url} type="button" onClick={() => selectBg(url)} title={url.split("/").pop()} style={{
+                  flexShrink: 0, width: 80, height: 72, borderRadius: 8, cursor: "pointer",
+                  backgroundImage: `url(${url})`, backgroundSize: "cover", backgroundPosition: "center",
+                  border: `2px solid ${isSelected ? "var(--nyx-accent)" : "transparent"}`,
+                  outline: isSelected ? "2px solid var(--nyx-accent-mid)" : "none",
+                  outlineOffset: 2,
+                  boxShadow: isSelected ? "0 0 14px var(--nyx-accent-glow)" : "0 2px 8px rgba(0,0,0,0.4)",
+                  transition: "all 0.15s",
+                }} />
+              );
+            })}
+          </div>
+        )}
+        <div style={{ marginTop: 10, fontSize: "0.68rem", color: "var(--nyx-text-muted)", opacity: 0.6 }}>
+          ▸ <code style={{ fontFamily: "monospace" }}>public/themes/{activeTheme}/{bgTab}/</code>
         </div>
       </Section>
 

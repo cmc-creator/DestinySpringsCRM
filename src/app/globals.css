@@ -229,7 +229,7 @@
   content: '';
   position: absolute;
   inset: 0;
-  background-image: var(--nyx-texture, none);
+  background-image: var(--nyx-sidebar-tex, var(--nyx-texture, none));
   background-size: 600px auto;
   background-repeat: repeat;
   opacity: 0.22;
