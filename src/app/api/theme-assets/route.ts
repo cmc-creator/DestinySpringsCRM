@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { readdirSync, existsSync } from "fs";
 import { join } from "path";
 
-const VALID_THEMES = ["luxury","glass","emerald","violet","hotpink","rose","light","blush"];
+const VALID_THEMES = ["luxury","glass","emerald","violet","hotpink","rose","light","blush","azure"];
 const VALID_TYPES  = ["backgrounds","sidebar","cards"];
 
 export async function GET(req: NextRequest) {

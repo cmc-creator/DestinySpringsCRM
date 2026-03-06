@@ -211,6 +211,30 @@ const THEMES: Theme[] = [
       "--nyx-card-border": "linear-gradient(135deg, #2a0018 0%, #8c1050 12%, #be185d 22%, #e060a8 30%, #ffd4e8 38%, #c82870 48%, #9e1248 58%, #e060a8 68%, #ffd4e8 77%, #8c1050 90%, #2a0018 100%)",
     },
   },
+  {
+    key: "azure", label: "Azure", desc: "Deep Ocean",
+    accent: "#3b82f6",
+    vars: {
+      "--nyx-accent":      "#3b82f6",
+      "--nyx-accent-glow": "rgba(59,130,246,0.22)",
+      "--nyx-accent-dim":  "rgba(59,130,246,0.10)",
+      "--nyx-accent-mid":  "rgba(59,130,246,0.18)",
+      "--nyx-accent-str":  "rgba(59,130,246,0.32)",
+      "--nyx-bg":          "#060c1a",
+      "--nyx-card":        "rgba(10,20,42,0.82)",
+      "--nyx-border":      "rgba(59,130,246,0.18)",
+      "--nyx-sidebar-bg":  "#070e20",
+      "--nyx-text":        "#e4edff",
+      "--nyx-text-muted":  "rgba(228,237,255,0.52)",
+      "--nyx-input-bg":    "rgba(59,130,246,0.07)",
+      "--nyx-scrollbar":   "rgba(59,130,246,0.28)",
+      "--nyx-accent-label":"rgba(59,130,246,0.60)",
+      "--nyx-texture":     "url(\"data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='256' height='256'><filter id='l'><feTurbulence type='fractalNoise' baseFrequency='.65 .58' numOctaves='5' seed='17' stitchTiles='stitch'/><feColorMatrix type='matrix' values='0 0 0 0 0.01  0.02 0 0 0 0.05  0.14 0 0 0 0.09  0 0 0 0.06 0'/></filter><rect width='256' height='256' filter='url(%23l)'/></svg>\")",
+      "--nyx-sidebar-tex": "",
+      "--nyx-card-texture": "none",
+      "--nyx-card-border": "linear-gradient(135deg, #0a1628 0%, #1a3a6e 12%, #2563eb 22%, #3b82f6 30%, #93c5fd 38%, #1d4ed8 48%, #1e40af 58%, #60a5fa 68%, #bfdbfe 77%, #1a3a6e 90%, #0a1628 100%)",
+    },
+  },
 ];
 
 /*  Helpers  */
