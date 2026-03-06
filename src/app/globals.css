@@ -16,16 +16,16 @@
   --nyx-accent-dim:   rgba(201,168,76,0.08);
   --nyx-accent-mid:   rgba(201,168,76,0.15);
   --nyx-accent-str:   rgba(201,168,76,0.30);
-  --nyx-bg:           #080604;
-  --nyx-card:         rgba(201,168,76,0.028);
+  --nyx-bg:           #100805;
+  --nyx-card:         rgba(201,168,76,0.032);
   --nyx-border:       rgba(201,168,76,0.13);
-  --nyx-sidebar-bg:   rgba(5,3,1,0.995);
+  --nyx-sidebar-bg:   rgba(7,3,1,0.998);
   --nyx-text:         #EDE4CF;
   --nyx-text-muted:   rgba(237,228,207,0.72);
   --nyx-accent-label: rgba(201,168,76,0.60);
   --nyx-input-bg:     rgba(0,0,0,0.45);
   --nyx-scrollbar:    rgba(201,168,76,0.20);
-  --nyx-texture:      url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='256' height='256'><filter id='l'><feTurbulence type='fractalNoise' baseFrequency='.68 .62' numOctaves='5' seed='2' stitchTiles='stitch'/><feColorMatrix type='matrix' values='0.15 0 0 0 0.06  0 0 0 0 0.04  0 0 0 0 0.01  0 0 0 0.055 0'/></filter><rect width='256' height='256' filter='url(%23l)'/></svg>");
+  --nyx-texture:      url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='256' height='256'><filter id='g'><feTurbulence type='fractalNoise' baseFrequency='.52 .38' numOctaves='7' seed='19' stitchTiles='stitch'/><feColorMatrix type='matrix' values='0.22 0 0 0 0.08  0.11 0 0 0 0.04  0 0 0 0 0  0 0 0 0.10 0'/></filter><filter id='w'><feTurbulence type='turbulence' baseFrequency='.028 .022' numOctaves='5' seed='8' stitchTiles='stitch'/><feColorMatrix type='matrix' values='0.15 0 0 0 0.06  0.07 0 0 0 0.025  0 0 0 0 0  0 0 0 0.07 0'/></filter><rect width='256' height='256' filter='url(%23g)'/><rect width='256' height='256' filter='url(%23w)'/></svg>");
   /* Tailwind compat */
   --background:        30 20% 3%;
   --foreground:        36 40% 91%;
