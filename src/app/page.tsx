@@ -146,9 +146,12 @@ export default function LandingPage() {
       <section style={{ position: "relative", zIndex: 1, padding: "100px 2rem 0", maxWidth: 1400, margin: "0 auto" }}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 64, alignItems: "center" }}>
           <div>
-            {/* Logo + badge */}
-            <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 20 }}>
-              <Image src="/Aegislogo.png" alt="NyxAegis" width={280} height={280} placeholder="empty" style={{ background: "transparent", filter: "drop-shadow(0 0 48px rgba(201,168,76,0.65))", flexShrink: 0 }} />
+            {/* Logo */}
+            <div style={{ marginBottom: 24 }}>
+              <Image src="/Aegislogo.png" alt="NyxAegis" width={280} height={280} placeholder="empty" style={{ background: "transparent", filter: "drop-shadow(0 0 48px rgba(201,168,76,0.65))" }} />
+            </div>
+            {/* Badge pill */}
+            <div style={{ marginBottom: 20 }}>
               <div style={{ display: "inline-flex", alignItems: "center", gap: 10, background: "linear-gradient(135deg, rgba(201,168,76,0.12), rgba(201,168,76,0.05))", border: "1px solid var(--nyx-accent-mid)", borderRadius: 999, padding: "10px 24px", boxShadow: "0 0 18px rgba(201,168,76,0.12), inset 0 1px 0 rgba(255,255,255,0.04)" }}>
                 <span style={{ fontSize: "0.72rem", color: "var(--nyx-accent)", fontWeight: 800, letterSpacing: "0.14em", textTransform: "uppercase" }}>Referral Tracking Platform</span>
               </div>
@@ -157,11 +160,15 @@ export default function LandingPage() {
             <p style={{ fontSize: "clamp(1.15rem, 2.5vw, 1.5rem)", fontWeight: 700, color: "var(--nyx-accent)", letterSpacing: "-0.01em", marginBottom: 20, fontStyle: "italic" }}>
               &ldquo;Where Relationships Become Referrals.&rdquo;
             </p>
-            <h1 style={{ fontSize: "clamp(2.4rem, 5vw, 3.8rem)", fontWeight: 900, lineHeight: 1.08, letterSpacing: "-0.03em", marginBottom: 24 }}>
+            <h1 style={{ fontSize: "clamp(2.4rem, 5vw, 3.8rem)", fontWeight: 900, lineHeight: 1.08, letterSpacing: "-0.03em", marginBottom: 16 }}>
               Track every<br />
               <span style={{ color: "var(--nyx-accent)" }}>referral source.</span>
               <br />Count every<br />referral received.
             </h1>
+            {/* Value prop line */}
+            <p style={{ fontSize: "clamp(0.95rem, 1.8vw, 1.1rem)", fontWeight: 700, color: C.muted, letterSpacing: "0.04em", textTransform: "uppercase", marginBottom: 20 }}>
+              High-Tech Precision&nbsp;&nbsp;·&nbsp;&nbsp;High-End Design&nbsp;&nbsp;·&nbsp;&nbsp;Highly Affordable
+            </p>
             <p style={{ fontSize: "1.05rem", color: C.muted, maxWidth: 480, lineHeight: 1.75, marginBottom: 36 }}>
               Built for teams who build relationships - log visits, track referral sources, and prove your outreach is turning into actual results.
             </p>
