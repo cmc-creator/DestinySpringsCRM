@@ -128,7 +128,7 @@ export default function LandingPage() {
       {/* NAV */}
       <nav style={{ position: "sticky", top: 0, zIndex: 50, borderBottom: `1px solid ${C.border}`, padding: "0 2rem", display: "flex", alignItems: "center", justifyContent: "space-between", height: 64, background: "color-mix(in srgb, var(--nyx-bg) 85%, transparent)", backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <Image src="/Aegislogo.png" alt="NyxAegis" width={72} height={72} placeholder="empty" style={{ background: "transparent", filter: "drop-shadow(0 0 10px rgba(201,168,76,0.4))" }} />
+          <Image src="/Aegislogo.png" alt="NyxAegis" width={96} height={96} placeholder="empty" style={{ background: "transparent", filter: "drop-shadow(0 0 12px rgba(201,168,76,0.45))" }} />
           <div>
             <span style={{ fontWeight: 900, fontSize: "1.15rem", letterSpacing: "-0.03em", display: "block", lineHeight: 1.1 }}>NyxAegis<sup style={{ fontSize: "0.6em", verticalAlign: "super", marginLeft: 1, color: "var(--nyx-accent)" }}>™</sup></span>
             <span style={{ fontSize: "0.62rem", color: C.muted, letterSpacing: "0.06em", fontStyle: "italic" }}>Where Relationships Become Referrals.</span>
@@ -148,7 +148,7 @@ export default function LandingPage() {
           <div>
             {/* Logo + badge */}
             <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 20 }}>
-              <Image src="/Aegislogo.png" alt="NyxAegis" width={140} height={140} placeholder="empty" style={{ background: "transparent", filter: "drop-shadow(0 0 32px rgba(201,168,76,0.55))", flexShrink: 0 }} />
+              <Image src="/Aegislogo.png" alt="NyxAegis" width={200} height={200} placeholder="empty" style={{ background: "transparent", filter: "drop-shadow(0 0 40px rgba(201,168,76,0.6))", flexShrink: 0 }} />
               <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "var(--nyx-accent-dim)", border: "1px solid var(--nyx-accent-mid)", borderRadius: 999, padding: "7px 18px" }}>
                 <span style={{ width: 7, height: 7, borderRadius: "50%", background: C.cyan, display: "inline-block", boxShadow: `0 0 8px ${C.cyan}` }} />
                 <span style={{ fontSize: "0.7rem", color: C.cyan, fontWeight: 700, letterSpacing: "0.1em" }}>BD &amp; REFERRAL TRACKING PLATFORM</span>
@@ -360,7 +360,7 @@ export default function LandingPage() {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 32, marginBottom: 40 }}>
             {/* Brand block */}
             <div style={{ display: "flex", alignItems: "flex-start", gap: 16 }}>
-              <Image src="/Aegislogo.png" alt="NyxAegis" width={72} height={72} placeholder="empty" style={{ background: "transparent", filter: "drop-shadow(0 0 12px rgba(201,168,76,0.35))" }} />
+              <Image src="/Aegislogo.png" alt="NyxAegis" width={96} height={96} placeholder="empty" style={{ background: "transparent", filter: "drop-shadow(0 0 14px rgba(201,168,76,0.4))" }} />
               <div>
                 <p style={{ margin: "0 0 4px", fontWeight: 900, fontSize: "1.1rem", color: C.text, letterSpacing: "-0.02em" }}>
                   NyxAegis<sup style={{ fontSize: "0.55em", verticalAlign: "super", marginLeft: 2, color: "var(--nyx-accent)" }}>™</sup>
