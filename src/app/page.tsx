@@ -1,4 +1,5 @@
 ﻿import Link from "next/link";
+import Image from "next/image";
 
 const C = {
   bg:      "var(--nyx-bg)",
@@ -127,13 +128,11 @@ export default function LandingPage() {
       {/* NAV */}
       <nav style={{ position: "sticky", top: 0, zIndex: 50, borderBottom: `1px solid ${C.border}`, padding: "0 2rem", display: "flex", alignItems: "center", justifyContent: "space-between", height: 64, background: "color-mix(in srgb, var(--nyx-bg) 85%, transparent)", backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <svg width="30" height="30" viewBox="0 0 32 32" fill="none">
-            <rect width="32" height="32" rx="8" fill={C.navy}/>
-            <rect x="1" y="1" width="30" height="30" rx="7" stroke={C.cyan} strokeWidth="1" strokeOpacity="0.5"/>
-            <path d="M16 5 L27 11.5 L27 20.5 L16 27 L5 20.5 L5 11.5 Z" stroke={C.cyan} strokeWidth="1.5" fill="none"/>
-            <circle cx="16" cy="16" r="4.5" fill={C.cyan} fillOpacity="0.9"/>
-          </svg>
-          <span style={{ fontWeight: 900, fontSize: "1.1rem", letterSpacing: "-0.03em" }}>NyxAegis</span>
+          <Image src="/Aegislogo.png" alt="NyxAegis" width={38} height={38} style={{ objectFit: "contain" }} />
+          <div>
+            <span style={{ fontWeight: 900, fontSize: "1.1rem", letterSpacing: "-0.03em", display: "block", lineHeight: 1.1 }}>NyxAegis</span>
+            <span style={{ fontSize: "0.6rem", color: C.muted, letterSpacing: "0.08em", textTransform: "uppercase" }}>Hospital BD Platform</span>
+          </div>
         </div>
         <div style={{ display: "flex", gap: "2rem", alignItems: "center" }}>
           <Link href="#features" style={{ color: C.muted, textDecoration: "none", fontSize: "0.85rem", fontWeight: 500 }}>Features</Link>
@@ -147,9 +146,15 @@ export default function LandingPage() {
       <section style={{ position: "relative", zIndex: 1, padding: "100px 2rem 0", maxWidth: 1200, margin: "0 auto" }}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 64, alignItems: "center" }}>
           <div>
-            <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "var(--nyx-accent-dim)", border: "1px solid var(--nyx-accent-mid)", borderRadius: 999, padding: "6px 16px", marginBottom: 28 }}>
-              <span style={{ width: 7, height: 7, borderRadius: "50%", background: C.cyan, display: "inline-block", boxShadow: `0 0 8px ${C.cyan}` }} />
-              <span style={{ fontSize: "0.72rem", color: C.cyan, fontWeight: 700, letterSpacing: "0.1em" }}>HOSPITAL BD REFERRAL TRACKING</span>
+            <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 28 }}>
+              <Image src="/Aegislogo.png" alt="NyxAegis" width={56} height={56} style={{ objectFit: "contain", filter: "drop-shadow(0 0 16px rgba(201,168,76,0.4))" }} />
+              <div>
+                <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "var(--nyx-accent-dim)", border: "1px solid var(--nyx-accent-mid)", borderRadius: 999, padding: "5px 14px", marginBottom: 6 }}>
+                  <span style={{ width: 6, height: 6, borderRadius: "50%", background: C.cyan, display: "inline-block", boxShadow: `0 0 8px ${C.cyan}` }} />
+                  <span style={{ fontSize: "0.68rem", color: C.cyan, fontWeight: 700, letterSpacing: "0.1em" }}>HOSPITAL BD REFERRAL TRACKING</span>
+                </div>
+                <p style={{ margin: 0, fontSize: "1rem", color: C.muted, fontStyle: "italic", letterSpacing: "0.02em" }}>Where Relationships Become Referrals.</p>
+              </div>
             </div>
             <h1 style={{ fontSize: "clamp(2.4rem, 5vw, 3.8rem)", fontWeight: 900, lineHeight: 1.08, letterSpacing: "-0.03em", marginBottom: 24 }}>
               Track every<br />
@@ -182,6 +187,29 @@ export default function LandingPage() {
               <div style={{ fontSize: "1.7rem", fontWeight: 900, color: C.cyan, letterSpacing: "-0.03em", textShadow: "0 0 24px var(--nyx-accent-glow)" }}>{s.value}</div>
               <div style={{ fontSize: "0.8rem", fontWeight: 700, color: C.text, marginTop: 4 }}>{s.label}</div>
               <div style={{ fontSize: "0.7rem", color: C.dim, marginTop: 2 }}>{s.sub}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* PHOTOGRAPHY STRIP */}
+      <section style={{ position: "relative", zIndex: 1, padding: "0 2rem 80px", maxWidth: 1200, margin: "0 auto" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 14 }}>
+          {[
+            { src: "/Landing/desk.png",    label: "Built for the field",       sub: "Log visits and referrals on the go" },
+            { src: "/Landing/table.png",   label: "Strategy at the table",     sub: "Territory planning made visual" },
+            { src: "/Landing/console.png", label: "Data when it matters",      sub: "Real-time dashboards for leadership" },
+          ].map((img) => (
+            <div key={img.src} style={{ position: "relative", borderRadius: 14, overflow: "hidden", aspectRatio: "16/10", border: `1px solid ${C.border}` }}>
+              <Image src={img.src} alt={img.label} fill style={{ objectFit: "cover", objectPosition: "center" }} sizes="(max-width:768px) 100vw, 33vw" />
+              <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.15) 55%, transparent 100%)" }} />
+              <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "18px 20px" }}>
+                <p style={{ margin: 0, fontWeight: 800, fontSize: "0.88rem", color: "#fff", marginBottom: 3 }}>{img.label}</p>
+                <p style={{ margin: 0, fontSize: "0.72rem", color: "rgba(255,255,255,0.65)" }}>{img.sub}</p>
+              </div>
+              <div style={{ position: "absolute", top: 14, left: 14, background: "rgba(201,168,76,0.15)", border: "1px solid rgba(201,168,76,0.3)", borderRadius: 999, padding: "3px 10px" }}>
+                <span style={{ fontSize: "0.6rem", fontWeight: 700, color: "#C9A84C", letterSpacing: "0.1em" }}>NYXAEGIS</span>
+              </div>
             </div>
           ))}
         </div>
@@ -326,13 +354,12 @@ export default function LandingPage() {
       {/* FOOTER */}
       <footer style={{ position: "relative", zIndex: 1, borderTop: `1px solid ${C.border}`, padding: "32px 2rem" }}>
         <div style={{ maxWidth: 1100, margin: "0 auto", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 16 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <svg width="20" height="20" viewBox="0 0 32 32" fill="none">
-              <rect width="32" height="32" rx="8" fill={C.navy}/>
-              <path d="M16 5 L27 11.5 L27 20.5 L16 27 L5 20.5 L5 11.5 Z" stroke={C.cyan} strokeWidth="1.5" fill="none"/>
-              <circle cx="16" cy="16" r="4" fill={C.cyan} fillOpacity="0.9"/>
-            </svg>
-            <span style={{ color: C.dim, fontSize: "0.82rem" }}>© 2026 NyxCollective LLC</span>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <Image src="/Aegislogo.png" alt="NyxAegis" width={24} height={24} style={{ objectFit: "contain", opacity: 0.7 }} />
+            <div>
+              <span style={{ color: C.dim, fontSize: "0.78rem", display: "block" }}>© 2026 NyxCollective LLC</span>
+              <span style={{ color: C.dim, fontSize: "0.65rem", opacity: 0.6, fontStyle: "italic" }}>Where Relationships Become Referrals.</span>
+            </div>
           </div>
           <div style={{ display: "flex", gap: 24 }}>
             <Link href="/terms" style={{ color: C.dim, textDecoration: "none", fontSize: "0.78rem" }}>Terms</Link>
