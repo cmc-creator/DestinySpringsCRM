@@ -16,6 +16,25 @@ interface Rep {
   createdAt: string;
 }
 
+function exportRepsCSV(reps: Rep[]) {
+  const headers = ["Name","Email","Title","Status","Phone","City","State","Territory","Business","Opportunities","Territories","Licensed States","HIPAA Trained","W-9 On File","Added"];
+  const rows = reps.map(r => [
+    r.user.name ?? "", r.user.email, r.title ?? "", r.status,
+    r.phone ?? "", r.city ?? "", r.state ?? "", r.territory ?? "", r.businessName ?? "",
+    String(r._count.opportunities), String(r._count.territories),
+    r.licensedStates.join("; "),
+    r.hipaaTrainedAt ? new Date(r.hipaaTrainedAt).toLocaleDateString("en-US") : "",
+    r.w9OnFile ? "Yes" : "No",
+    new Date(r.createdAt).toLocaleDateString("en-US"),
+  ].map(v => `"${v.replace(/"/g, '""')}"`).join(","));
+  const csv = [headers.map(h => `"${h}"`).join(","), ...rows].join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = `reps-${Date.now()}.csv`; a.click();
+  URL.revokeObjectURL(url);
+}
+
 /** Inline SVG sparkline — just a tiny trend line generated from the opp count as a visual anchor */
 function Sparkline({ value, color }: { value: number; color: string }) {
   const max = 20;
@@ -294,6 +313,7 @@ export default function RepsClient() {
               </button>
             ))}
           </div>
+          <button onClick={() => exportRepsCSV(filtered)} style={{ background: "rgba(52,211,153,0.08)", border: "1px solid rgba(52,211,153,0.2)", borderRadius: 8, padding: "10px 18px", color: "#34d399", cursor: "pointer", fontWeight: 700, fontSize: "0.82rem" }}>⬇ Export CSV</button>
           <button onClick={() => setModal("add")} style={{ background: "var(--nyx-accent-dim)", border: "1px solid var(--nyx-accent-str)", borderRadius: 8, padding: "10px 20px", color: C.cyan, cursor: "pointer", fontWeight: 700, fontSize: "0.875rem" }}>+ Add Rep</button>
         </div>
       </div>
