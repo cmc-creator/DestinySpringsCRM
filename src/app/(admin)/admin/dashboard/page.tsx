@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { formatCurrency, formatRelativeTime } from "@/lib/utils";
 import Link from "next/link";
 import TerritoryMapWrapper from "@/components/maps/TerritoryMapWrapper";
+import QuickActionsWidget from "@/components/dashboard/QuickActionsWidget";
 
 const CYAN = "var(--nyx-accent)";
 const BORDER = "var(--nyx-accent-dim)";
@@ -143,13 +144,6 @@ export default async function AdminDashboard() {
     { label: "Pending Invoices",    value: pendingInvoices, icon: "invoices",      href: "/admin/invoices" },
   ];
 
-  const quickActions = [
-    { label: "Add Referral",    href: "/admin/leads",         icon: "referral" },
-    { label: "Add Lead",        href: "/admin/leads",         icon: "target" },
-    { label: "New Opportunity", href: "/admin/opportunities", icon: "chart" },
-    { label: "Add Rep",         href: "/admin/reps",          icon: "user" },
-  ];
-
   const stageColor: Record<string, string> = {
     DISCOVERY: "#94a3b8", QUALIFICATION: "#fbbf24", DEMO: "#f59e0b",
     PROPOSAL: "var(--nyx-accent)", NEGOTIATION: "#60a5fa", CLOSED_WON: "#34d399", CLOSED_LOST: "#f87171", ON_HOLD: "#94a3b8",
@@ -178,16 +172,7 @@ export default async function AdminDashboard() {
       </div>
 
       {/* Quick Actions */}
-      <div style={{ marginBottom: 32 }}>
-        <p style={{ fontSize: "0.7rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 12 }}>QUICK ACTIONS</p>
-        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-          {quickActions.map((a) => (
-            <Link key={a.label} href={a.href} style={{ display: "inline-flex", alignItems: "center", gap: 7, background: "var(--nyx-accent-dim)", border: `1px solid var(--nyx-accent-mid)`, borderRadius: 8, padding: "8px 14px", textDecoration: "none", color: CYAN, fontSize: "0.8rem", fontWeight: 600 }}>
-              <Icon id={a.icon} color={"var(--nyx-accent)"} /> {a.label}
-            </Link>
-          ))}
-        </div>
-      </div>
+      <QuickActionsWidget />
 
       {/* Territory Overview */}
       <div style={{ marginBottom: 32 }}>
