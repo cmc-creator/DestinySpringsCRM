@@ -43,7 +43,7 @@ const workflow = [
 ];
 
 const stats = [
-  { value: "100%",      label: "Purpose-Built BD CRM",   sub: "Healthcare, behavioral & more" },
+  { value: "100%",      label: "Purpose-Built BD CRM",   sub: "Adaptable to any business type" },
   { value: "Real-Time", label: "Referral Counts",        sub: "Know your ROI from day one" },
   { value: "Mobile",    label: "Field-Ready",            sub: "Log visits between stops" },
   { value: "HIPAA",     label: "Compliance Tracking",    sub: "Docs, certs & alerts built-in" },
@@ -164,7 +164,7 @@ export default function LandingPage() {
               <br />Count every<br />referral received.
             </h1>
             <p style={{ fontSize: "1.05rem", color: C.muted, maxWidth: 480, lineHeight: 1.75, marginBottom: 36 }}>
-              Built for BD teams in medical, behavioral health, and specialty care - log physician visits, track clinics and care facilities, and prove your outreach is turning into actual patient referrals.
+              Built for BD teams who build relationships in the field - log visits, track referral sources, and prove your outreach is turning into actual business.
             </p>
             <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginBottom: 24 }}>
               <Link href="/signup" style={{ background: "var(--nyx-accent)", color: "#000", padding: "14px 32px", borderRadius: 10, fontWeight: 800, textDecoration: "none", fontSize: "0.95rem", display: "inline-flex", alignItems: "center", gap: 8, boxShadow: "0 0 40px var(--nyx-accent-str)" }}>
@@ -366,7 +366,7 @@ export default function LandingPage() {
                   NyxAegis<sup style={{ fontSize: "0.55em", verticalAlign: "super", marginLeft: 2, color: "var(--nyx-accent)" }}>™</sup>
                 </p>
                 <p style={{ margin: "0 0 8px", fontSize: "0.85rem", color: "var(--nyx-accent)", fontStyle: "italic", fontWeight: 600 }}>Where Relationships Become Referrals.</p>
-                <p style={{ margin: 0, fontSize: "0.75rem", color: C.dim, maxWidth: 280, lineHeight: 1.6 }}>Purpose-built CRM for BD teams in healthcare, behavioral health, and specialty care - tracking referral sources in the field.</p>
+                <p style={{ margin: 0, fontSize: "0.75rem", color: C.dim, maxWidth: 280, lineHeight: 1.6 }}>Purpose-built CRM for BD teams tracking referral sources and proving outreach ROI in the field.</p>
               </div>
             </div>
             {/* Links */}
