@@ -372,6 +372,52 @@ async function main() {
     { userId: repUser.id, title: "Payment Processed", body: "Your Q4 2025 commission of $28,000 has been paid.", type: "SUCCESS", link: "/rep/payments" },
   ]});
 
+  // ── COMMUNICATION TEMPLATES ─────────────────────────────────────────────────
+  await prisma.communicationTemplate.createMany({ skipDuplicates: true, data: [
+    {
+      name: "Warm Introduction",
+      subject: "Introduction — NyxAegis Partnership",
+      body: "Hi {{name}},\n\nI hope this message finds you well. My name is {{sender}} and I work with NyxAegis helping healthcare organizations maximize their referral relationships.\n\nI'd love to connect for a brief 15-minute call to learn more about your organization's goals and share how we've helped similar teams grow their referral volume by 30–50%.\n\nWould any time next week work for a quick intro call?\n\nBest regards,\n{{sender}}",
+      category: "INTRODUCTION",
+      isGlobal: true,
+    },
+    {
+      name: "Follow-Up After Meeting",
+      subject: "Great connecting with you — next steps",
+      body: "Hi {{name}},\n\nIt was a pleasure speaking with you today. I wanted to follow up on a few key points we discussed:\n\n• {{point_1}}\n• {{point_2}}\n• {{point_3}}\n\nAs discussed, I'll send over the proposal by end of week. In the meantime, please don't hesitate to reach out if you have any questions.\n\nLooking forward to moving forward together.\n\nBest,\n{{sender}}",
+      category: "FOLLOW_UP",
+      isGlobal: true,
+    },
+    {
+      name: "Check-In (Quarterly)",
+      subject: "Checking in — Q{{quarter}} {{year}}",
+      body: "Hi {{name}},\n\nI wanted to reach out and check in as we head into Q{{quarter}}. It's been a while since we've connected, and I'd love to hear how things are going on your end.\n\nWe've rolled out several new features I think would be valuable for your team — including AI-powered pipeline insights and automated referral tracking.\n\nWould you be open to a quick 20-minute catch-up call this week or next?\n\nWarm regards,\n{{sender}}",
+      category: "CHECK_IN",
+      isGlobal: true,
+    },
+    {
+      name: "Proposal Cover Note",
+      subject: "Proposal for {{organization}} — NyxAegis",
+      body: "Hi {{name}},\n\nThank you for the opportunity to put together this proposal for {{organization}}. Attached, you'll find a detailed overview of our recommended approach, projected outcomes, and investment information.\n\nHighlights:\n• Referral tracking and source attribution\n• AI-powered opportunity insights\n• Dedicated BD rep portal and account management\n• Full compliance and contract management\n\nI'm available for a review call at your convenience. Please let me know your thoughts!\n\nBest,\n{{sender}}",
+      category: "PROPOSAL",
+      isGlobal: true,
+    },
+    {
+      name: "Thank You — Referral",
+      subject: "Thank you for the referral!",
+      body: "Hi {{name}},\n\nI just wanted to take a moment to sincerely thank you for the referral to {{contact}}. Referrals are the highest compliment we receive, and we take great care to ensure every referred contact has an exceptional experience.\n\nPlease know that I'm always here if you or anyone in your network could use our support.\n\nGratefully,\n{{sender}}",
+      category: "THANK_YOU",
+      isGlobal: true,
+    },
+    {
+      name: "Event / Webinar Invitation",
+      subject: "You're invited: {{event_name}}",
+      body: "Hi {{name}},\n\nI wanted to personally invite you to {{event_name}}, happening on {{date}} at {{time}}.\n\nThis {{format}} will cover:\n• {{topic_1}}\n• {{topic_2}}\n• {{topic_3}}\n\nSpots are limited — RSVP here: {{link}}\n\nI hope to see you there!\n\n{{sender}}",
+      category: "INVITATION",
+      isGlobal: true,
+    },
+  ]});
+
   console.log("✅ Full demo seed complete!");
   console.log("  ADMIN:   admin@nyxaegis.com / admin123!");
   console.log("  REP:     rep@nyxaegis.com / rep123!");

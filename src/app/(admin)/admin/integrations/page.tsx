@@ -7,12 +7,16 @@ const TEXT = "var(--nyx-text)";
 const TEXT_MUTED = "var(--nyx-text-muted)";
 
 const integrations = [
-  { name: "Stripe",     desc: "Payment processing for invoices and rep commissions", icon: "💳", status: "connected", href: null },
-  { name: "Resend",     desc: "Transactional email for notifications and digests",   icon: "📧", status: "connected", href: null },
-  { name: "Salesforce", desc: "Sync opportunities and accounts with Salesforce CRM", icon: "☁️", status: "available", href: null },
-  { name: "Epic EHR",   desc: "Integrate with Epic for clinical data context",        icon: "🏥", status: "available", href: null },
-  { name: "DocuSign",   desc: "E-signature for contracts and compliance docs",        icon: "✍️", status: "available", href: null },
-  { name: "Slack",      desc: "Team notifications and pipeline alerts in Slack",      icon: "💬", status: "available", href: null },
+  { name: "Stripe",             desc: "Payment processing for invoices and rep commissions",              icon: "💳", status: "connected", href: null },
+  { name: "Resend",             desc: "Transactional email for notifications and digests",                icon: "📧", status: "connected", href: null },
+  { name: "Microsoft Outlook",  desc: "Send emails and manage calendar via Microsoft Graph API",          icon: "📮", status: "available", href: "/admin/communications" },
+  { name: "Microsoft Teams",    desc: "Post channel messages and alerts via Teams Incoming Webhooks",      icon: "💬", status: "available", href: "/admin/communications" },
+  { name: "Google Gmail",       desc: "Send emails directly from your Gmail account via Gmail API",       icon: "📬", status: "available", href: "/admin/communications" },
+  { name: "Google Calendar",    desc: "Create follow-up events and meeting invites via Google Calendar",   icon: "📅", status: "available", href: "/admin/communications" },
+  { name: "Salesforce",         desc: "Sync opportunities and accounts with Salesforce CRM",              icon: "☁️", status: "available", href: null },
+  { name: "Epic EHR",           desc: "Integrate with Epic for clinical data context",                    icon: "🏥", status: "available", href: null },
+  { name: "DocuSign",           desc: "E-signature for contracts and compliance docs",                    icon: "✍️", status: "available", href: null },
+  { name: "Slack",              desc: "Team notifications and pipeline alerts in Slack",                  icon: "🔔", status: "available", href: null },
   { name: "Zapier",     desc: "Connect NyxAegis to 5000+ apps via Zapier",           icon: "⚡", status: "available", href: null },
 ];
 

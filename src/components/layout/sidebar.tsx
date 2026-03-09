@@ -114,7 +114,8 @@ const ADMIN_NAV: NavGroup[] = [
   {
     group: "BD Team", tint: "orange",
     items: [
-      { href: "/admin/reps", label: "BD Reps" },
+      { href: "/admin/reps",           label: "BD Reps" },
+      { href: "/admin/communications", label: "Communications" },
     ],
   },
   {
@@ -148,6 +149,12 @@ const REP_NAV: NavGroup[] = [
       { href: "/rep/dashboard",     label: "Dashboard" },
       { href: "/rep/opportunities", label: "My Opportunities" },
       { href: "/rep/territory",     label: "My Territory" },
+    ],
+  },
+  {
+    group: "Outreach", tint: "orange",
+    items: [
+      { href: "/rep/communications", label: "Communications" },
     ],
   },
   {

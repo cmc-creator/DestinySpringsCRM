@@ -703,6 +703,99 @@ model Message {
 }
 
 // ─────────────────────────────────────────
+// INTEGRATION TOKENS (per-user OAuth)
+// ─────────────────────────────────────────
+
+model IntegrationToken {
+  id           String    @id @default(cuid())
+  userId       String
+  provider     String    // "microsoft" | "google"
+  accessToken  String    @db.Text
+  refreshToken String?   @db.Text
+  expiresAt    DateTime?
+  scope        String?
+  email        String?
+  displayName  String?
+  teamsWebhook String?   // Teams incoming webhook URL (optional)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@unique([userId, provider])
+  @@map("integration_tokens")
+}
+
+// ─────────────────────────────────────────
+// COMMUNICATIONS LOG
+// ─────────────────────────────────────────
+
+enum CommChannel {
+  OUTLOOK
+  GMAIL
+  TEAMS
+  INTERNAL
+}
+
+enum CommStatus {
+  DRAFT
+  SENT
+  FAILED
+  SCHEDULED
+}
+
+enum CommCategory {
+  FOLLOW_UP
+  INTRODUCTION
+  PROPOSAL
+  CHECK_IN
+  THANK_YOU
+  INVITATION
+  OTHER
+}
+
+model CommunicationLog {
+  id          String      @id @default(cuid())
+  fromUserId  String
+  toEmail     String?
+  toName      String?
+  subject     String?
+  body        String      @db.Text
+  channel     CommChannel @default(INTERNAL)
+  status      CommStatus  @default(DRAFT)
+  externalId  String?     // Provider message ID
+  scheduledAt DateTime?
+  sentAt      DateTime?
+
+  hospitalId    String?
+  leadId        String?
+  opportunityId String?
+  contactId     String?
+  templateId    String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("communication_logs")
+}
+
+// ─────────────────────────────────────────
+// COMMUNICATION TEMPLATES
+// ─────────────────────────────────────────
+
+model CommunicationTemplate {
+  id          String       @id @default(cuid())
+  name        String
+  subject     String?
+  body        String       @db.Text
+  category    CommCategory @default(OTHER)
+  createdById String?
+  isGlobal    Boolean      @default(true)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@map("communication_templates")
+}
+
+// ─────────────────────────────────────────
 // REFERRAL TRACKING (MedWorxs integration)
 // ─────────────────────────────────────────
 
