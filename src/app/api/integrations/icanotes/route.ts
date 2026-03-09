@@ -111,14 +111,14 @@ export async function POST(req: NextRequest) {
     // Dedup: if externalId is present, check if a lead with that referral ID already exists
     if (externalId) {
       const existing = await prisma.lead.findFirst({
-        where: { notes: { contains: `iCannotes-ID:${externalId}` } },
+        where: { notes: { contains: `ICANotes-ID:${externalId}` } },
         select: { id: true },
       });
       if (existing) { skipped++; continue; }
     }
 
-    const notesParts: string[] = [`iCannotes import`];
-    if (externalId)      notesParts.push(`iCannotes-ID:${externalId}`);
+    const notesParts: string[] = [`ICANotes import`];
+    if (externalId)      notesParts.push(`ICANotes-ID:${externalId}`);
     if (referringNpi)    notesParts.push(`NPI:${referringNpi}`);
     if (authNumber)      notesParts.push(`Auth:${authNumber}`);
     if (diagnosis)       notesParts.push(`ICD-10:${diagnosis}`);

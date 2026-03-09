@@ -25,10 +25,10 @@ type ImportResult = {
   totalRows: number; imported: number; skipped: number; errors: number; errorLog: string[];
 };
 
-const TABS = ["CSV Import", "Webhook Setup", "About iCannotes"] as const;
+const TABS = ["CSV Import", "Webhook Setup", "About ICANotes"] as const;
 type Tab = typeof TABS[number];
 
-export default function ICanotesIntegrationPage() {
+export default function ICANotesIntegrationPage() {
   const [tab, setTab]               = useState<Tab>("CSV Import");
   const [file, setFile]             = useState<File | null>(null);
   const [mapping, setMapping]       = useState(DEFAULT_MAPPING);
@@ -89,12 +89,12 @@ export default function ICanotesIntegrationPage() {
         </div>
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-            <h1 style={{ fontSize: "1.6rem", fontWeight: 900, color: C.text }}>iCannotes</h1>
+            <h1 style={{ fontSize: "1.6rem", fontWeight: 900, color: C.text }}>ICANotes</h1>
             <span style={{ background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.25)", borderRadius: 999, padding: "3px 10px", fontSize: "0.65rem", fontWeight: 800, color: C.amber, letterSpacing: "0.1em" }}>SETUP REQUIRED</span>
             <span style={{ background: "rgba(52,211,153,0.1)", border: "1px solid rgba(52,211,153,0.25)", borderRadius: 999, padding: "3px 10px", fontSize: "0.65rem", fontWeight: 800, color: C.green, letterSpacing: "0.1em" }}>REFERRAL TRACKING</span>
           </div>
           <p style={{ color: C.muted, fontSize: "0.875rem", marginTop: 4 }}>
-            Import behavioral health referrals from iCannotes via CSV export or real-time webhook.
+            Import behavioral health referrals from ICANotes via CSV export or real-time webhook.
           </p>
         </div>
       </div>
@@ -113,7 +113,7 @@ export default function ICanotesIntegrationPage() {
       {tab === "CSV Import" && (
         <div style={{ maxWidth: 680 }}>
           <p style={{ color: C.muted, fontSize: "0.875rem", lineHeight: 1.7, marginBottom: 20 }}>
-            Export a <strong style={{ color: C.text }}>Referral Report</strong> from iCannotes (Reports → Referrals), then upload it here.
+            Export a <strong style={{ color: C.text }}>Referral Report</strong> from ICANotes (Reports → Referrals), then upload it here.
             NyxAegis will match referring providers to your referral source directory and create lead records for each new referral.
           </p>
 
@@ -121,7 +121,7 @@ export default function ICanotesIntegrationPage() {
           <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: 20, marginBottom: 20 }}>
             <h3 style={{ fontSize: "0.82rem", fontWeight: 800, color: C.text, marginBottom: 4 }}>Column Mapping</h3>
             <p style={{ fontSize: "0.77rem", color: C.muted, marginBottom: 16 }}>
-              Enter the exact column headers from your iCannotes CSV. Leave blank to skip a field.
+              Enter the exact column headers from your ICANotes CSV. Leave blank to skip a field.
             </p>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
               {[
@@ -161,8 +161,8 @@ export default function ICanotesIntegrationPage() {
               <p style={{ color: C.green, fontWeight: 700, fontSize: "0.9rem" }}>{file.name}</p>
             ) : (
               <>
-                <p style={{ color: C.text, fontWeight: 700, fontSize: "0.9rem", marginBottom: 4 }}>Drop your iCannotes CSV here or click to browse</p>
-                <p style={{ color: C.muted, fontSize: "0.78rem" }}>Export from iCannotes → Reports → Referrals → Export CSV</p>
+                <p style={{ color: C.text, fontWeight: 700, fontSize: "0.9rem", marginBottom: 4 }}>Drop your ICANotes CSV here or click to browse</p>
+                <p style={{ color: C.muted, fontSize: "0.78rem" }}>Export from ICANotes → Reports → Referrals → Export CSV</p>
               </>
             )}
           </div>
@@ -211,7 +211,7 @@ export default function ICanotesIntegrationPage() {
       {tab === "Webhook Setup" && (
         <div style={{ maxWidth: 680 }}>
           <div style={{ background: "rgba(245,158,11,0.05)", border: "1px solid rgba(245,158,11,0.2)", borderRadius: 10, padding: "14px 18px", marginBottom: 24, fontSize: "0.82rem", color: C.amber, lineHeight: 1.7 }}>
-            <strong>Requires iCannotes administrator access.</strong> Contact iCannotes support at{" "}
+            <strong>Requires ICANotes administrator access.</strong> Contact ICANotes support at{" "}
             <a href="mailto:support@icanotes.com" style={{ color: C.amber }}>support@icanotes.com</a>{" "}
             or <a href="tel:800-604-6556" style={{ color: C.amber }}>800-604-6556</a> to enable outbound webhook notifications for new admissions and referral events.
           </div>
@@ -232,7 +232,7 @@ export default function ICanotesIntegrationPage() {
             <label style={{ display: "block", fontSize: "0.72rem", fontWeight: 700, color: C.muted, marginBottom: 8, letterSpacing: "0.08em" }}>SHARED SECRET</label>
             <div style={{ display: "flex", gap: 8 }}>
               <input type="text" value={webhookSecret} onChange={(e) => setWebhookSecret(e.target.value)}
-                placeholder="Generate a random secret and share with iCannotes support"
+                placeholder="Generate a random secret and share with ICANotes support"
                 style={{ ...inp, flex: 1 }} />
               <button onClick={handleSaveSecret} disabled={savingSecret || !webhookSecret}
                 style={{ background: `linear-gradient(135deg,${C.green},${C.emerald})`, color: "#000", border: "none", borderRadius: 8, padding: "10px 18px", fontWeight: 800, fontSize: "0.82rem", cursor: !webhookSecret || savingSecret ? "not-allowed" : "pointer", opacity: !webhookSecret ? 0.5 : 1 }}>
@@ -240,7 +240,7 @@ export default function ICanotesIntegrationPage() {
               </button>
             </div>
             <p style={{ fontSize: "0.72rem", color: C.muted, marginTop: 6 }}>
-              iCannotes sends this in the <code style={{ color: C.muted }}>X-iCannotes-Secret</code> header. NyxAegis rejects requests without a matching secret.
+              ICANotes sends this in the <code style={{ color: C.muted }}>X-ICANotes-Secret</code> header. NyxAegis rejects requests without a matching secret.
             </p>
           </div>
 
@@ -266,18 +266,18 @@ export default function ICanotesIntegrationPage() {
       )}
 
       {/* ─── ABOUT TAB ─── */}
-      {tab === "About iCannotes" && (
+      {tab === "About ICANotes" && (
         <div style={{ maxWidth: 620 }}>
           <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: 24, marginBottom: 16 }}>
-            <h3 style={{ fontSize: "1rem", fontWeight: 800, color: C.text, marginBottom: 12 }}>What is iCannotes?</h3>
+            <h3 style={{ fontSize: "1rem", fontWeight: 800, color: C.text, marginBottom: 12 }}>What is ICANotes?</h3>
             <p style={{ fontSize: "0.875rem", color: C.muted, lineHeight: 1.75 }}>
-              iCannotes (icanotes.com) is a cloud-based EHR designed specifically for behavioral health organizations — including psychiatric hospitals, substance use treatment centers, and outpatient mental health practices. Its referral management module tracks outgoing and incoming referrals with authorization tracking.
+              ICANotes (icanotes.com) is a cloud-based EHR designed specifically for behavioral health organizations — including psychiatric hospitals, substance use treatment centers, and outpatient mental health practices. Its referral management module tracks outgoing and incoming referrals with authorization tracking.
             </p>
           </div>
           <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: 24 }}>
             <h3 style={{ fontSize: "1rem", fontWeight: 800, color: C.text, marginBottom: 12 }}>HIPAA Compliance Note</h3>
             <p style={{ fontSize: "0.875rem", color: C.muted, lineHeight: 1.75 }}>
-              NyxAegis does not store patient names, dates of birth, or other PHI. Patient names from iCannotes are automatically converted to initials. All other fields stored are limited to referral metadata (provider NPI, service type, referral date) which are considered de-identified under HIPAA Safe Harbor guidelines when no direct identifiers are present.
+              NyxAegis does not store patient names, dates of birth, or other PHI. Patient names from ICANotes are automatically converted to initials. All other fields stored are limited to referral metadata (provider NPI, service type, referral date) which are considered de-identified under HIPAA Safe Harbor guidelines when no direct identifiers are present.
             </p>
           </div>
         </div>

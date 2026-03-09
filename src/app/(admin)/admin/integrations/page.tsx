@@ -30,9 +30,9 @@ const featuredIntegrations = [
     ),
   },
   {
-    name: "iCannotes EHR",
+    name: "ICANotes EHR",
     badges: [{ label: "SETUP REQUIRED", color: "#f59e0b" }, { label: "REFERRAL TRACKING", color: "#34d399" }],
-    desc: "Import behavioral health referrals from iCannotes. Supports CSV export upload and webhook for real-time admission events. Matches referring clinicians to your referral source directory.",
+    desc: "Import behavioral health referrals from ICANotes. Supports CSV export upload and webhook for real-time admission events. Matches referring clinicians to your referral source directory.",
     href: "/admin/integrations/icanotes",
     icon: (
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#34d399" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
