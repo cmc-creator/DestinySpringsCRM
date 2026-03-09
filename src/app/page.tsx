@@ -27,23 +27,23 @@ const icons = {
 };
 
 const features = [
-  { icon: icons.referral, color: "var(--nyx-accent)", title: "Referral Source Tracking",   desc: "Log every referring physician, specialist, SNF, and care facility. Track visit frequency, relationship strength, and referral volume per source - so you know exactly where to invest your time." },
-  { icon: icons.chart,    color: "var(--nyx-accent)", title: "Referral Volume Analytics",  desc: "Count referrals actually received vs. expected by source. Spot trending sources, identify drop-offs, and give leadership real data on what your community outreach is producing." },
-  { icon: icons.map,      color: "var(--nyx-accent)", title: "Territory Management",       desc: "Assign BD reps to geographic territories. Map referral source density and whitespace. Track which zip codes and facilities your team has touched this week." },
-  { icon: icons.activity, color: "#a78bfa",   title: "Activity Logging",           desc: "Log physician office visits, lunches, calls, and events in seconds - right from the field. Auto-reminders for follow-ups so no relationship slips through the cracks." },
-  { icon: icons.shield,   color: "var(--nyx-accent)", title: "HIPAA Compliance Docs",      desc: "Store and track BAAs, NDAs, licenses, and training certificates. Automated expiration alerts keep every rep compliant in the field." },
-  { icon: icons.mobile,   color: "#f59e0b",   title: "Field-First Mobile Design",  desc: "Built for reps who are out in the community. Log a visit, update a referral count, or check your territory from any device between stops." },
+  { icon: icons.referral, color: "var(--nyx-accent)", title: "Referral Source Tracking",   desc: "Log every referral source - contacts, partners, and organizations. Track visit frequency, relationship strength, and referral volume per source so you always know where to invest your time." },
+  { icon: icons.chart,    color: "var(--nyx-accent)", title: "Referral Volume Analytics",  desc: "Count referrals received vs. expected by source. Spot trends, identify drop-offs, and give leadership real data on what your relationship-building is producing." },
+  { icon: icons.map,      color: "var(--nyx-accent)", title: "Territory Management",       desc: "Assign team members to geographic territories. Map referral source density and coverage gaps. Track which areas and contacts your team has engaged this week." },
+  { icon: icons.activity, color: "#a78bfa",   title: "Activity Logging",           desc: "Log visits, lunches, calls, and events in seconds - from anywhere. Auto-reminders for follow-ups so no relationship slips through the cracks." },
+  { icon: icons.shield,   color: "var(--nyx-accent)", title: "Compliance Document Management", desc: "Store and track agreements, certifications, licenses, and training records. Automated expiration alerts keep your team compliant and audit-ready." },
+  { icon: icons.mobile,   color: "#f59e0b",   title: "Mobile-First Design",        desc: "Built for people on the move. Log a visit, update a referral count, or review your territory from any device, anywhere." },
 ];
 
 const workflow = [
-  { n: "01", title: "Add Referral Sources",      desc: "Build your directory of physicians, practices, SNFs, specialists, and care coordinators with contact details, relationship history, and referral volume goals." },
-  { n: "02", title: "Track Outreach Activity",   desc: "Log every office visit, call, lunch, and event as you do it. The app captures time, location, and outcome so nothing is forgotten." },
-  { n: "03", title: "Count Referrals Received",  desc: "When a patient arrives, log the referral back to the source. Watch your referral-per-source metrics update in real time." },
-  { n: "04", title: "Report to Leadership",      desc: "Auto-generated dashboards show referral volume, source performance, rep activity, and territory coverage - ready for any C-suite meeting." },
+  { n: "01", title: "Add Referral Sources",      desc: "Build your directory of partners, contacts, and organizations with relationship history, contact details, and referral volume goals." },
+  { n: "02", title: "Track Engagement Activity",  desc: "Log every visit, call, lunch, and touchpoint as you go. Capture time, location, and outcome so nothing is forgotten." },
+  { n: "03", title: "Count Referrals Received",   desc: "When a referral comes in, log it back to the source. Watch your referral-per-source metrics update in real time." },
+  { n: "04", title: "Report to Leadership",       desc: "Auto-generated dashboards show referral volume, source performance, team activity, and territory coverage - ready for any stakeholder meeting." },
 ];
 
 const stats = [
-  { value: "100%",      label: "Purpose-Built BD CRM",   sub: "Adaptable to any business type" },
+  { value: "100%",      label: "Purpose-Built CRM",      sub: "Adaptable to any business type" },
   { value: "Real-Time", label: "Referral Counts",        sub: "Know your ROI from day one" },
   { value: "Mobile",    label: "Field-Ready",            sub: "Log visits between stops" },
   { value: "HIPAA",     label: "Compliance Tracking",    sub: "Docs, certs & alerts built-in" },
@@ -51,21 +51,21 @@ const stats = [
 
 const pricing = [
   {
-    name: "Solo Rep", price: "$49", period: "/mo",
-    desc: "For a single BD rep managing their own referral territory.",
+    name: "Solo User", price: "$49", period: "/mo",
+    desc: "For an individual managing their own referral relationships and territory.",
     features: ["Up to 100 referral sources", "Activity & visit logging", "Referral count tracking", "Document storage", "Mobile portal"],
     cta: "Start Free Trial", highlight: false,
   },
   {
-    name: "BD Team", price: "$199", period: "/mo",
-    desc: "For BD teams of 2–10 reps with shared analytics and territory management.",
-    features: ["Unlimited referral sources", "Team referral dashboards", "Territory assignment & maps", "Rep performance KPIs", "Contract management", "HIPAA compliance docs", "Priority support"],
+    name: "Team", price: "$199", period: "/mo",
+    desc: "For teams of 2-10 with shared analytics, territory management, and collaboration.",
+    features: ["Unlimited referral sources", "Team referral dashboards", "Territory assignment & maps", "Member performance KPIs", "Contract management", "Compliance doc management", "Priority support"],
     cta: "Start Free Trial", highlight: true,
   },
   {
     name: "Enterprise", price: "Custom", period: "",
-    desc: "For large BD organizations and multi-location operations.",
-    features: ["Everything in BD Team", "White-label branding", "Custom integrations", "SSO / SAML", "Dedicated success manager", "SLA guarantee"],
+    desc: "For large organizations and multi-location operations.",
+    features: ["Everything in Team", "White-label branding", "Custom integrations", "SSO / SAML", "Dedicated success manager", "SLA guarantee"],
     cta: "Contact Sales", highlight: false,
   },
 ];
@@ -163,7 +163,7 @@ export default function LandingPage() {
               <br />Count every<br />referral received.
             </h1>
             <p style={{ fontSize: "1.05rem", color: C.muted, maxWidth: 480, lineHeight: 1.75, marginBottom: 36 }}>
-              Built for BD teams who build relationships in the field - log visits, track referral sources, and prove your outreach is turning into actual business.
+              Built for teams who build relationships - log visits, track referral sources, and prove your outreach is turning into actual results.
             </p>
             <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginBottom: 24 }}>
               <Link href="/signup" style={{ background: "var(--nyx-accent)", color: "#000", padding: "14px 32px", borderRadius: 10, fontWeight: 800, textDecoration: "none", fontSize: "0.95rem", display: "inline-flex", alignItems: "center", gap: 8, boxShadow: "0 0 40px var(--nyx-accent-str)" }}>
@@ -221,7 +221,7 @@ export default function LandingPage() {
         <div style={{ textAlign: "center", marginBottom: 60 }}>
           <p style={{ color: C.cyan, fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", marginBottom: 14 }}>Platform Features</p>
           <h2 style={{ fontSize: "clamp(1.8rem, 4vw, 2.8rem)", fontWeight: 900, letterSpacing: "-0.025em", marginBottom: 14 }}>Built for how you actually work</h2>
-          <p style={{ color: C.muted, fontSize: "1rem", maxWidth: 520, margin: "0 auto", lineHeight: 1.7 }}>Every feature was designed for BD reps who are out in the field building relationships - not sitting at a desk.</p>
+          <p style={{ color: C.muted, fontSize: "1rem", maxWidth: 520, margin: "0 auto", lineHeight: 1.7 }}>Every feature is designed for people who build relationships and need to prove their impact.</p>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))", gap: 20 }}>
           {features.map((f) => (
@@ -269,13 +269,13 @@ export default function LandingPage() {
             {[
               {
                 role: "ADMIN", color: C.cyan, title: "Operations Command Center",
-                desc: "Full visibility over your entire BD organization - reps, sources, referral volume, territory coverage, and compliance status.",
-                items: ["Team referral dashboards & KPIs", "Territory assignment & coverage maps", "Rep activity and performance metrics", "HIPAA compliance doc management"],
+                desc: "Full visibility over your entire organization - team members, referral sources, volume, territory coverage, and compliance status.",
+                items: ["Team referral dashboards & KPIs", "Territory assignment & coverage maps", "Member activity and performance metrics", "Compliance document management"],
               },
               {
-                role: "BD REP", color: "var(--nyx-accent)", title: "Field Rep Dashboard",
-                desc: "Everything a BD rep needs out in the community - log visits, update referral counts, and review your territory between stops.",
-                items: ["Referral source directory & history", "Quick visit & activity logging", "Personal referral count tracking", "Compliance doc uploads on mobile"],
+                role: "TEAM", color: "var(--nyx-accent)", title: "Team Member Dashboard",
+                desc: "Everything your team needs on the go - log touchpoints, update referral counts, and review territory from any device.",
+                items: ["Referral source directory & history", "Quick visit & activity logging", "Personal referral count tracking", "Document uploads on mobile"],
               },
               {
                 role: "ACCOUNT", color: "var(--nyx-accent)", title: "Partner Portal",
