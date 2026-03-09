@@ -63,8 +63,8 @@ const pricing = [
     cta: "Start Free Trial", highlight: true,
   },
   {
-    name: "Health System", price: "Custom", period: "",
-    desc: "For large BD organizations and multi-facility health systems.",
+    name: "Enterprise", price: "Custom", period: "",
+    desc: "For large BD organizations and multi-location operations.",
     features: ["Everything in BD Team", "White-label branding", "Custom integrations", "SSO / SAML", "Dedicated success manager", "SLA guarantee"],
     cta: "Contact Sales", highlight: false,
   },
@@ -280,7 +280,7 @@ export default function LandingPage() {
               },
               {
                 role: "ACCOUNT", color: "var(--nyx-accent)", title: "Partner Portal",
-                desc: "A transparent view for your clinic, practice, and health system partners to track engagement summaries and service activity.",
+                desc: "A transparent view for your clinic, practice, and partner organizations to track engagement summaries and service activity.",
                 items: ["Engagement & referral summaries", "Active proposals and invoices", "Contract and document access", "Branded white-label experience"],
               },
             ].map((portal) => (
@@ -327,7 +327,7 @@ export default function LandingPage() {
                     </li>
                   ))}
                 </ul>
-                <Link href={p.name === "Health System" ? "/contact" : "/signup"} style={{ display: "block", textAlign: "center", background: p.highlight ? "var(--nyx-accent)" : "rgba(255,255,255,0.05)", color: p.highlight ? "#000" : C.text, padding: "13px", borderRadius: 10, fontWeight: 700, textDecoration: "none", fontSize: "0.88rem", border: p.highlight ? "none" : `1px solid ${C.border}`, boxShadow: p.highlight ? "0 0 24px var(--nyx-accent-str)" : "none" }}>
+                <Link href={p.name === "Enterprise" ? "/contact" : "/signup"} style={{ display: "block", textAlign: "center", background: p.highlight ? "var(--nyx-accent)" : "rgba(255,255,255,0.05)", color: p.highlight ? "#000" : C.text, padding: "13px", borderRadius: 10, fontWeight: 700, textDecoration: "none", fontSize: "0.88rem", border: p.highlight ? "none" : `1px solid ${C.border}`, boxShadow: p.highlight ? "0 0 24px var(--nyx-accent-str)" : "none" }}>
                   {p.cta}
                 </Link>
               </div>
