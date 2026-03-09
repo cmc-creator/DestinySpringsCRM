@@ -43,7 +43,7 @@ const workflow = [
 ];
 
 const stats = [
-  { value: "100%",      label: "Built for Hospital BD",  sub: "Not adapted from generic CRM" },
+  { value: "100%",      label: "Purpose-Built BD CRM",   sub: "Healthcare, behavioral & more" },
   { value: "Real-Time", label: "Referral Counts",        sub: "Know your ROI from day one" },
   { value: "Mobile",    label: "Field-Ready",            sub: "Log visits between stops" },
   { value: "HIPAA",     label: "Compliance Tracking",    sub: "Docs, certs & alerts built-in" },
@@ -128,7 +128,7 @@ export default function LandingPage() {
       {/* NAV */}
       <nav style={{ position: "sticky", top: 0, zIndex: 50, borderBottom: `1px solid ${C.border}`, padding: "0 2rem", display: "flex", alignItems: "center", justifyContent: "space-between", height: 64, background: "color-mix(in srgb, var(--nyx-bg) 85%, transparent)", backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <Image src="/Aegislogo.png" alt="NyxAegis" width={50} height={50} style={{ objectFit: "contain", filter: "drop-shadow(0 0 8px rgba(201,168,76,0.35))" }} />
+          <Image src="/Aegislogo.png" alt="NyxAegis" width={50} height={50} placeholder="empty" style={{ background: "transparent", filter: "drop-shadow(0 0 8px rgba(201,168,76,0.35))" }} />
           <div>
             <span style={{ fontWeight: 900, fontSize: "1.15rem", letterSpacing: "-0.03em", display: "block", lineHeight: 1.1 }}>NyxAegis<sup style={{ fontSize: "0.6em", verticalAlign: "super", marginLeft: 1, color: "var(--nyx-accent)" }}>™</sup></span>
             <span style={{ fontSize: "0.62rem", color: C.muted, letterSpacing: "0.06em", fontStyle: "italic" }}>Where Relationships Become Referrals.</span>
@@ -148,10 +148,10 @@ export default function LandingPage() {
           <div>
             {/* Logo + badge */}
             <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 20 }}>
-              <Image src="/Aegislogo.png" alt="NyxAegis" width={88} height={88} style={{ objectFit: "contain", filter: "drop-shadow(0 0 24px rgba(201,168,76,0.5))", flexShrink: 0 }} />
+              <Image src="/Aegislogo.png" alt="NyxAegis" width={88} height={88} placeholder="empty" style={{ background: "transparent", filter: "drop-shadow(0 0 24px rgba(201,168,76,0.5))", flexShrink: 0 }} />
               <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "var(--nyx-accent-dim)", border: "1px solid var(--nyx-accent-mid)", borderRadius: 999, padding: "7px 18px" }}>
                 <span style={{ width: 7, height: 7, borderRadius: "50%", background: C.cyan, display: "inline-block", boxShadow: `0 0 8px ${C.cyan}` }} />
-                <span style={{ fontSize: "0.7rem", color: C.cyan, fontWeight: 700, letterSpacing: "0.1em" }}>HOSPITAL BD REFERRAL TRACKING</span>
+                <span style={{ fontSize: "0.7rem", color: C.cyan, fontWeight: 700, letterSpacing: "0.1em" }}>BD &amp; REFERRAL TRACKING PLATFORM</span>
               </div>
             </div>
             {/* Tagline — prominent */}
@@ -164,7 +164,7 @@ export default function LandingPage() {
               <br />Count every<br />referral received.
             </h1>
             <p style={{ fontSize: "1.05rem", color: C.muted, maxWidth: 480, lineHeight: 1.75, marginBottom: 36 }}>
-              Built for hospital BD teams working in the community - log physician visits, track SNFs and care facilities, and prove your outreach is turning into actual patient referrals.
+              Built for BD teams in medical, behavioral health, and specialty care — log physician visits, track clinics and care facilities, and prove your outreach is turning into actual patient referrals.
             </p>
             <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginBottom: 24 }}>
               <Link href="/signup" style={{ background: "var(--nyx-accent)", color: "#000", padding: "14px 32px", borderRadius: 10, fontWeight: 800, textDecoration: "none", fontSize: "0.95rem", display: "inline-flex", alignItems: "center", gap: 8, boxShadow: "0 0 40px var(--nyx-accent-str)" }}>
@@ -279,8 +279,8 @@ export default function LandingPage() {
                 items: ["Referral source directory & history", "Quick visit & activity logging", "Personal referral count tracking", "Compliance doc uploads on mobile"],
               },
               {
-                role: "ACCOUNT", color: "var(--nyx-accent)", title: "Hospital Partner Portal",
-                desc: "A transparent view for your hospital and health system partners to track engagement summaries and service activity.",
+                role: "ACCOUNT", color: "var(--nyx-accent)", title: "Partner Portal",
+                desc: "A transparent view for your clinic, practice, and health system partners to track engagement summaries and service activity.",
                 items: ["Engagement & referral summaries", "Active proposals and invoices", "Contract and document access", "Branded white-label experience"],
               },
             ].map((portal) => (
@@ -360,13 +360,13 @@ export default function LandingPage() {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 32, marginBottom: 40 }}>
             {/* Brand block */}
             <div style={{ display: "flex", alignItems: "flex-start", gap: 16 }}>
-              <Image src="/Aegislogo.png" alt="NyxAegis" width={56} height={56} style={{ objectFit: "contain", filter: "drop-shadow(0 0 10px rgba(201,168,76,0.3))" }} />
+              <Image src="/Aegislogo.png" alt="NyxAegis" width={56} height={56} placeholder="empty" style={{ background: "transparent", filter: "drop-shadow(0 0 10px rgba(201,168,76,0.3))" }} />
               <div>
                 <p style={{ margin: "0 0 4px", fontWeight: 900, fontSize: "1.1rem", color: C.text, letterSpacing: "-0.02em" }}>
                   NyxAegis<sup style={{ fontSize: "0.55em", verticalAlign: "super", marginLeft: 2, color: "var(--nyx-accent)" }}>™</sup>
                 </p>
                 <p style={{ margin: "0 0 8px", fontSize: "0.85rem", color: "var(--nyx-accent)", fontStyle: "italic", fontWeight: 600 }}>Where Relationships Become Referrals.</p>
-                <p style={{ margin: 0, fontSize: "0.75rem", color: C.dim, maxWidth: 280, lineHeight: 1.6 }}>Purpose-built CRM for hospital business development teams tracking referral sources in the field.</p>
+                <p style={{ margin: 0, fontSize: "0.75rem", color: C.dim, maxWidth: 280, lineHeight: 1.6 }}>Purpose-built CRM for BD teams in healthcare, behavioral health, and specialty care — tracking referral sources in the field.</p>
               </div>
             </div>
             {/* Links */}
