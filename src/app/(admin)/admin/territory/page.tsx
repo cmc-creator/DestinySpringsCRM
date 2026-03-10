@@ -1,5 +1,6 @@
 ﻿import { prisma } from "@/lib/prisma";
 import { formatDate } from "@/lib/utils";
+import Link from "next/link";
 import TerritoryMapWrapper from "@/components/maps/TerritoryMapWrapper";
 import RouteIQButton from "@/components/maps/RouteIQButton";
 
@@ -52,9 +53,14 @@ export default async function TerritoryPage() {
           <div>
             <p style={{ color: "var(--nyx-accent-label)", fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 4 }}>BD TEAM</p>
             <h1 style={{ fontSize: "1.8rem", fontWeight: 900, color: TEXT, letterSpacing: "-0.02em" }}>Territory Management</h1>
-            <p style={{ color: TEXT_MUTED, fontSize: "0.875rem", marginTop: 4 }}>Rep coverage and hospital locations across the US</p>
+            <p style={{ color: TEXT_MUTED, fontSize: "0.875rem", marginTop: 4 }}>Rep coverage and account locations across the US</p>
           </div>
-          <RouteIQButton hospitals={mapHospitals} />
+          <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+            <Link href="/admin/hospitals" style={{ background: "var(--nyx-accent-dim)", border: "1px solid var(--nyx-accent-str)", borderRadius: 8, padding: "9px 18px", color: "var(--nyx-accent)", fontWeight: 700, fontSize: "0.85rem", textDecoration: "none", whiteSpace: "nowrap" }}>
+              + Add Account
+            </Link>
+            <RouteIQButton hospitals={mapHospitals} />
+          </div>
         </div>
       </div>
 

@@ -117,6 +117,7 @@ const ADMIN_NAV: NavGroup[] = [
     items: [
       { href: "/admin/reps",           label: "BD Reps" },
       { href: "/admin/communications", label: "Communications" },
+      { href: "/admin/compliance",     label: "Compliance" },
     ],
   },
   {
@@ -129,7 +130,6 @@ const ADMIN_NAV: NavGroup[] = [
   {
     group: "Intelligence", tint: "pink",
     items: [
-      { href: "/admin/compliance", label: "Compliance" },
       { href: "/admin/analytics",  label: "Analytics" },
       { href: "/admin/reports",    label: "Reports" },
       { href: "/admin/audit",      label: "Audit Log" },

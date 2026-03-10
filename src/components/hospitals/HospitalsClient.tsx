@@ -80,7 +80,7 @@ function HospitalModal({ hospital, onClose, onSave }: {
     try {
       await onSave(form);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to save hospital");
+      setError(err instanceof Error ? err.message : "Failed to save account");
     } finally {
       setSaving(false);
     }
@@ -90,7 +90,7 @@ function HospitalModal({ hospital, onClose, onSave }: {
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.78)", display: "flex", alignItems: "flex-start", justifyContent: "center", zIndex: 1000, padding: "40px 16px 32px", overflowY: "auto" }}>
       <div style={{ background: "var(--nyx-bg)", border: "1px solid var(--nyx-accent-str)", borderRadius: 14, width: "100%", maxWidth: 700, padding: 28, flexShrink: 0 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
-          <h2 style={{ fontSize: "1.2rem", fontWeight: 800, color: C.text }}>{isEdit ? "Edit Hospital" : "Add Hospital"}</h2>
+          <h2 style={{ fontSize: "1.2rem", fontWeight: 800, color: C.text }}>{isEdit ? "Edit Account" : "Add Account"}</h2>
           <button onClick={onClose} style={{ background: "none", border: "none", color: C.muted, cursor: "pointer", fontSize: "1.4rem", lineHeight: 1 }}>×</button>
         </div>
 
@@ -104,7 +104,7 @@ function HospitalModal({ hospital, onClose, onSave }: {
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
             {/* Hospital Info */}
             <div style={{ gridColumn: "1/-1" }}>
-              <label style={{ fontSize: "0.72rem", color: C.muted, display: "block", marginBottom: 4 }}>HOSPITAL NAME *</label>
+              <label style={{ fontSize: "0.72rem", color: C.muted, display: "block", marginBottom: 4 }}>ACCOUNT NAME *</label>
               <input style={inp} required value={form.hospitalName ?? ""} onChange={e => set("hospitalName", e.target.value)} placeholder="Saint Mary's Medical Center" />
             </div>
             <div>
@@ -112,7 +112,7 @@ function HospitalModal({ hospital, onClose, onSave }: {
               <input style={inp} value={form.systemName ?? ""} onChange={e => set("systemName", e.target.value)} placeholder="Health System Name" />
             </div>
             <div>
-              <label style={{ fontSize: "0.72rem", color: C.muted, display: "block", marginBottom: 4 }}>HOSPITAL TYPE</label>
+              <label style={{ fontSize: "0.72rem", color: C.muted, display: "block", marginBottom: 4 }}>ACCOUNT TYPE</label>
               <select style={sel} value={form.hospitalType ?? "ACUTE_CARE"} onChange={e => set("hospitalType", e.target.value)}>
                 {HOSPITAL_TYPES.map(t => <option key={t} value={t}>{lbl(t)}</option>)}
               </select>
@@ -177,7 +177,7 @@ function HospitalModal({ hospital, onClose, onSave }: {
               <>
                 <div style={{ gridColumn: "1/-1", borderTop: `1px solid ${C.border}`, paddingTop: 14, marginTop: 4 }}>
                   <p style={{ fontSize: "0.68rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 4 }}>Portal Access</p>
-                  <p style={{ fontSize: "0.75rem", color: C.muted, marginBottom: 10 }}>A portal account will be auto-created for this hospital.</p>
+                  <p style={{ fontSize: "0.75rem", color: C.muted, marginBottom: 10 }}>A portal account will be auto-created for this account.</p>
                 </div>
                 <div style={{ gridColumn: "1/-1" }}>
                   <label style={{ fontSize: "0.72rem", color: C.muted, display: "block", marginBottom: 4 }}>PORTAL EMAIL *</label>
@@ -196,7 +196,7 @@ function HospitalModal({ hospital, onClose, onSave }: {
           <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 24 }}>
             <button type="button" onClick={onClose} style={{ background: "none", border: `1px solid ${C.border}`, borderRadius: 7, padding: "8px 20px", color: C.muted, cursor: "pointer" }}>Cancel</button>
             <button type="submit" disabled={saving} style={{ background: "var(--nyx-accent-mid)", border: "1px solid var(--nyx-accent-str)", borderRadius: 7, padding: "8px 24px", color: "var(--nyx-accent)", cursor: "pointer", fontWeight: 700 }}>
-              {saving ? "Saving…" : isEdit ? "Save Changes" : "Add Hospital"}
+              {saving ? "Saving…" : isEdit ? "Save Changes" : "Add Account"}
             </button>
           </div>
         </form>
@@ -252,11 +252,11 @@ export default function HospitalsClient({ initialHospitals }: { initialHospitals
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20, flexWrap: "wrap", gap: 12 }}>
         <div>
           <p style={{ color: "var(--nyx-accent-label)", fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 4 }}>ACCOUNTS</p>
-          <h1 style={{ fontSize: "1.8rem", fontWeight: 900, color: C.text }}>Hospitals</h1>
-          <p style={{ color: C.muted, fontSize: "0.875rem", marginTop: 4 }}>{hospitals.length} hospital accounts</p>
+          <h1 style={{ fontSize: "1.8rem", fontWeight: 900, color: C.text }}>Accounts</h1>
+          <p style={{ color: C.muted, fontSize: "0.875rem", marginTop: 4 }}>{hospitals.length} accounts</p>
         </div>
         <button onClick={() => setModal("add")} style={{ background: "var(--nyx-accent-dim)", border: "1px solid var(--nyx-accent-str)", borderRadius: 8, padding: "10px 20px", color: "var(--nyx-accent)", cursor: "pointer", fontWeight: 700, fontSize: "0.875rem", display: "flex", alignItems: "center", gap: 6 }}>
-          + Add Hospital
+          + Add Account
         </button>
       </div>
 
@@ -285,7 +285,7 @@ export default function HospitalsClient({ initialHospitals }: { initialHospitals
       </div>
 
       <div style={{ marginBottom: 16 }}>
-        <input style={inp2} value={search} onChange={e => setSearch(e.target.value)} placeholder="Search hospitals, city, state…" />
+        <input style={inp2} value={search} onChange={e => setSearch(e.target.value)} placeholder="Search accounts, city, state…" />
       </div>
 
       {/* Table */}
@@ -294,7 +294,7 @@ export default function HospitalsClient({ initialHospitals }: { initialHospitals
           <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 700 }}>
             <thead>
               <tr style={{ borderBottom: `1px solid var(--nyx-border)` }}>
-                {["Hospital", "System", "Type", "Status", "Opportunities", "Contacts", "Added"].map(h => (
+                {["Account", "System", "Type", "Status", "Opportunities", "Contacts", "Added"].map(h => (
                   <th key={h} style={{ padding: "12px 16px", textAlign: "left", fontSize: "0.68rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.12em", textTransform: "uppercase", whiteSpace: "nowrap" }}>{h}</th>
                 ))}
               </tr>
@@ -302,7 +302,7 @@ export default function HospitalsClient({ initialHospitals }: { initialHospitals
             <tbody>
               {filtered.length === 0 && (
                 <tr><td colSpan={7} style={{ padding: 32, textAlign: "center", color: C.muted, fontSize: "0.9rem" }}>
-                  {search ? "No hospitals match your search." : "No hospitals yet. Click + Add Hospital to get started."}
+                  {search ? "No accounts match your search." : "No accounts yet. Click + Add Account to get started."}
                 </td></tr>
               )}
               {filtered.map(h => (
