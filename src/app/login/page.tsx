@@ -76,10 +76,10 @@ function LoginForm() {
             </p>
             <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
               {[
-                { icon: "🏥", text: "360° account management" },
-                { icon: "📊", text: "Live opportunity pipeline tracking" },
-                { icon: "🗺️", text: "Geographic territory management" },
-                { icon: "📋", text: "HIPAA compliance document storage" },
+                { icon: "�", text: "360° account management" },
+                { icon: "📈", text: "Live opportunity pipeline tracking" },
+                { icon: "📍", text: "Geographic territory management" },
+                { icon: "🔒", text: "HIPAA compliance document storage" },
               ].map((item) => (
                 <div key={item.text} style={{ display: "flex", alignItems: "center", gap: 12 }}>
                   <span style={{ fontSize: "1.3rem" }}>{item.icon}</span>
