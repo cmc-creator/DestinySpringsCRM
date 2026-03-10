@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, Fragment } from "react";
 
 const C = {
   card:   "var(--nyx-card)",
@@ -59,9 +59,9 @@ export default function AuditLogPage() {
       if (res) params.set("resource", res);
       const r = await fetch(`/api/audit?${params}`);
       if (r.ok) {
-        const data: AuditEntry[] = await r.json();
-        setEntries(pg === 1 ? data : (prev) => [...prev, ...data]);
-        setHasMore(data.length === 50);
+        const { logs }: { logs: AuditEntry[] } = await r.json();
+        setEntries(pg === 1 ? logs : (prev) => [...prev, ...logs]);
+        setHasMore(logs.length === 50);
         setPage(pg);
       }
     } finally {
@@ -111,8 +111,8 @@ export default function AuditLogPage() {
                   <tr><td colSpan={7} style={{ padding: 32, textAlign: "center", color: C.muted }}>No audit events recorded yet.</td></tr>
                 )}
                 {entries.map(entry => (
-                  <>
-                    <tr key={entry.id}
+                  <Fragment key={entry.id}>
+                    <tr
                       style={{ borderBottom: `1px solid var(--nyx-accent-dim)`, cursor: entry.diff ? "pointer" : "default" }}
                       onClick={() => entry.diff && setExpanded(expanded === entry.id ? null : entry.id)}
                       onMouseEnter={e => (e.currentTarget.style.background = "var(--nyx-accent-dim)")}
@@ -139,7 +139,7 @@ export default function AuditLogPage() {
                       </td>
                     </tr>
                     {expanded === entry.id && entry.diff && (
-                      <tr key={`${entry.id}-diff`}>
+                      <tr>
                         <td colSpan={7} style={{ padding: "0 14px 14px", background: "rgba(0,0,0,0.25)" }}>
                           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, padding: "12px 0" }}>
                             {entry.diff.before !== undefined && (
@@ -162,7 +162,7 @@ export default function AuditLogPage() {
                         </td>
                       </tr>
                     )}
-                  </>
+                  </Fragment>
                 ))}
               </tbody>
             </table>
