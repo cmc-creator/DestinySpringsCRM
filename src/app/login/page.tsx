@@ -3,6 +3,7 @@ import { Suspense, useState } from "react";
 import { signIn, getSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 
 function getRoleHome(role?: string) {
   switch (role) {
@@ -62,12 +63,7 @@ function LoginForm() {
         <div style={{ position: "absolute", top: "20%", left: "10%", width: 300, height: 300, borderRadius: "50%", background: "radial-gradient(circle, var(--nyx-accent-dim) 0%, transparent 70%)", pointerEvents: "none" }} />
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 64 }}>
-            <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-              <rect width="32" height="32" rx="8" fill="var(--nyx-bg)"/>
-              <rect x="1" y="1" width="30" height="30" rx="7" stroke={CYAN} strokeWidth="1" strokeOpacity="0.4"/>
-              <path d="M16 6 L26 12 L26 20 L16 26 L6 20 L6 12 Z" stroke={CYAN} strokeWidth="1.5" fill="none" strokeOpacity="0.7"/>
-              <circle cx="16" cy="16" r="4" fill={CYAN} fillOpacity="0.8"/>
-            </svg>
+            <Image src="/Aegislogo.png" alt="NyxAegis" width={34} height={34} style={{ objectFit: "contain" }} />
             <span style={{ fontWeight: 900, fontSize: "1.2rem", color: "#d8e8f4" }}>NyxAegis</span>
           </div>
           <div className="login-fade-up">
