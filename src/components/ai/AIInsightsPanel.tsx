@@ -1,4 +1,5 @@
 "use client";
+import { useState, useEffect } from "react";
 
 const GOLD     = "var(--nyx-accent)";
 const GOLD_DIM = "var(--nyx-accent-dim)";
@@ -47,6 +48,75 @@ function SparkleIcon() {
 
 interface Props {
   role: "admin" | "rep" | "account";
+}
+
+interface NextAction { label: string; desc: string; prompt: string; urgency: "high" | "medium" | "low" }
+
+function SuggestedNextActions({ role }: { role: string }) {
+  const [actions, setActions] = useState<NextAction[]>([]);
+
+  useEffect(() => {
+    if (role === "account") return;
+    // Build personalized suggestions from stale leads + overdue follow-ups
+    const base: NextAction[] = [];
+    fetch("/api/leads?limit=20")
+      .then(r => r.ok ? r.json() : [])
+      .then((leads: { hospitalName: string; status: string; updatedAt?: string; createdAt: string; nextFollowUp?: string | null; assignedRep?: { user: { name: string | null } } | null }[]) => {
+        const now = Date.now();
+        leads.forEach(l => {
+          if (l.status === "WON" || l.status === "LOST" || l.status === "UNQUALIFIED") return;
+          const days = Math.floor((now - new Date(l.updatedAt ?? l.createdAt).getTime()) / 86_400_000);
+          if (days >= 14) {
+            base.push({
+              label: `Re-engage ${l.hospitalName}`,
+              desc: `${days} days since last update — status: ${l.status.replace(/_/g, " ")}`,
+              prompt: `I haven't touched the lead "${l.hospitalName}" in ${days} days. It's currently in ${l.status.replace(/_/g, " ")} status. What's the best next step to move it forward?`,
+              urgency: days >= 30 ? "high" : "medium",
+            });
+          }
+          if (l.nextFollowUp && new Date(l.nextFollowUp) <= new Date()) {
+            base.push({
+              label: `Overdue follow-up: ${l.hospitalName}`,
+              desc: `Follow-up was due ${new Date(l.nextFollowUp).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`,
+              prompt: `My follow-up with "${l.hospitalName}" is overdue. Help me draft a re-engagement message.`,
+              urgency: "high",
+            });
+          }
+        });
+        // Sort by urgency, limit to 4
+        base.sort((a, b) => (a.urgency === "high" ? -1 : b.urgency === "high" ? 1 : 0));
+        setActions(base.slice(0, 4));
+      })
+      .catch(() => {});
+  }, [role]);
+
+  const ask = (prompt: string) => window.dispatchEvent(new CustomEvent("aegis:prompt", { detail: prompt }));
+
+  if (actions.length === 0) return null;
+
+  const urgencyColor = (u: "high" | "medium" | "low") =>
+    u === "high" ? "#f87171" : u === "medium" ? "#fbbf24" : MUTED;
+
+  return (
+    <div style={{ borderTop: `1px solid ${BORDER}`, padding: "14px 16px" }}>
+      <p style={{ fontSize: "0.68rem", fontWeight: 800, letterSpacing: "0.12em", textTransform: "uppercase", color: "#f87171", marginBottom: 10 }}>
+        ⚡ Suggested Next Actions
+      </p>
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        {actions.map((a, i) => (
+          <button key={i} onClick={() => ask(a.prompt)} style={{ background: "rgba(248,113,113,0.05)", border: "1px solid rgba(248,113,113,0.15)", borderRadius: 8, padding: "9px 12px", textAlign: "left", cursor: "pointer", transition: "background 0.15s" }}
+            onMouseEnter={e => (e.currentTarget.style.background = "rgba(248,113,113,0.1)")}
+            onMouseLeave={e => (e.currentTarget.style.background = "rgba(248,113,113,0.05)")}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
+              <span style={{ fontSize: "0.78rem", fontWeight: 700, color: TEXT, lineHeight: 1.3 }}>{a.label}</span>
+              <span style={{ fontSize: "0.6rem", fontWeight: 800, color: urgencyColor(a.urgency), flexShrink: 0, marginTop: 1, letterSpacing: "0.06em" }}>{a.urgency.toUpperCase()}</span>
+            </div>
+            <div style={{ fontSize: "0.68rem", color: MUTED, marginTop: 2 }}>{a.desc}</div>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 export default function AIInsightsPanel({ role }: Props) {
@@ -132,6 +202,7 @@ export default function AIInsightsPanel({ role }: Props) {
           ))}
         </div>
       </div>
+      <SuggestedNextActions role={role} />
     </div>
   );
 }

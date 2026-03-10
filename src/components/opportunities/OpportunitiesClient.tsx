@@ -12,7 +12,7 @@ interface Opp {
   assignedRepId?: string | null; assignedRep?: { user: { name: string | null } } | null;
   stage: Stage; serviceLine: SvcLine; value?: string | number | null;
   closeDate?: string | null; priority: string; notes?: string | null; lostReason?: string | null;
-  createdAt: string;
+  createdAt: string; updatedAt?: string; nextFollowUp?: string | null;
 }
 
 const C = { card: "var(--nyx-card)", border: "var(--nyx-border)", cyan: "var(--nyx-accent)", text: "var(--nyx-text)", muted: "var(--nyx-text-muted)", input: "var(--nyx-input-bg)" };
@@ -27,6 +27,13 @@ const STAGE_CLR: Record<Stage, string> = {
 const SVC_LINES: SvcLine[] = ["CARDIOLOGY","ONCOLOGY","ORTHOPEDICS","NEUROLOGY","WOMENS_HEALTH","PEDIATRICS","BEHAVIORAL_HEALTH","PRIMARY_CARE","SURGICAL_SERVICES","EMERGENCY_MEDICINE","RADIOLOGY","LABORATORY","PHARMACY","REHABILITATION","HOME_HEALTH","TELEHEALTH","REVENUE_CYCLE","SUPPLY_CHAIN","IT_SOLUTIONS","STAFFING","OTHER"];
 const lbl = (s: string) => s.replace(/_/g, " ");
 const fmt = (v: string | number | null | undefined) => v ? `$${Number(v).toLocaleString()}` : "-";
+const fmtDate = (d: string) => new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+const isStale = (o: Opp) => {
+  if (o.stage === "CLOSED_WON" || o.stage === "CLOSED_LOST" || o.stage === "ON_HOLD") return false;
+  const ref = o.updatedAt ?? o.createdAt;
+  return (Date.now() - new Date(ref).getTime()) / 86_400_000 > 14;
+};
+const staleDays = (o: Opp) => Math.floor((Date.now() - new Date(o.updatedAt ?? o.createdAt).getTime()) / 86_400_000);
 
 function OppModal({ opp, hospitals, reps, onClose, onSave, onDelete }: {
   opp: Opp | null; hospitals: Hospital[]; reps: Rep[]; onClose: () => void;
@@ -98,6 +105,10 @@ function OppModal({ opp, hospitals, reps, onClose, onSave, onDelete }: {
             <div style={{ gridColumn: "1/-1" }}>
               <label style={{ fontSize: "0.72rem", color: C.muted, display: "block", marginBottom: 4 }}>DESCRIPTION</label>
               <textarea style={{ ...inp, minHeight: 60, resize: "vertical" }} value={form.description ?? ""} onChange={e => set("description", e.target.value)} placeholder="Opportunity details…" />
+            </div>
+            <div>
+              <label style={{ fontSize: "0.72rem", color: C.muted, display: "block", marginBottom: 4 }}>FOLLOW-UP DATE</label>
+              <input style={inp} type="date" value={form.nextFollowUp ? form.nextFollowUp.slice(0, 10) : ""} onChange={e => set("nextFollowUp", e.target.value ? new Date(e.target.value).toISOString() : null)} />
             </div>
             <div style={{ gridColumn: "1/-1" }}>
               <label style={{ fontSize: "0.72rem", color: C.muted, display: "block", marginBottom: 4 }}>NOTES</label>
@@ -210,7 +221,10 @@ export default function OpportunitiesClient({ hospitals, reps }: { hospitals: Ho
                     <div key={opp.id} onClick={() => setModal(opp)} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 8, padding: 12, cursor: "pointer", transition: "border-color 0.15s" }}
                       onMouseEnter={e => (e.currentTarget.style.borderColor = `${color}44`)}
                       onMouseLeave={e => (e.currentTarget.style.borderColor = C.border)}>
-                      <div style={{ fontSize: "0.8rem", fontWeight: 600, color: C.text, marginBottom: 4 }}>{opp.title}</div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 4 }}>
+                        <span style={{ fontSize: "0.8rem", fontWeight: 600, color: C.text }}>{opp.title}</span>
+                        {isStale(opp) && <span title={`${staleDays(opp)}d no update`} style={{ fontSize: "0.55rem", fontWeight: 800, background: "rgba(251,191,36,0.12)", color: "#fbbf24", border: "1px solid rgba(251,191,36,0.25)", borderRadius: 3, padding: "1px 4px", whiteSpace: "nowrap" }}>STALE</span>}
+                      </div>
                       <div style={{ fontSize: "0.7rem", color: C.muted, marginBottom: 6 }}>{opp.hospital.hospitalName}</div>
                       {opp.value && <div style={{ fontSize: "0.8rem", fontWeight: 700, color: C.cyan }}>{fmt(opp.value)}</div>}
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 6 }}>
@@ -234,7 +248,7 @@ export default function OpportunitiesClient({ hospitals, reps }: { hospitals: Ho
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr style={{ borderBottom: `1px solid ${C.border}` }}>
-                {["Title","Hospital","Stage","Service Line","Value","Rep","Priority",""].map(h => (
+                  {["Title","Hospital","Stage","Service Line","Value","Rep","Priority","Next Follow-up",""].map(h => (
                   <th key={h} style={{ padding: "12px 14px", textAlign: "left", fontSize: "0.65rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.1em", textTransform: "uppercase" }}>{h}</th>
                 ))}
               </tr>
@@ -245,7 +259,12 @@ export default function OpportunitiesClient({ hospitals, reps }: { hospitals: Ho
                 <tr key={opp.id} onClick={() => setModal(opp)} style={{ borderBottom: `1px solid var(--nyx-accent-dim)`, cursor: "pointer" }}
                   onMouseEnter={e => (e.currentTarget.style.background = "var(--nyx-accent-dim)")}
                   onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
-                  <td style={{ padding: "12px 14px", fontWeight: 600, fontSize: "0.875rem", color: C.text }}>{opp.title}</td>
+                  <td style={{ padding: "12px 14px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <span style={{ fontWeight: 600, fontSize: "0.875rem", color: C.text }}>{opp.title}</span>
+                    {isStale(opp) && <span title={`${staleDays(opp)}d no update`} style={{ fontSize: "0.6rem", fontWeight: 800, background: "rgba(251,191,36,0.12)", color: "#fbbf24", border: "1px solid rgba(251,191,36,0.25)", borderRadius: 4, padding: "1px 5px", whiteSpace: "nowrap" }}>STALE {staleDays(opp)}d</span>}
+                  </div>
+                </td>
                   <td style={{ padding: "12px 14px", fontSize: "0.8rem", color: C.muted }}>{opp.hospital.hospitalName}</td>
                   <td style={{ padding: "12px 14px" }}>
                     <span style={{ fontSize: "0.68rem", fontWeight: 700, color: STAGE_CLR[opp.stage], background: "rgba(0,0,0,0.3)", padding: "2px 8px", borderRadius: 4 }}>{lbl(opp.stage)}</span>
@@ -254,6 +273,9 @@ export default function OpportunitiesClient({ hospitals, reps }: { hospitals: Ho
                   <td style={{ padding: "12px 14px", fontSize: "0.85rem", color: C.cyan, fontWeight: 600 }}>{fmt(opp.value)}</td>
                   <td style={{ padding: "12px 14px", fontSize: "0.78rem", color: C.muted }}>{opp.assignedRep?.user.name ?? "-"}</td>
                   <td style={{ padding: "12px 14px", fontSize: "0.68rem", fontWeight: 700, color: opp.priority === "URGENT" ? "#f87171" : opp.priority === "HIGH" ? "#fbbf24" : C.muted }}>{opp.priority}</td>
+                  <td style={{ padding: "12px 14px", fontSize: "0.75rem", color: opp.nextFollowUp && new Date(opp.nextFollowUp) < new Date() ? "#f87171" : C.muted, whiteSpace: "nowrap" }}>
+                    {opp.nextFollowUp ? fmtDate(opp.nextFollowUp) : <span style={{ opacity: 0.4 }}>--</span>}
+                  </td>
                   <td style={{ padding: "12px 14px", fontSize: "0.75rem", color: C.cyan }}>Edit →</td>
                 </tr>
               ))}

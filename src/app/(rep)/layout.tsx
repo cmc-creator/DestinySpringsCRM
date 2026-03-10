@@ -2,6 +2,8 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { Sidebar } from "@/components/layout/sidebar";
 import AIChatWidget from "@/components/ai/AIChatWidget";
+import GlobalSearch from "@/components/search/GlobalSearch";
+import QuickLogWidget from "@/components/activities/QuickLogWidget";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +19,8 @@ export default async function RepLayout({ children }: { children: React.ReactNod
         <div className="p-4 md:p-8 page-enter">{children}</div>
       </main>
       <AIChatWidget />
+      <GlobalSearch role="REP" />
+      <QuickLogWidget role="REP" />
     </div>
   );
 }

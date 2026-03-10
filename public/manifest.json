@@ -1,0 +1,31 @@
+{
+  "name": "NyxAegis CRM",
+  "short_name": "NyxAegis",
+  "description": "Business Development CRM Platform for high-performance BD teams",
+  "start_url": "/admin/dashboard",
+  "display": "standalone",
+  "background_color": "#0a0f1a",
+  "theme_color": "#C9A84C",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/Aegislogo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/Aegislogo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "categories": ["business", "productivity"],
+  "lang": "en",
+  "scope": "/"
+}

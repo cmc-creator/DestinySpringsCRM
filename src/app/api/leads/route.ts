@@ -21,6 +21,28 @@ export async function POST(req: NextRequest) {
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   try {
     const body = await req.json();
+
+    // Bulk action support: { bulk: true, ids: string[], action: "status"|"assign"|"delete", value?: string }
+    if (body.bulk && Array.isArray(body.ids)) {
+      if (body.action === "delete") {
+        await prisma.lead.deleteMany({ where: { id: { in: body.ids } } });
+        return NextResponse.json({ ok: true, count: body.ids.length });
+      }
+      if (body.action === "status") {
+        await prisma.lead.updateMany({ where: { id: { in: body.ids } }, data: { status: body.value } });
+        return NextResponse.json({ ok: true, count: body.ids.length });
+      }
+      if (body.action === "assign") {
+        await prisma.lead.updateMany({ where: { id: { in: body.ids } }, data: { assignedRepId: body.value || null } });
+        return NextResponse.json({ ok: true, count: body.ids.length });
+      }
+      if (body.action === "followup") {
+        await prisma.lead.updateMany({ where: { id: { in: body.ids } }, data: { nextFollowUp: body.value ? new Date(body.value) : null } });
+        return NextResponse.json({ ok: true, count: body.ids.length });
+      }
+      return NextResponse.json({ error: "Unknown bulk action" }, { status: 400 });
+    }
+
     // Whitelist only scalar Lead fields to prevent Prisma relation errors
     const data = {
       hospitalName: body.hospitalName,
@@ -39,12 +61,18 @@ export async function POST(req: NextRequest) {
       status: body.status ?? "NEW",
       source: body.source ?? "OTHER",
       priority: body.priority ?? "MEDIUM",
+      nextFollowUp: body.nextFollowUp ? new Date(body.nextFollowUp) : null,
       ...(body.assignedRepId ? { assignedRepId: body.assignedRepId } : {}),
     };
     const lead = await prisma.lead.create({ data });
+    // Audit log
+    await prisma.auditLog.create({
+      data: { userId: session.user.id, userEmail: session.user.email ?? undefined, userName: session.user.name ?? undefined, action: "CREATE", resource: "Lead", resourceId: lead.id },
+    });
     return NextResponse.json(lead, { status: 201 });
   } catch (e) {
     console.error("Lead create error:", e);
     return NextResponse.json({ error: "Failed to create lead" }, { status: 500 });
   }
 }
+

@@ -14,7 +14,7 @@ interface Lead {
   serviceInterest?: string | null; estimatedValue?: string | number | null; notes?: string | null;
   status: LeadStatus; source: LeadSource; priority: string;
   assignedRepId?: string | null; assignedRep?: { user: { name: string | null } } | null;
-  createdAt: string;
+  createdAt: string; updatedAt?: string; nextFollowUp?: string | null;
 }
 
 // ── Constants ───────────────────────────────────────────
@@ -32,6 +32,15 @@ const PRIORITIES = ["LOW","MEDIUM","HIGH","URGENT"];
 const fmt = (v: string | number | null | undefined) => v ? `$${Number(v).toLocaleString()}` : "-";
 const fmtDate = (d: string) => new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 const lbl = (s: string) => s.replace(/_/g, " ");
+const isStale = (lead: Lead) => {
+  if (lead.status === "WON" || lead.status === "LOST" || lead.status === "UNQUALIFIED") return false;
+  const ref = lead.updatedAt ?? lead.createdAt;
+  return (Date.now() - new Date(ref).getTime()) / 86_400_000 > 14;
+};
+const staleDays = (lead: Lead) => {
+  const ref = lead.updatedAt ?? lead.createdAt;
+  return Math.floor((Date.now() - new Date(ref).getTime()) / 86_400_000);
+};
 
 // ── Shared input style ──────────────────────────────────
 const inp: React.CSSProperties = { width: "100%", background: C.input, border: `1px solid ${C.border}`, borderRadius: 7, padding: "8px 12px", color: C.text, fontSize: "0.875rem", outline: "none", boxSizing: "border-box" };
@@ -153,6 +162,10 @@ function LeadModal({ lead, reps, onClose, onSave, onDelete }: {
             <div>
               <label style={{ fontSize: "0.72rem", color: C.muted, display: "block", marginBottom: 4 }}>SERVICE INTEREST</label>
               <input style={inp} value={form.serviceInterest ?? ""} onChange={e => set("serviceInterest", e.target.value)} placeholder="Revenue Cycle, Telehealth..." />
+            </div>
+            <div>
+              <label style={{ fontSize: "0.72rem", color: C.muted, display: "block", marginBottom: 4 }}>FOLLOW-UP DATE</label>
+              <input style={inp} type="date" value={form.nextFollowUp ? form.nextFollowUp.slice(0, 10) : ""} onChange={e => set("nextFollowUp", e.target.value ? new Date(e.target.value).toISOString() : null)} />
             </div>
             <div style={{ gridColumn: "1/-1" }}>
               <label style={{ fontSize: "0.72rem", color: C.muted, display: "block", marginBottom: 4 }}>NOTES</label>
@@ -450,7 +463,7 @@ export default function LeadsClient({ reps }: { reps: Rep[] }) {
                   onChange={toggleAll}
                   style={{ accentColor: C.cyan, cursor: "pointer", width: 14, height: 14 }} />
               </th>
-              {["Hospital", "Contact", "Status", "Priority", "Source", "Est. Value", "Rep", "Created", ""].map(h => (
+              {["Hospital", "Contact", "Status", "Priority", "Source", "Est. Value", "Rep", "Next Follow-up", "Created", ""].map(h => (
                 <th key={h} style={{ padding: "12px 14px", textAlign: "left", fontSize: "0.65rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.1em", textTransform: "uppercase", whiteSpace: "nowrap" }}>{h}</th>
               ))}
             </tr>
@@ -469,7 +482,10 @@ export default function LeadsClient({ reps }: { reps: Rep[] }) {
                     style={{ accentColor: C.cyan, cursor: "pointer", width: 14, height: 14 }} />
                 </td>
                 <td style={{ padding: "13px 14px" }}>
-                  <div style={{ fontWeight: 600, fontSize: "0.875rem", color: C.text }}>{lead.hospitalName}</div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <span style={{ fontWeight: 600, fontSize: "0.875rem", color: C.text }}>{lead.hospitalName}</span>
+                    {isStale(lead) && <span title={`No activity in ${staleDays(lead)} days`} style={{ fontSize: "0.6rem", fontWeight: 800, background: "rgba(251,191,36,0.12)", color: "#fbbf24", border: "1px solid rgba(251,191,36,0.25)", borderRadius: 4, padding: "1px 5px", whiteSpace: "nowrap", letterSpacing: "0.05em" }}>STALE {staleDays(lead)}d</span>}
+                  </div>
                   {lead.state && <div style={{ fontSize: "0.7rem", color: C.muted }}>{lead.city ? `${lead.city}, ` : ""}{lead.state}</div>}
                 </td>
                 <td style={{ padding: "13px 14px" }}>
@@ -485,6 +501,9 @@ export default function LeadsClient({ reps }: { reps: Rep[] }) {
                 <td style={{ padding: "13px 14px", fontSize: "0.78rem", color: C.muted }}>{lbl(lead.source)}</td>
                 <td style={{ padding: "13px 14px", fontSize: "0.85rem", color: C.cyan, fontWeight: 600 }}>{fmt(lead.estimatedValue)}</td>
                 <td style={{ padding: "13px 14px", fontSize: "0.78rem", color: C.muted }}>{lead.assignedRep?.user.name ?? "Unassigned"}</td>
+                <td style={{ padding: "13px 14px", fontSize: "0.75rem", color: lead.nextFollowUp && new Date(lead.nextFollowUp) < new Date() ? "#f87171" : C.muted, whiteSpace: "nowrap" }}>
+                  {lead.nextFollowUp ? fmtDate(lead.nextFollowUp) : <span style={{ opacity: 0.4 }}>--</span>}
+                </td>
                 <td style={{ padding: "13px 14px", fontSize: "0.75rem", color: C.muted, whiteSpace: "nowrap" }}>{fmtDate(lead.createdAt)}</td>
                 <td style={{ padding: "13px 10px" }} onClick={e => e.stopPropagation()}>
                   <button onClick={() => setActivityLead(lead)} title="Activity feed"

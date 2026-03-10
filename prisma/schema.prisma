@@ -53,6 +53,8 @@ model User {
   password      String?
   role          Role      @default(ACCOUNT)
   preferences   Json?
+  twoFactorSecret String?
+  twoFactorEnabled Boolean @default(false)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -266,6 +268,7 @@ model Hospital {
   contractValue  Decimal?
   notes          String?
   source         String?
+  metadata       Json?
 
   // Portal credentials
   portalPassword String?
@@ -370,6 +373,8 @@ model Lead {
   status  LeadStatus @default(NEW)
   source  LeadSource @default(OTHER)
   priority String    @default("MEDIUM")
+  nextFollowUp DateTime?
+  metadata     Json?
 
   assignedRepId String?
   assignedRep   Rep?   @relation(fields: [assignedRepId], references: [id])
@@ -443,6 +448,8 @@ model Opportunity {
 
   notes       String?
   lostReason  String?
+  nextFollowUp DateTime?
+  metadata     Json?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -914,4 +921,23 @@ model MedworxsImport {
   createdAt DateTime @default(now())
 
   @@map("medworxs_imports")
+}
+
+// ─────────────────────────────────────────
+// AUDIT LOG
+// ─────────────────────────────────────────
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String
+  userEmail  String?
+  userName   String?
+  action     String   // "CREATE" | "UPDATE" | "DELETE"
+  resource   String   // "Lead" | "Opportunity" | "Hospital" etc
+  resourceId String?
+  diff       Json?    // { before, after } snapshot
+  ip         String?
+  createdAt  DateTime @default(now())
+
+  @@map("audit_logs")
 }

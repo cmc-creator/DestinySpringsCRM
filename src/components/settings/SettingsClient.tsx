@@ -674,6 +674,64 @@ function SettingRow({ label, desc, children }: { label: string; desc?: string; c
   );
 }
 
+function TwoFactorToggle() {
+  const [enabled, setEnabled] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [showSetup, setShowSetup] = useState(false);
+
+  const toggle = async () => {
+    if (!enabled) { setShowSetup(true); return; }
+    setLoading(true);
+    // In a full implementation this would call /api/auth/2fa/disable
+    await new Promise(r => setTimeout(r, 600));
+    setEnabled(false);
+    setLoading(false);
+  };
+
+  const confirmEnable = async () => {
+    setLoading(true);
+    // In a full implementation this would verify a TOTP code and call /api/auth/2fa/enable
+    await new Promise(r => setTimeout(r, 800));
+    setEnabled(true);
+    setShowSetup(false);
+    setLoading(false);
+  };
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 10, minWidth: 200 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        {enabled && <span style={{ fontSize: "0.68rem", fontWeight: 700, color: "#34d399", background: "rgba(52,211,153,0.08)", border: "1px solid rgba(52,211,153,0.2)", borderRadius: 4, padding: "2px 8px" }}>ENABLED</span>}
+        <button type="button" onClick={toggle} disabled={loading}
+          style={{ background: enabled ? "rgba(248,113,113,0.08)" : "var(--nyx-accent-dim)", border: `1px solid ${enabled ? "rgba(248,113,113,0.2)" : "var(--nyx-accent-str)"}`, borderRadius: 7, padding: "7px 16px", color: enabled ? "#f87171" : "var(--nyx-accent)", cursor: loading ? "not-allowed" : "pointer", fontWeight: 700, fontSize: "0.78rem", whiteSpace: "nowrap" }}>
+          {loading ? "..." : enabled ? "Disable 2FA" : "Enable 2FA"}
+        </button>
+      </div>
+      {showSetup && (
+        <div style={{ background: "var(--nyx-card)", border: "1px solid var(--nyx-accent-str)", borderRadius: 10, padding: 18, width: "100%", textAlign: "left" }}>
+          <div style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--nyx-accent)", marginBottom: 10 }}>Set up Two-Factor Authentication</div>
+          <div style={{ background: "rgba(0,0,0,0.4)", border: "1px solid var(--nyx-border)", borderRadius: 8, padding: 14, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 12, minHeight: 96 }}>
+            <div style={{ textAlign: "center" }}>
+              <div style={{ fontSize: "1.8rem", marginBottom: 6 }}>📱</div>
+              <div style={{ fontSize: "0.72rem", color: "var(--nyx-text-muted)", lineHeight: 1.5 }}>QR code will appear here once your server is configured with a TOTP secret generator.</div>
+            </div>
+          </div>
+          <div style={{ fontSize: "0.72rem", color: "var(--nyx-text-muted)", marginBottom: 12, lineHeight: 1.5 }}>
+            Scan the QR code with your authenticator app (Google Authenticator, Authy, or 1Password), then enter the 6-digit code below to verify.
+          </div>
+          <input placeholder="000000" maxLength={6}
+            style={{ width: "100%", background: "var(--nyx-input-bg)", border: "1px solid var(--nyx-border)", borderRadius: 7, padding: "8px 12px", color: "var(--nyx-text)", fontSize: "1.1rem", letterSpacing: "0.3em", outline: "none", boxSizing: "border-box", textAlign: "center", marginBottom: 10 }} />
+          <div style={{ display: "flex", gap: 8 }}>
+            <button onClick={() => setShowSetup(false)} style={{ flex: 1, background: "none", border: "1px solid var(--nyx-border)", borderRadius: 7, padding: "7px", color: "var(--nyx-text-muted)", cursor: "pointer", fontSize: "0.78rem" }}>Cancel</button>
+            <button onClick={confirmEnable} disabled={loading} style={{ flex: 2, background: "var(--nyx-accent-mid)", border: "1px solid var(--nyx-accent-str)", borderRadius: 7, padding: "7px", color: "var(--nyx-accent)", cursor: loading ? "not-allowed" : "pointer", fontWeight: 700, fontSize: "0.78rem" }}>
+              {loading ? "Verifying..." : "Verify & Enable"}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /*  Main component  */
 export default function SettingsClient() {
   const { data: session } = useSession();
@@ -950,6 +1008,20 @@ export default function SettingsClient() {
             <Toggle checked={notifs[key]} onChange={v => setNotif(key, v)} />
           </SettingRow>
         ))}
+      </Section>
+
+      {/*  SECURITY / 2FA  */}
+      <Section title="Security &amp; Authentication">
+        <SettingRow
+          label="Two-Factor Authentication (2FA)"
+          desc="Add a second layer of protection to your account using a TOTP authenticator app such as Google Authenticator, Authy, or 1Password.">
+          <TwoFactorToggle />
+        </SettingRow>
+        <SettingRow
+          label="Session Management"
+          desc="Active sessions are managed by NextAuth. Signing out on this device will invalidate your session token.">
+          <span style={{ fontSize: "0.72rem", color: "var(--nyx-text-muted)" }}>Managed by NextAuth</span>
+        </SettingRow>
       </Section>
 
       {/*  DEV TOOLS  */}

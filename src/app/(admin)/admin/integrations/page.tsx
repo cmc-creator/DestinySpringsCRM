@@ -13,10 +13,11 @@ const integrations = [
   { name: "Microsoft Calendar", desc: "Auto-sync scheduled activities and meetings to Outlook Calendar",          icon: "📅", status: "available", href: "/admin/communications" },
   { name: "Microsoft Teams",    desc: "Post channel messages and alerts via Teams Incoming Webhooks",              icon: "💬", status: "available", href: "/admin/communications" },
   { name: "Google Gmail",       desc: "Send emails directly from your Gmail account via Gmail API",               icon: "📬", status: "available", href: "/admin/communications" },
-  { name: "Google Calendar",    desc: "Auto-sync scheduled activities and meetings to Google Calendar",            icon: "🗓️", status: "available", href: "/admin/communications" },
+  { name: "Google Calendar",    desc: "Auto-sync scheduled activities and meetings to Google Calendar",            icon: "🗓️", status: "available", href: "/admin/integrations/gcal" },
   { name: "Salesforce",         desc: "Sync opportunities and accounts with Salesforce CRM",              icon: "☁️", status: "available", href: null },
   { name: "Epic EHR",           desc: "Integrate with Epic for clinical data context",                    icon: "🏥", status: "available", href: null },
-  { name: "DocuSign",           desc: "E-signature for contracts and compliance docs",                    icon: "✍️", status: "available", href: null },
+  { name: "DocuSign",           desc: "E-signature for contracts and compliance docs",                    icon: "✍️", status: "available", href: "/admin/integrations/esign" },
+  { name: "Email Open Tracking",desc: "Track when contacts open your outreach emails via Resend webhooks", icon: "📬", status: "available", href: "/admin/integrations/emailtrack" },
   { name: "Slack",              desc: "Team notifications and pipeline alerts in Slack",                  icon: "🔔", status: "available", href: null },
   { name: "Zapier",     desc: "Connect NyxAegis to 5000+ apps via Zapier",           icon: "⚡", status: "available", href: null },
 ];
@@ -122,24 +123,29 @@ export default function IntegrationsPage() {
       {/* ── Other integrations ── */}
       <p style={{ fontSize: "0.72rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 14 }}>OTHER CONNECTIONS</p>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
-        {integrations.map((int) => (
-          <div key={int.name} style={{ background: CARD, border: `1px solid ${int.status === "connected" ? "var(--nyx-accent-str)" : BORDER}`, borderRadius: 12, padding: "20px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
-              <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-                <span style={{ fontSize: "1.8rem" }}>{int.icon}</span>
-                <div>
-                  <div style={{ fontWeight: 700, fontSize: "0.9rem", color: TEXT }}>{int.name}</div>
-                  {int.status === "connected" && <div style={{ fontSize: "0.65rem", color: "#34d399", fontWeight: 600, letterSpacing: "0.08em" }}>● CONNECTED</div>}
-                  {int.status === "available" && <div style={{ fontSize: "0.65rem", color: TEXT_MUTED, letterSpacing: "0.08em" }}>NOT CONNECTED</div>}
+        {integrations.map((int) => {
+          const CardContent = (
+            <div style={{ background: CARD, border: `1px solid ${int.status === "connected" ? "var(--nyx-accent-str)" : BORDER}`, borderRadius: 12, padding: "20px", height: "100%" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
+                <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                  <span style={{ fontSize: "1.8rem" }}>{int.icon}</span>
+                  <div>
+                    <div style={{ fontWeight: 700, fontSize: "0.9rem", color: TEXT }}>{int.name}</div>
+                    {int.status === "connected" && <div style={{ fontSize: "0.65rem", color: "#34d399", fontWeight: 600, letterSpacing: "0.08em" }}>● CONNECTED</div>}
+                    {int.status === "available" && <div style={{ fontSize: "0.65rem", color: TEXT_MUTED, letterSpacing: "0.08em" }}>NOT CONNECTED</div>}
+                  </div>
                 </div>
               </div>
+              <p style={{ fontSize: "0.82rem", color: TEXT_MUTED, lineHeight: 1.5, marginBottom: 14 }}>{int.desc}</p>
+              <div style={{ width: "100%", background: int.status === "connected" ? "rgba(239,68,68,0.06)" : "var(--nyx-accent-dim)", border: `1px solid ${int.status === "connected" ? "rgba(239,68,68,0.15)" : "var(--nyx-accent-mid)"}`, borderRadius: 6, padding: "8px", fontSize: "0.78rem", color: int.status === "connected" ? "#f87171" : CYAN, fontWeight: 600, textAlign: "center" }}>
+                {int.status === "connected" ? "Disconnect" : int.href ? "Configure" : "Connect"}
+              </div>
             </div>
-            <p style={{ fontSize: "0.82rem", color: TEXT_MUTED, lineHeight: 1.5, marginBottom: 14 }}>{int.desc}</p>
-            <button style={{ width: "100%", background: int.status === "connected" ? "rgba(239,68,68,0.06)" : "var(--nyx-accent-dim)", border: `1px solid ${int.status === "connected" ? "rgba(239,68,68,0.15)" : "var(--nyx-accent-mid)"}`, borderRadius: 6, padding: "8px", fontSize: "0.78rem", color: int.status === "connected" ? "#f87171" : CYAN, cursor: "pointer", fontWeight: 600 }}>
-              {int.status === "connected" ? "Disconnect" : "Connect"}
-            </button>
-          </div>
-        ))}
+          );
+          return int.href
+            ? <Link key={int.name} href={int.href} style={{ textDecoration: "none", display: "block" }}>{CardContent}</Link>
+            : <div key={int.name}>{CardContent}</div>;
+        })}
       </div>
     </div>
   );
