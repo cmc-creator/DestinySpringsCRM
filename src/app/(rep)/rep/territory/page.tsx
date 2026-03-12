@@ -48,7 +48,7 @@ export default async function RepTerritoryPage() {
         </div>
       )}
 
-      <div className="nyx-table-scroll" style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, overflow: "hidden" }}>
+      <div className="nyx-table-scroll" style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12 }}>
         <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 480 }}>
           <thead>
             <tr style={{ borderBottom: `1px solid ${BORDER}` }}>

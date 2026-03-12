@@ -35,7 +35,7 @@ export default async function RepOpportunitiesPage() {
         <p style={{ color: TEXT_MUTED, fontSize: "0.875rem", marginTop: 4 }}>{opportunities.length} opportunities assigned to you</p>
       </div>
 
-      <div className="nyx-table-scroll" style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, overflow: "hidden" }}>
+      <div className="nyx-table-scroll" style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12 }}>
         <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 560 }}>
           <thead>
             <tr style={{ borderBottom: `1px solid ${BORDER}` }}>

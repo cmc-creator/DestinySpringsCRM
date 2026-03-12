@@ -1204,6 +1204,12 @@ img[data-nimg] {
   transition: transform 0.25s ease;
 }
 
+/* Tables get horizontal scroll on all viewports */
+.nyx-table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
 /* Mobile layout adjustments */
 @media (max-width: 768px) {
   /* Sidebar becomes a slide-in drawer */
@@ -1239,15 +1245,14 @@ img[data-nimg] {
     grid-template-columns: 1fr !important;
   }
 
-  /* Tables get horizontal scroll */
-  .nyx-table-scroll {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-
   /* Add breathing room at the top for the hamburger button */
   main {
     padding-top: 52px;
+  }
+
+  /* Hide desktop keyboard shortcut hint — irrelevant on mobile */
+  .nyx-search-shortcut {
+    display: none !important;
   }
 }
 

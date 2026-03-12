@@ -67,7 +67,7 @@ export default async function RepDocumentsPage() {
       </div>
 
       {rep.complianceDocs.length > 0 && (
-        <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, overflow: "hidden" }}>
+        <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr style={{ borderBottom: `1px solid ${BORDER}` }}>

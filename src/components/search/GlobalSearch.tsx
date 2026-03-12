@@ -99,7 +99,7 @@ export default function GlobalSearch({ role: _role }: { role: string }) {
           <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
         </svg>
         Search…
-        <span style={{ marginLeft: 4, fontSize: "0.68rem", background: "rgba(255,255,255,0.07)", border: `1px solid ${C.border}`, borderRadius: 4, padding: "1px 5px", color: C.muted }}>Ctrl K</span>
+        <span className="nyx-search-shortcut" style={{ marginLeft: 4, fontSize: "0.68rem", background: "rgba(255,255,255,0.07)", border: `1px solid ${C.border}`, borderRadius: 4, padding: "1px 5px", color: C.muted }}>Ctrl K</span>
       </button>
     );
   }

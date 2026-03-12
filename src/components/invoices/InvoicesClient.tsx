@@ -208,7 +208,7 @@ export default function InvoicesClient({ hospitals }: { hospitals: Hospital[] })
       </div>
 
       <div className="gold-card" style={{ borderRadius: 12 }}>
-        <div style={{ background: C.card, borderRadius: 12, overflow: "hidden" }}>
+        <div style={{ background: C.card, borderRadius: 12, overflow: "visible" }}>
         <div className="nyx-table-scroll">
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
