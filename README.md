@@ -1,8 +1,17 @@
-# NyxAegis CRM
+# NyxAegis — Destiny Springs Healthcare CRM
 
-**Hospital Business Development Platform** - purpose-built for healthcare BD teams.
+**Behavioral Health Admission & Referral Management Platform** — purpose-built for Destiny Springs Healthcare, an inpatient acute psychiatric hospital in Arizona.
 
-NyxAegis gives hospital business development organizations a unified platform to manage hospital accounts, track opportunity pipelines, assign territories, manage rep compliance, and close more contracts.
+NyxAegis gives Destiny Springs Healthcare's liaison team a unified platform to manage sending facilities, track the admission pipeline (inquiry → clinical review → insurance auth → admitted → discharged), assign territories, manage liaison compliance, and grow referral volume.
+
+## Behavioral Health Features
+
+- **Admissions Pipeline** — BH-specific stages: Inquiry → Clinical Review → Insurance Auth → Admitted → Active → Discharged
+- **Title 36 Tracking** — Arizona ARS §36-520 emergency psychiatric hold workflow
+- **Census Snapshot** — Daily bed availability by unit (Adult, Adolescent, Geriatric, Dual Diagnosis)
+- **Payor Mix** — AHCCCS, BCBSAZ, Medicare, Aetna Better Health, UHC Community Plan tracking
+- **Referral Sources** — ED social workers, PCPs, courts, crisis lines, peer support organizations
+- **Arizona Geography** — Phoenix Metro, Scottsdale, Tucson, East Valley, Southern AZ territories
 
 ## Tech Stack
 
@@ -18,9 +27,9 @@ NyxAegis gives hospital business development organizations a unified platform to
 
 | Role | Portal | Access |
 |------|--------|--------|
-| `ADMIN` | `/admin/*` | Full platform access - all hospitals, reps, pipeline, analytics |
-| `REP` | `/rep/*` | BD rep portal - their opportunities, territory, docs, payments |
-| `ACCOUNT` | `/account/*` | Hospital portal - their engagements, invoices, contracts |
+| `ADMIN` | `/admin/*` | Full platform access — facilities, liaisons, admissions pipeline, analytics, census |
+| `REP` | `/rep/*` | Liaison portal — their admissions, territory, documents, payments |
+| `ACCOUNT` | `/account/*` | Sending facility portal — their engagements, invoices, contracts |
 
 ## Setup
 
