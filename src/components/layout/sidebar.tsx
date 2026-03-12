@@ -254,7 +254,7 @@ export function Sidebar({ role, userName, userEmail }: SidebarProps) {
           <button
             className="nyx-hamburger"
             onClick={() => setMobileOpen(false)}
-            style={{ display: "none", background: "transparent", border: "none", cursor: "pointer", padding: 4, color: TEXT_MUTED, fontSize: "1.2rem", lineHeight: 1 }}
+            style={{ display: "none", background: "transparent", border: "none", cursor: "pointer", padding: "10px 12px", minWidth: 44, minHeight: 44, color: TEXT_MUTED, fontSize: "1.2rem", lineHeight: 1, borderRadius: 6 }}
             aria-label="Close menu"
           >✕</button>
         </div>
@@ -276,7 +276,8 @@ export function Sidebar({ role, userName, userEmail }: SidebarProps) {
                     display: "flex",
                     alignItems: "center",
                     gap: 9,
-                    padding: "7px 8px",
+                    padding: "11px 8px",
+                    minHeight: 44,
                     borderRadius: 7,
                     marginBottom: 1,
                     textDecoration: "none",
@@ -310,7 +311,7 @@ export function Sidebar({ role, userName, userEmail }: SidebarProps) {
         </div>
         <button
           onClick={() => window.dispatchEvent(new Event("aegis:open"))}
-          style={{ width: "100%", background: ACCENT_DIM, border: `1px solid ${ACCENT_MID}`, borderRadius: 6, padding: "7px", fontSize: "0.78rem", color: CYAN, cursor: "pointer", fontWeight: 700, marginBottom: 6, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}
+          style={{ width: "100%", background: ACCENT_DIM, border: `1px solid ${ACCENT_MID}`, borderRadius: 6, padding: "11px 7px", minHeight: 44, fontSize: "0.78rem", color: CYAN, cursor: "pointer", fontWeight: 700, marginBottom: 6, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}
         >
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M9.5 3 11 7.5 15.5 9 11 10.5 9.5 15 8 10.5 3.5 9 8 7.5z"/>
@@ -320,7 +321,7 @@ export function Sidebar({ role, userName, userEmail }: SidebarProps) {
         </button>
         <button
           onClick={() => signOut({ callbackUrl: "/login" })}
-          style={{ width: "100%", background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.12)", borderRadius: 6, padding: "7px", fontSize: "0.78rem", color: "#f87171", cursor: "pointer", fontWeight: 500 }}
+          style={{ width: "100%", background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.12)", borderRadius: 6, padding: "11px 7px", minHeight: 44, fontSize: "0.78rem", color: "#f87171", cursor: "pointer", fontWeight: 500 }}
         >
           Sign Out
         </button>

@@ -55,12 +55,12 @@ export default function QuickLogWidget({ repId, role }: { repId?: string; role: 
 
   return (
     <>
-      {/* FAB */}
+      {/* FAB — offset above the AIChatWidget FAB (bottom:24 right:24) to prevent overlap */}
       <button
         onClick={() => setOpen(true)}
         title="Quick log activity"
         style={{
-          position: "fixed", bottom: 28, right: 28, zIndex: 500,
+          position: "fixed", bottom: 92, right: 24, zIndex: 500,
           width: 52, height: 52, borderRadius: "50%",
           background: "linear-gradient(135deg, var(--nyx-accent), var(--nyx-accent-str))",
           border: "none", cursor: "pointer",

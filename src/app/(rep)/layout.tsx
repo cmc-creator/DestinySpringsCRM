@@ -16,7 +16,7 @@ export default async function RepLayout({ children }: { children: React.ReactNod
     <div className="flex min-h-screen" style={{ color: "var(--nyx-text)" }}>
       <Sidebar role="REP" userName={session.user.name} userEmail={session.user.email} />
       <main className="flex-1 overflow-auto" style={{ background: "var(--nyx-bg-scrim, var(--nyx-bg))" }}>
-        <div className="p-4 md:p-8 page-enter">{children}</div>
+        <div className="px-4 pt-0 pb-4 md:p-8 page-enter">{children}</div>
       </main>
       <AIChatWidget />
       <GlobalSearch role="REP" />

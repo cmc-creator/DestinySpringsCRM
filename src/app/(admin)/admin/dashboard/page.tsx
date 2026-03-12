@@ -205,7 +205,7 @@ export default async function AdminDashboard() {
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {recentOpps.length === 0 && <p style={{ color: TEXT_MUTED, fontSize: "0.85rem" }}>No opportunities yet.</p>}
             {recentOpps.map((opp) => (
-              <div key={opp.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", padding: "10px 12px", background: "rgba(0,0,0,0.2)", borderRadius: 8, border: `1px solid ${BORDER}` }}>
+              <div key={opp.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "6px 12px", padding: "10px 12px", background: "rgba(0,0,0,0.2)", borderRadius: 8, border: `1px solid ${BORDER}` }}>
                 <div>
                   <div style={{ fontSize: "0.85rem", fontWeight: 600, color: TEXT, marginBottom: 2 }}>{opp.title}</div>
                   <div style={{ fontSize: "0.75rem", color: TEXT_MUTED }}>{opp.hospital.hospitalName}</div>
