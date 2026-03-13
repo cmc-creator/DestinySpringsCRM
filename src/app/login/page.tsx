@@ -40,15 +40,14 @@ function LoginForm() {
     try {
       const result = await signIn("credentials", { email, password, redirect: false });
       if (result?.error) {
-        setError("Invalid email or password.");
+        setError(`Auth error: ${result.error}`);
       } else {
         // Get role from session to redirect to the correct portal
         const session = await getSession();
         const role = session?.user?.role as string | undefined;
         const home = getRoleHome(role);
         if (!home) {
-          // Session wasn't readable — likely missing AUTH_SECRET in env
-          setError("Sign-in succeeded but session could not be established. Check AUTH_SECRET is set.");
+          setError(`Sign-in completed but no session returned. role=${String(role)} session=${JSON.stringify(session)}`);
           return;
         }
         const callbackUrl = searchParams.get("callbackUrl");
@@ -58,8 +57,8 @@ function LoginForm() {
         router.push(destination);
         router.refresh();
       }
-    } catch {
-      setError("Something went wrong. Please try again.");
+    } catch (err) {
+      setError(`Exception: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       setLoading(false);
     }
