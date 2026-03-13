@@ -45,7 +45,7 @@ export default function TermsPage() {
         </div>
         <div style={{ marginTop: 48, paddingTop: 24, borderTop: `1px solid ${BORDER}`, fontSize: "0.8rem", color: "rgba(216,232,244,0.25)", textAlign: "center" }}>
           <Link href="/" style={{ color: "inherit" }}>? Back to NyxAegis</Link>
-          {" · "}
+          {" Â· "}
           <Link href="/privacy" style={{ color: "inherit" }}>Privacy Policy</Link>
         </div>
       </div>

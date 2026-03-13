@@ -44,7 +44,7 @@ export default function PrivacyPage() {
         </div>
         <div style={{ marginTop: 48, paddingTop: 24, borderTop: `1px solid ${BORDER}`, fontSize: "0.8rem", color: "rgba(216,232,244,0.25)", textAlign: "center" }}>
           <Link href="/" style={{ color: "inherit" }}>? Back to NyxAegis</Link>
-          {" · "}
+          {" Â· "}
           <Link href="/terms" style={{ color: "inherit" }}>Terms of Service</Link>
         </div>
       </div>
