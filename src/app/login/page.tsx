@@ -1,5 +1,5 @@
 ﻿"use client";
-import { Suspense, useState } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { signIn, getSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -32,6 +32,12 @@ function LoginForm() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  // Catch NextAuth redirect errors (e.g. /login?error=CredentialsSignin)
+  useEffect(() => {
+    const urlError = searchParams.get("error");
+    if (urlError) setError(`Sign-in failed: ${urlError}. Check your email and password.`);
+  }, [searchParams]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
