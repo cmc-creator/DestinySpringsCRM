@@ -45,9 +45,9 @@ async function getRows(type: string) {
       }));
     }
 
-    case "closed-won": {
+    case "discharged": {
       const opps = await prisma.opportunity.findMany({
-        where: { stage: "CLOSED_WON" },
+        where: { stage: "DISCHARGED" },
         include: {
           hospital: { select: { hospitalName: true, city: true, state: true } },
           assignedRep: { include: { user: { select: { name: true } } } },
@@ -75,13 +75,13 @@ async function getRows(type: string) {
         },
       });
       return reps.map(r => {
-        const wonOpps   = r.opportunities.filter(o => o.stage === "CLOSED_WON");
-        const lostOpps  = r.opportunities.filter(o => o.stage === "CLOSED_LOST");
+        const wonOpps   = r.opportunities.filter(o => o.stage === "DISCHARGED");
+        const lostOpps  = r.opportunities.filter(o => o.stage === "DECLINED");
         const winRate   = wonOpps.length + lostOpps.length > 0
           ? Math.round((wonOpps.length / (wonOpps.length + lostOpps.length)) * 100)
           : 0;
         const pipeline  = r.opportunities
-          .filter(o => !["CLOSED_WON","CLOSED_LOST"].includes(o.stage))
+          .filter(o => !["DISCHARGED","DECLINED"].includes(o.stage))
           .reduce((s, o) => s + Number(o.value ?? 0), 0);
         const totalPaid = r.payments.reduce((s, p) => s + Number(p.amount), 0);
         return {
@@ -94,9 +94,9 @@ async function getRows(type: string) {
           Rating: r.rating ?? "",
           "# Opportunities": r._count.opportunities,
           "# Leads": r._count.leads,
-          "Win Rate %": winRate,
+          "Discharge Rate %": winRate,
           "Pipeline Value ($)": pipeline,
-          "Closed Won ($)": wonOpps.reduce((s, o) => s + Number(o.value ?? 0), 0),
+          "Discharged ($)": wonOpps.reduce((s, o) => s + Number(o.value ?? 0), 0),
           "Total Paid ($)": totalPaid,
           "HIPAA Date": fmt(r.hipaaTrainedAt),
           "W9 On File": r.w9OnFile ? "Yes" : "No",

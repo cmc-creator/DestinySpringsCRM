@@ -10,8 +10,8 @@ const TEXT = "var(--nyx-text)";
 const TEXT_MUTED = "var(--nyx-text-muted)";
 
 const stageColors: Record<string, string> = {
-  DISCOVERY: "#94a3b8", QUALIFICATION: "#fbbf24", DEMO: "#f59e0b",
-  PROPOSAL: "var(--nyx-accent)", NEGOTIATION: "#60a5fa", CLOSED_WON: "#34d399", CLOSED_LOST: "#f87171", ON_HOLD: "#94a3b8",
+  INQUIRY: "#94a3b8", CLINICAL_REVIEW: "#fbbf24", INSURANCE_AUTH: "#f59e0b",
+  ADMITTED: "var(--nyx-accent)", ACTIVE: "#60a5fa", DISCHARGED: "#34d399", DECLINED: "#f87171", ON_HOLD: "#94a3b8",
 };
 
 export default async function AccountEngagementsPage() {
@@ -29,8 +29,8 @@ export default async function AccountEngagementsPage() {
   });
   if (!hospital) redirect("/login");
 
-  const activeCount = hospital.opportunities.filter(o => !["CLOSED_WON", "CLOSED_LOST"].includes(o.stage)).length;
-  const wonCount = hospital.opportunities.filter(o => o.stage === "CLOSED_WON").length;
+  const activeCount = hospital.opportunities.filter(o => !["DISCHARGED", "DECLINED"].includes(o.stage)).length;
+  const wonCount = hospital.opportunities.filter(o => o.stage === "DISCHARGED").length;
 
   return (
     <div>

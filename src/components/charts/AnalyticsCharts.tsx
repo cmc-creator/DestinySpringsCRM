@@ -5,14 +5,14 @@ const TEXT = "var(--nyx-text)";
 const TEXT_MUTED = "var(--nyx-text-muted)";
 
 const stageColors: Record<string, string> = {
-  DISCOVERY:    "#94a3b8",
-  QUALIFICATION:"#fbbf24",
-  DEMO:         "#f59e0b",
-  PROPOSAL:     "var(--nyx-accent)",
-  NEGOTIATION:  "#60a5fa",
-  CLOSED_WON:   "#34d399",
-  CLOSED_LOST:  "#f87171",
-  ON_HOLD:      "#64748b",
+  INQUIRY:         "#94a3b8",
+  CLINICAL_REVIEW: "#fbbf24",
+  INSURANCE_AUTH:  "#f59e0b",
+  ADMITTED:        "var(--nyx-accent)",
+  ACTIVE:          "#60a5fa",
+  DISCHARGED:      "#34d399",
+  DECLINED:        "#f87171",
+  ON_HOLD:         "#64748b",
 };
 
 const statusColors: Record<string, string> = {
@@ -230,11 +230,11 @@ export default function AnalyticsCharts({
 
         {/* Outcome Summary */}
         <div className="gold-card" style={{ borderRadius: 12, padding: 20 }}>
-          <p style={{ fontSize: "0.65rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 18 }}>WIN / LOSS SUMMARY</p>
+          <p style={{ fontSize: "0.65rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 18 }}>DISCHARGE / DECLINE SUMMARY</p>
           {(() => {
-            const won  = oppsByStage.find(o => o.stage === "CLOSED_WON");
-            const lost = oppsByStage.find(o => o.stage === "CLOSED_LOST");
-            const open = oppsByStage.filter(o => !["CLOSED_WON","CLOSED_LOST"].includes(o.stage));
+            const won  = oppsByStage.find(o => o.stage === "DISCHARGED");
+            const lost = oppsByStage.find(o => o.stage === "DECLINED");
+            const open = oppsByStage.filter(o => !["DISCHARGED","DECLINED"].includes(o.stage));
             const openCount = open.reduce((s, o) => s + o.count, 0);
             const openValue = open.reduce((s, o) => s + o.value, 0);
             const total = (won?.count ?? 0) + (lost?.count ?? 0);
@@ -243,12 +243,12 @@ export default function AnalyticsCharts({
                 <div style={{ display: "flex", gap: 12 }}>
                   <div style={{ flex: 1, background: "rgba(52,211,153,0.07)", border: "1px solid rgba(52,211,153,0.2)", borderRadius: 10, padding: "16px 14px", textAlign: "center" }}>
                     <div style={{ fontSize: "2rem", fontWeight: 900, color: "#34d399" }}>{won?.count ?? 0}</div>
-                    <div style={{ fontSize: "0.7rem", color: TEXT_MUTED, marginTop: 2 }}>WON</div>
+                    <div style={{ fontSize: "0.7rem", color: TEXT_MUTED, marginTop: 2 }}>DISCHARGED</div>
                     <div style={{ fontSize: "0.75rem", color: "#34d399", marginTop: 4 }}>{fmt(won?.value ?? 0)}</div>
                   </div>
                   <div style={{ flex: 1, background: "rgba(248,113,113,0.07)", border: "1px solid rgba(248,113,113,0.2)", borderRadius: 10, padding: "16px 14px", textAlign: "center" }}>
                     <div style={{ fontSize: "2rem", fontWeight: 900, color: "#f87171" }}>{lost?.count ?? 0}</div>
-                    <div style={{ fontSize: "0.7rem", color: TEXT_MUTED, marginTop: 2 }}>LOST</div>
+                    <div style={{ fontSize: "0.7rem", color: TEXT_MUTED, marginTop: 2 }}>DECLINED</div>
                     <div style={{ fontSize: "0.75rem", color: "#f87171", marginTop: 4 }}>{fmt(lost?.value ?? 0)}</div>
                   </div>
                   <div style={{ flex: 1, background: "var(--nyx-accent-dim)", border: "1px solid var(--nyx-accent-mid)", borderRadius: 10, padding: "16px 14px", textAlign: "center" }}>

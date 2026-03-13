@@ -108,8 +108,8 @@ export default async function AdminDashboard() {
     prisma.rep.count({ where: { status: "ACTIVE" } }),
     prisma.hospital.count({ where: { status: { not: "CHURNED" } } }),
     prisma.lead.count({ where: { status: { in: ["NEW", "CONTACTED", "QUALIFIED"] } } }),
-    prisma.opportunity.count({ where: { stage: { notIn: ["CLOSED_WON", "CLOSED_LOST"] } } }),
-    prisma.opportunity.count({ where: { stage: "CLOSED_WON" } }),
+    prisma.opportunity.count({ where: { stage: { notIn: ["DISCHARGED", "DECLINED"] } } }),
+    prisma.opportunity.count({ where: { stage: "DISCHARGED" } }),
     prisma.invoice.count({ where: { status: { in: ["SENT", "OVERDUE"] } } }),
     prisma.activity.findMany({ take: 8, orderBy: { createdAt: "desc" }, include: { hospital: { select: { hospitalName: true } }, rep: { include: { user: { select: { name: true } } } } } }),
     prisma.opportunity.findMany({ take: 6, orderBy: { createdAt: "desc" }, include: { hospital: { select: { hospitalName: true } }, assignedRep: { include: { user: { select: { name: true } } } } } }),
@@ -141,13 +141,13 @@ export default async function AdminDashboard() {
     { label: "Active Clients",       value: hospitalCount,   icon: "hospitals",     href: "/admin/hospitals" },
     { label: "Open Leads",          value: leadCount,       icon: "leads",         href: "/admin/leads" },
     { label: "Open Opportunities",  value: openOpps,        icon: "opportunities", href: "/admin/opportunities" },
-    { label: "Closed Won",          value: closedWon,       icon: "won",           href: "/admin/opportunities" },
+    { label: "Discharged",           value: closedWon,       icon: "won",        href: "/admin/opportunities" },
     { label: "Pending Invoices",    value: pendingInvoices, icon: "invoices",      href: "/admin/invoices" },
   ];
 
   const stageColor: Record<string, string> = {
-    DISCOVERY: "#94a3b8", QUALIFICATION: "#fbbf24", DEMO: "#f59e0b",
-    PROPOSAL: "var(--nyx-accent)", NEGOTIATION: "#60a5fa", CLOSED_WON: "#34d399", CLOSED_LOST: "#f87171", ON_HOLD: "#94a3b8",
+    INQUIRY: "#94a3b8", CLINICAL_REVIEW: "#fbbf24", INSURANCE_AUTH: "#f59e0b",
+    ADMITTED: "var(--nyx-accent)", ACTIVE: "#60a5fa", DISCHARGED: "#34d399", DECLINED: "#f87171", ON_HOLD: "#94a3b8",
   };
 
   return (

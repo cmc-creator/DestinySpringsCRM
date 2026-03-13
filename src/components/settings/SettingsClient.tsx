@@ -522,7 +522,7 @@ function applyStoredBgs(themeKey: string) {
   const theme = THEMES.find(t => t.key === themeKey);
   const html  = document.documentElement;
   (["backgrounds", "sidebar", "cards"] as const).forEach(type => {
-    const stored = localStorage.getItem(`nyxaegis-bg-${themeKey}-${type}`);
+    const stored = localStorage.getItem(`destinysprings-bg-${themeKey}-${type}`);
     const cssVar = BG_VAR_MAP[type];
     if (stored) {
       html.style.setProperty(cssVar, `url('${stored}')`);
@@ -737,8 +737,8 @@ export default function SettingsClient() {
   const { data: session } = useSession();
   const isAdmin = session?.user?.role === "ADMIN";
   const [activeTheme, setActiveTheme]     = useState("luxury");
-  const [orgName, setOrgName]             = useState("NyxAegis");
-  const [supportEmail, setSupportEmail]   = useState("support@nyxaegis.com");
+  const [orgName, setOrgName]             = useState("Destiny Springs Healthcare");
+  const [supportEmail, setSupportEmail]   = useState("intake@destinysprings.com");
   const [notifs, setNotifs]               = useState({ email: true, push: false, digest: true, leads: true, contracts: false });
   const [devMsg, setDevMsg]               = useState("");
   const [devLoading, setDevLoading]       = useState<string | null>(null);
@@ -752,27 +752,27 @@ export default function SettingsClient() {
   const [bgTile, setBgTile]             = useState(false);
 
   useEffect(() => {
-    const stored = typeof window !== "undefined" ? localStorage.getItem("nyxaegis-theme") ?? "luxury" : "luxury";
+    const stored = typeof window !== "undefined" ? localStorage.getItem("destinysprings-theme") ?? "luxury" : "luxury";
     setActiveTheme(stored);
     applyTheme(stored);
-    const org = localStorage.getItem("nyxaegis-orgName");
+    const org = localStorage.getItem("destinysprings-orgName");
     if (org) setOrgName(org);
-    const em = localStorage.getItem("nyxaegis-supportEmail");
+    const em = localStorage.getItem("destinysprings-supportEmail");
     if (em) setSupportEmail(em);
-    const n = localStorage.getItem("nyxaegis-notifs");
+    const n = localStorage.getItem("destinysprings-notifs");
     if (n) try { setNotifs(JSON.parse(n)); } catch { /* ignore */ }
     // Load stored bg selections
     const sels: Record<string, string> = {};
     THEMES.forEach(t => {
       ["backgrounds", "sidebar", "cards"].forEach(type => {
-        const k = `nyxaegis-bg-${t.key}-${type}`;
+        const k = `destinysprings-bg-${t.key}-${type}`;
         const v = localStorage.getItem(k);
         if (v) sels[k] = v;
       });
     });
     setBgSelections(sels);
     // Load tile mode for current theme
-    const tile = localStorage.getItem(`nyxaegis-bg-tile-${stored}`) === "1";
+    const tile = localStorage.getItem(`destinysprings-bg-tile-${stored}`) === "1";
     setBgTile(tile);
     applyTileMode(tile);
   }, []);
@@ -788,15 +788,15 @@ export default function SettingsClient() {
 
   function selectTheme(key: string) {
     setActiveTheme(key);
-    localStorage.setItem("nyxaegis-theme", key);
+    localStorage.setItem("destinysprings-theme", key);
     applyTheme(key);
-    const tile = localStorage.getItem(`nyxaegis-bg-tile-${key}`) === "1";
+    const tile = localStorage.getItem(`destinysprings-bg-tile-${key}`) === "1";
     setBgTile(tile);
     applyTileMode(tile);
   }
 
   function selectBg(url: string) {
-    const lsKey  = `nyxaegis-bg-${activeTheme}-${bgTab}`;
+    const lsKey  = `destinysprings-bg-${activeTheme}-${bgTab}`;
     const cssVar = BG_VAR_MAP[bgTab];
     const theme  = THEMES.find(t => t.key === activeTheme);
     if (url) {
@@ -825,13 +825,13 @@ export default function SettingsClient() {
 
   function selectTile(tiled: boolean) {
     setBgTile(tiled);
-    localStorage.setItem(`nyxaegis-bg-tile-${activeTheme}`, tiled ? "1" : "0");
+    localStorage.setItem(`destinysprings-bg-tile-${activeTheme}`, tiled ? "1" : "0");
     applyTileMode(tiled);
   }
 
   function saveOrg() {
-    localStorage.setItem("nyxaegis-orgName", orgName);
-    localStorage.setItem("nyxaegis-supportEmail", supportEmail);
+    localStorage.setItem("destinysprings-orgName", orgName);
+    localStorage.setItem("destinysprings-supportEmail", supportEmail);
     setSaved(true);
     setTimeout(() => setSaved(false), 2200);
   }
@@ -839,7 +839,7 @@ export default function SettingsClient() {
   function setNotif(k: keyof typeof notifs, v: boolean) {
     const updated = { ...notifs, [k]: v };
     setNotifs(updated);
-    localStorage.setItem("nyxaegis-notifs", JSON.stringify(updated));
+    localStorage.setItem("destinysprings-notifs", JSON.stringify(updated));
   }
 
   async function devAction(action: string) {
@@ -943,8 +943,8 @@ export default function SettingsClient() {
               <button type="button" onClick={() => selectBg("")} style={{
                 flexShrink: 0, width: 68, height: 68, borderRadius: 8, display: "flex", flexDirection: "column",
                 alignItems: "center", justifyContent: "center", gap: 3, cursor: "pointer",
-                background: !bgSelections[`nyxaegis-bg-${activeTheme}-${bgTab}`] ? "var(--nyx-accent-dim)" : "rgba(0,0,0,0.25)",
-                border: `2px solid ${!bgSelections[`nyxaegis-bg-${activeTheme}-${bgTab}`] ? "var(--nyx-accent)" : "var(--nyx-border)"}`,
+                background: !bgSelections[`destinysprings-bg-${activeTheme}-${bgTab}`] ? "var(--nyx-accent-dim)" : "rgba(0,0,0,0.25)",
+                border: `2px solid ${!bgSelections[`destinysprings-bg-${activeTheme}-${bgTab}`] ? "var(--nyx-accent)" : "var(--nyx-border)"}`,
                 color: "var(--nyx-text-muted)", fontSize: "0.62rem", fontWeight: 600, transition: "all 0.15s",
               }}>
                 <span style={{ fontSize: "1.1rem", lineHeight: 1 }}>∅</span>
@@ -956,7 +956,7 @@ export default function SettingsClient() {
                   <code style={{ fontFamily: "monospace", fontSize: "0.68rem" }}>public/themes/{activeTheme}/{bgTab}/</code>
                 </div>
               ) : bgAssets.map(url => {
-                const isSelected = bgSelections[`nyxaegis-bg-${activeTheme}-${bgTab}`] === url;
+                const isSelected = bgSelections[`destinysprings-bg-${activeTheme}-${bgTab}`] === url;
                 return (
                   <button key={url} type="button" onClick={() => selectBg(url)} title={url.split("/").pop()} style={{
                     flexShrink: 0, width: 80, height: 68, borderRadius: 8, cursor: "pointer",

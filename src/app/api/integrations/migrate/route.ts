@@ -48,10 +48,11 @@ function safeDecimal(s: string): number | undefined {
 
 // Map user-supplied stage string → valid OpportunityStage enum value
 const STAGE_MAP: Record<string, string> = {
-  discovery: "DISCOVERY", qualification: "QUALIFICATION", demo: "DEMO",
-  proposal: "PROPOSAL", negotiation: "NEGOTIATION",
-  "closed won": "CLOSED_WON", won: "CLOSED_WON", closed_won: "CLOSED_WON",
-  "closed lost": "CLOSED_LOST", lost: "CLOSED_LOST", closed_lost: "CLOSED_LOST",
+  inquiry: "INQUIRY", "clinical review": "CLINICAL_REVIEW", clinical_review: "CLINICAL_REVIEW",
+  "insurance auth": "INSURANCE_AUTH", insurance_auth: "INSURANCE_AUTH",
+  admitted: "ADMITTED", active: "ACTIVE",
+  discharged: "DISCHARGED", "closed won": "DISCHARGED", won: "DISCHARGED", closed_won: "DISCHARGED",
+  declined: "DECLINED", "closed lost": "DECLINED", lost: "DECLINED", closed_lost: "DECLINED",
   "on hold": "ON_HOLD", on_hold: "ON_HOLD",
 };
 
@@ -75,13 +76,20 @@ const CONTACT_TYPE_MAP: Record<string, string> = {
 };
 
 const HOSPITAL_TYPE_MAP: Record<string, string> = {
-  "acute care": "ACUTE_CARE", "critical access": "CRITICAL_ACCESS",
-  specialty: "SPECIALTY", "health system": "HEALTH_SYSTEM",
-  ambulatory: "AMBULATORY", outpatient: "OUTPATIENT",
-  "long term care": "LONG_TERM_CARE", "behavioral health": "BEHAVIORAL_HEALTH",
-  rehabilitation: "REHABILITATION", "children's": "CHILDRENS",
-  "cancer center": "CANCER_CENTER", "urgent care": "URGENT_CARE",
-  pcp: "PCP", "private practice": "PRIVATE_PRACTICE", other: "OTHER",
+  "emergency department": "EMERGENCY_DEPARTMENT", "emergency room": "EMERGENCY_DEPARTMENT", er: "EMERGENCY_DEPARTMENT", ed: "EMERGENCY_DEPARTMENT",
+  "inpatient medical": "INPATIENT_MEDICAL", "inpatient": "INPATIENT_MEDICAL",
+  "primary care": "PRIMARY_CARE", pcp: "PRIMARY_CARE",
+  "outpatient psychiatry": "OUTPATIENT_PSYCHIATRY", "outpatient psych": "OUTPATIENT_PSYCHIATRY",
+  "iop": "IOP_PHP", "php": "IOP_PHP", "iop/php": "IOP_PHP",
+  "crisis stabilization": "CRISIS_STABILIZATION_UNIT", csu: "CRISIS_STABILIZATION_UNIT",
+  "crisis line": "CRISIS_LINE",
+  "court": "COURT_LEGAL", "legal": "COURT_LEGAL", "court ordered": "COURT_LEGAL",
+  "community mental health": "COMMUNITY_MENTAL_HEALTH", cmhc: "COMMUNITY_MENTAL_HEALTH",
+  "school counselor": "SCHOOL_COUNSELOR", "school": "SCHOOL_COUNSELOR",
+  "peer support": "PEER_SUPPORT",
+  "snf": "SNF_LTACH", "ltach": "SNF_LTACH", "skilled nursing": "SNF_LTACH",
+  "self referral": "SELF_REFERRAL", "self-referral": "SELF_REFERRAL",
+  other: "OTHER",
 };
 
 function mapEnum(value: string, map: Record<string, string>, fallback: string): string {
@@ -280,7 +288,7 @@ export async function POST(req: NextRequest) {
             title,
             hospitalId:  hospital.id,
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            stage:       mapEnum(stageRaw, STAGE_MAP, "DISCOVERY") as any,
+            stage:       mapEnum(stageRaw, STAGE_MAP, "INQUIRY") as any,
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             serviceLine: "OTHER" as any,
             value:       safeDecimal(valRaw) ?? undefined,

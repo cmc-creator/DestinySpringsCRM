@@ -31,8 +31,8 @@ export default async function RepDashboard() {
 
   if (!rep) redirect("/login");
 
-  const openOpps = rep.opportunities.filter(o => !["CLOSED_WON", "CLOSED_LOST"].includes(o.stage));
-  const closedWon = rep.opportunities.filter(o => o.stage === "CLOSED_WON");
+  const openOpps = rep.opportunities.filter(o => !["DISCHARGED", "DECLINED"].includes(o.stage));
+  const closedWon = rep.opportunities.filter(o => o.stage === "DISCHARGED");
   const pipelineValue = openOpps.reduce((s, o) => s + (o.value ? Number(o.value) : 0), 0);
 
   return (

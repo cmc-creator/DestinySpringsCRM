@@ -12,20 +12,19 @@ const TEXT = "var(--nyx-text)";
 const TEXT_MUTED = "var(--nyx-text-muted)";
 
 const HOSPITAL_TYPE_LABELS: Record<string, string> = {
-  ACUTE_CARE: "🏥 Acute Care",
-  CRITICAL_ACCESS: "🚨 Critical Access",
-  SPECIALTY: "⭐ Specialty",
-  HEALTH_SYSTEM: "🏛️ Health System",
-  AMBULATORY: "🏢 Ambulatory",
-  OUTPATIENT: "🏢 Outpatient",
-  LONG_TERM_CARE: "🏠 Long-Term Care",
-  BEHAVIORAL_HEALTH: "🧠 Behavioral Health",
-  REHABILITATION: "💪 Rehabilitation",
-  CHILDRENS: "🧒 Children's",
-  CANCER_CENTER: "🎗️ Cancer Center",
-  URGENT_CARE: "⚡ Urgent Care",
-  PCP: "👨‍⚕️ Primary Care (PCP)",
-  PRIVATE_PRACTICE: "🏠 Private Practice",
+  EMERGENCY_DEPARTMENT: "🚑 Emergency Department",
+  INPATIENT_MEDICAL: "🏥 Inpatient Medical",
+  PRIMARY_CARE: "👨‍⚕️ Primary Care",
+  OUTPATIENT_PSYCHIATRY: "🧠 Outpatient Psychiatry",
+  IOP_PHP: "📋 IOP / PHP Program",
+  CRISIS_STABILIZATION_UNIT: "⚡ Crisis Stabilization Unit",
+  CRISIS_LINE: "📞 Crisis Line",
+  COURT_LEGAL: "⚖️ Court / Legal",
+  COMMUNITY_MENTAL_HEALTH: "🏘️ Community Mental Health",
+  SCHOOL_COUNSELOR: "🏫 School Counselor",
+  PEER_SUPPORT: "🤝 Peer Support",
+  SNF_LTACH: "🛏️ SNF / LTACH",
+  SELF_REFERRAL: "👤 Self-Referral",
   OTHER: "🏷️ Other",
 };
 
@@ -41,7 +40,7 @@ export default async function AccountDashboard() {
     if (!type) return;
     await prisma.hospital.update({
       where: { userId: sess.user.id },
-      data: { hospitalType: type as "ACUTE_CARE" },
+      data: { hospitalType: type as "OTHER" },
     });
     revalidatePath("/account/dashboard");
   }
@@ -75,18 +74,18 @@ export default async function AccountDashboard() {
       <div style={{ textAlign: "center", padding: "80px 20px", color: TEXT_MUTED }}>
         <div style={{ fontSize: "3rem", marginBottom: 16 }}>🏥</div>
         <h2 style={{ color: TEXT, fontSize: "1.3rem", fontWeight: 700, marginBottom: 8 }}>No hospital profile found</h2>
-        <p>Contact your NyxAegis representative to set up your hospital account.</p>
+        <p>Contact Destiny Springs Intake to set up your facility account.</p>
       </div>
     );
   }
 
-  const activeOpps = hospital.opportunities.filter(o => !["CLOSED_WON", "CLOSED_LOST"].includes(o.stage));
+  const activeOpps = hospital.opportunities.filter(o => !["DISCHARGED", "DECLINED"].includes(o.stage));
   const unpaidInvoices = hospital.invoices.filter(i => i.status !== "PAID");
   const totalOwed = unpaidInvoices.reduce((s, i) => s + Number(i.totalAmount), 0);
 
   const stageColors: Record<string, string> = {
-    DISCOVERY: "#94a3b8", QUALIFICATION: "#fbbf24", DEMO: "#f59e0b",
-    PROPOSAL: "var(--nyx-accent)", NEGOTIATION: "#60a5fa", CLOSED_WON: "#34d399", CLOSED_LOST: "#f87171",
+    INQUIRY: "#94a3b8", CLINICAL_REVIEW: "#fbbf24", INSURANCE_AUTH: "#f59e0b",
+    ADMITTED: "var(--nyx-accent)", ACTIVE: "#60a5fa", DISCHARGED: "#34d399", DECLINED: "#f87171",
   };
 
   const invoiceStatusColors: Record<string, string> = {

@@ -69,10 +69,10 @@ export default async function AnalyticsPage() {
   }
   const monthlyRevenue: MonthRow[] = monthLabels.map(m => ({ month: m.split(" ")[0], value: monthMap.get(m) ?? 0 }));
 
-  const totalPipeline = oppsByStage.filter(o => !["CLOSED_WON","CLOSED_LOST"].includes(o.stage)).reduce((s, o) => s + o.value, 0);
-  const closedWonValue = oppsByStage.find(o => o.stage === "CLOSED_WON")?.value ?? 0;
-  const wonCount  = oppsByStage.find(o => o.stage === "CLOSED_WON")?.count ?? 0;
-  const lostCount = oppsByStage.find(o => o.stage === "CLOSED_LOST")?.count ?? 0;
+  const totalPipeline = oppsByStage.filter(o => !["DISCHARGED","DECLINED"].includes(o.stage)).reduce((s, o) => s + o.value, 0);
+  const closedWonValue = oppsByStage.find(o => o.stage === "DISCHARGED")?.value ?? 0;
+  const wonCount  = oppsByStage.find(o => o.stage === "DISCHARGED")?.count ?? 0;
+  const lostCount = oppsByStage.find(o => o.stage === "DECLINED")?.count ?? 0;
   const winRate   = wonCount + lostCount > 0 ? Math.round((wonCount / (wonCount + lostCount)) * 100) : 0;
   const activeLeads = leadsByStatus.filter(l => ["NEW","CONTACTED","QUALIFIED"].includes(l.status)).reduce((s, l) => s + l.count, 0);
 

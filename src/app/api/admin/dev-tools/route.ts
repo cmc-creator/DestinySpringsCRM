@@ -60,10 +60,10 @@ export async function POST(req: NextRequest) {
 
     if (hospitals.length > 0) {
       const demoOpps = [
-        { title: "Revenue Cycle Optimization", hospitalId: hospitals[0].id, stage: "PROPOSAL" as const, serviceLine: "REVENUE_CYCLE" as const, value: 125000, priority: "HIGH", assignedRepId: reps[0]?.id },
-        { title: "Telehealth Platform Rollout", hospitalId: hospitals[0].id, stage: "DEMO" as const, serviceLine: "TELEHEALTH" as const, value: 85000, priority: "MEDIUM", assignedRepId: reps[0]?.id },
-        { title: "Surgical Staffing Contract", hospitalId: hospitals[1]?.id ?? hospitals[0].id, stage: "NEGOTIATION" as const, serviceLine: "STAFFING" as const, value: 210000, priority: "HIGH", assignedRepId: reps[1]?.id ?? reps[0]?.id },
-        { title: "Lab IT Solutions", hospitalId: hospitals[2]?.id ?? hospitals[0].id, stage: "QUALIFICATION" as const, serviceLine: "IT_SOLUTIONS" as const, value: 67000, priority: "LOW", assignedRepId: reps[2]?.id ?? reps[0]?.id },
+        { title: "Adult Inpatient Psych Referral Pathway", hospitalId: hospitals[0].id, stage: "ADMITTED" as const, serviceLine: "ADULT_INPATIENT_PSYCH" as const, value: 0, priority: "HIGH", assignedRepId: reps[0]?.id },
+        { title: "Detox Track - ED Referral", hospitalId: hospitals[0].id, stage: "INSURANCE_AUTH" as const, serviceLine: "DETOX_STABILIZATION" as const, value: 0, priority: "MEDIUM", assignedRepId: reps[0]?.id },
+        { title: "Dual Diagnosis Step-Down", hospitalId: hospitals[1]?.id ?? hospitals[0].id, stage: "ACTIVE" as const, serviceLine: "DUAL_DIAGNOSIS" as const, value: 0, priority: "HIGH", assignedRepId: reps[1]?.id ?? reps[0]?.id },
+        { title: "Adolescent Psych Pathway", hospitalId: hospitals[2]?.id ?? hospitals[0].id, stage: "CLINICAL_REVIEW" as const, serviceLine: "ADOLESCENT_PSYCH" as const, value: 0, priority: "LOW", assignedRepId: reps[2]?.id ?? reps[0]?.id },
       ];
       await prisma.opportunity.createMany({ data: demoOpps });
     }

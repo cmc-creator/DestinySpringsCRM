@@ -2,8 +2,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { ActivityFeedPanel } from "@/components/activities/ActivityFeedPanel";
 
-type Stage = "DISCOVERY"|"QUALIFICATION"|"DEMO"|"PROPOSAL"|"NEGOTIATION"|"CLOSED_WON"|"CLOSED_LOST"|"ON_HOLD";
-type SvcLine = "CARDIOLOGY"|"ONCOLOGY"|"ORTHOPEDICS"|"NEUROLOGY"|"WOMENS_HEALTH"|"PEDIATRICS"|"BEHAVIORAL_HEALTH"|"PRIMARY_CARE"|"SURGICAL_SERVICES"|"EMERGENCY_MEDICINE"|"RADIOLOGY"|"LABORATORY"|"PHARMACY"|"REHABILITATION"|"HOME_HEALTH"|"TELEHEALTH"|"REVENUE_CYCLE"|"SUPPLY_CHAIN"|"IT_SOLUTIONS"|"STAFFING"|"OTHER";
+type Stage = "INQUIRY"|"CLINICAL_REVIEW"|"INSURANCE_AUTH"|"ADMITTED"|"ACTIVE"|"DISCHARGED"|"DECLINED"|"ON_HOLD";
+type SvcLine = "ADULT_INPATIENT_PSYCH"|"ADOLESCENT_PSYCH"|"GERIATRIC_PSYCH"|"DUAL_DIAGNOSIS"|"DETOX_STABILIZATION"|"CRISIS_STABILIZATION"|"PARTIAL_HOSPITALIZATION"|"INTENSIVE_OUTPATIENT"|"OUTPATIENT_THERAPY"|"MED_MGMT"|"COURT_ORDERED_TREATMENT"|"OTHER";
 
 interface Hospital { id: string; hospitalName: string }
 interface Rep { id: string; user: { name: string | null; email: string } }
@@ -20,17 +20,17 @@ const C = { card: "var(--nyx-card)", border: "var(--nyx-border)", cyan: "var(--n
 const inp: React.CSSProperties = { width: "100%", background: C.input, border: `1px solid ${C.border}`, borderRadius: 7, padding: "8px 12px", color: C.text, fontSize: "0.875rem", outline: "none", boxSizing: "border-box" };
 const sel: React.CSSProperties = { ...inp, appearance: "none" };
 
-const STAGES: Stage[] = ["DISCOVERY","QUALIFICATION","DEMO","PROPOSAL","NEGOTIATION","CLOSED_WON","CLOSED_LOST","ON_HOLD"];
+const STAGES: Stage[] = ["INQUIRY","CLINICAL_REVIEW","INSURANCE_AUTH","ADMITTED","ACTIVE","DISCHARGED","DECLINED","ON_HOLD"];
 const STAGE_CLR: Record<Stage, string> = {
-  DISCOVERY: "#94a3b8", QUALIFICATION: "#fbbf24", DEMO: "#f59e0b",
-  PROPOSAL: "var(--nyx-accent)", NEGOTIATION: "#60a5fa", CLOSED_WON: "#34d399", CLOSED_LOST: "#f87171", ON_HOLD: "#a78bfa",
+  INQUIRY: "#94a3b8", CLINICAL_REVIEW: "#fbbf24", INSURANCE_AUTH: "#f59e0b",
+  ADMITTED: "var(--nyx-accent)", ACTIVE: "#60a5fa", DISCHARGED: "#34d399", DECLINED: "#f87171", ON_HOLD: "#a78bfa",
 };
-const SVC_LINES: SvcLine[] = ["CARDIOLOGY","ONCOLOGY","ORTHOPEDICS","NEUROLOGY","WOMENS_HEALTH","PEDIATRICS","BEHAVIORAL_HEALTH","PRIMARY_CARE","SURGICAL_SERVICES","EMERGENCY_MEDICINE","RADIOLOGY","LABORATORY","PHARMACY","REHABILITATION","HOME_HEALTH","TELEHEALTH","REVENUE_CYCLE","SUPPLY_CHAIN","IT_SOLUTIONS","STAFFING","OTHER"];
+const SVC_LINES: SvcLine[] = ["ADULT_INPATIENT_PSYCH","ADOLESCENT_PSYCH","GERIATRIC_PSYCH","DUAL_DIAGNOSIS","DETOX_STABILIZATION","CRISIS_STABILIZATION","PARTIAL_HOSPITALIZATION","INTENSIVE_OUTPATIENT","OUTPATIENT_THERAPY","MED_MGMT","COURT_ORDERED_TREATMENT","OTHER"];
 const lbl = (s: string) => s.replace(/_/g, " ");
 const fmt = (v: string | number | null | undefined) => v ? `$${Number(v).toLocaleString()}` : "-";
 const fmtDate = (d: string) => new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 const isStale = (o: Opp) => {
-  if (o.stage === "CLOSED_WON" || o.stage === "CLOSED_LOST" || o.stage === "ON_HOLD") return false;
+  if (o.stage === "DISCHARGED" || o.stage === "DECLINED" || o.stage === "ON_HOLD") return false;
   const ref = o.updatedAt ?? o.createdAt;
   return (Date.now() - new Date(ref).getTime()) / 86_400_000 > 14;
 };
@@ -40,7 +40,7 @@ function OppModal({ opp, hospitals, reps, onClose, onSave, onDelete }: {
   opp: Opp | null; hospitals: Hospital[]; reps: Rep[]; onClose: () => void;
   onSave: (d: Partial<Opp>) => Promise<void>; onDelete?: () => Promise<void>;
 }) {
-  const [form, setForm] = useState<Partial<Opp>>(opp ?? { stage: "DISCOVERY", serviceLine: "OTHER", priority: "MEDIUM" });
+  const [form, setForm] = useState<Partial<Opp>>(opp ?? { stage: "INQUIRY", serviceLine: "OTHER", priority: "MEDIUM" });
   const [saving, setSaving] = useState(false);
   const [confirmDel, setConfirmDel] = useState(false);
   const set = (k: keyof Opp, v: unknown) => setForm(f => ({ ...f, [k]: v }));
@@ -79,7 +79,7 @@ function OppModal({ opp, hospitals, reps, onClose, onSave, onDelete }: {
             </div>
             <div>
               <label style={{ fontSize: "0.72rem", color: C.muted, display: "block", marginBottom: 4 }}>STAGE</label>
-              <select style={sel} value={form.stage ?? "DISCOVERY"} onChange={e => set("stage", e.target.value)}>
+              <select style={sel} value={form.stage ?? "INQUIRY"} onChange={e => set("stage", e.target.value)}>
                 {STAGES.map(s => <option key={s} value={s}>{lbl(s)}</option>)}
               </select>
             </div>
@@ -115,10 +115,10 @@ function OppModal({ opp, hospitals, reps, onClose, onSave, onDelete }: {
               <label style={{ fontSize: "0.72rem", color: C.muted, display: "block", marginBottom: 4 }}>NOTES</label>
               <textarea style={{ ...inp, minHeight: 60, resize: "vertical" }} value={form.notes ?? ""} onChange={e => set("notes", e.target.value)} placeholder="Internal notes…" />
             </div>
-            {(form.stage === "CLOSED_LOST") && (
+            {(form.stage === "DECLINED") && (
               <div style={{ gridColumn: "1/-1" }}>
                 <label style={{ fontSize: "0.72rem", color: C.muted, display: "block", marginBottom: 4 }}>LOST REASON</label>
-                <input style={inp} value={form.lostReason ?? ""} onChange={e => set("lostReason", e.target.value)} placeholder="Why was this opportunity lost?" />
+                <input style={inp} value={form.lostReason ?? ""} onChange={e => set("lostReason", e.target.value)} placeholder="Why was this admission declined?" />
               </div>
             )}
           </div>
@@ -174,15 +174,15 @@ export default function OpportunitiesClient({ hospitals, reps }: { hospitals: Ho
     setModal(null); await load();
   }
 
-  const totalWon = opps.filter(o => o.stage === "CLOSED_WON").reduce((s, o) => s + (o.value ? Number(o.value) : 0), 0);
-  const pipeline = opps.filter(o => !["CLOSED_WON","CLOSED_LOST"].includes(o.stage)).reduce((s, o) => s + (o.value ? Number(o.value) : 0), 0);
+  const totalWon = opps.filter(o => o.stage === "DISCHARGED").reduce((s, o) => s + (o.value ? Number(o.value) : 0), 0);
+  const pipeline = opps.filter(o => !["DISCHARGED","DECLINED"].includes(o.stage)).reduce((s, o) => s + (o.value ? Number(o.value) : 0), 0);
 
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20, flexWrap: "wrap", gap: 12 }}>
         <div>
           <p style={{ color: "var(--nyx-accent-label)", fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 4 }}>PIPELINE</p>
-          <h1 style={{ fontSize: "1.8rem", fontWeight: 900, color: C.text }}>Opportunities</h1>
+          <h2 style={{ fontSize: "1.8rem", fontWeight: 900, color: C.text }}>Admissions</h2>
         </div>
         <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
           <div style={{ display: "flex", gap: 8 }}>

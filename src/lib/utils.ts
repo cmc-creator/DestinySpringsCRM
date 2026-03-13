@@ -39,13 +39,13 @@ export function getInitials(name: string | null | undefined): string {
 
 export function stageBadgeClass(stage: string): string {
   const map: Record<string, string> = {
-    DISCOVERY: "badge-muted",
-    QUALIFICATION: "badge-warn",
-    DEMO: "badge-warn",
-    PROPOSAL: "badge-active",
-    NEGOTIATION: "badge-active",
-    CLOSED_WON: "badge-success",
-    CLOSED_LOST: "badge-danger",
+    INQUIRY: "badge-muted",
+    CLINICAL_REVIEW: "badge-warn",
+    INSURANCE_AUTH: "badge-warn",
+    ADMITTED: "badge-active",
+    ACTIVE: "badge-active",
+    DISCHARGED: "badge-success",
+    DECLINED: "badge-danger",
     ON_HOLD: "badge-muted",
   };
   return map[stage] ?? "badge-muted";

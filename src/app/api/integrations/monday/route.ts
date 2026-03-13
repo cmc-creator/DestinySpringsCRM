@@ -252,7 +252,7 @@ export async function POST(req: NextRequest) {
             data: {
               title,
               hospitalId: hospital.id,
-              stage:      "DISCOVERY",
+              stage:      "INQUIRY",
               serviceLine: "OTHER",
               value:       safeDecimal(valueStr) ?? undefined,
               closeDate:   safeDate(closeStr),
