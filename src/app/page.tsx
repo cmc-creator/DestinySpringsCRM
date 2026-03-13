@@ -34,7 +34,7 @@ const features = [
   { icon: icons.activity, color: "#a78bfa",   title: "Activity Logging",           desc: "Log visits, lunches, calls, and events in seconds - from anywhere. Auto-reminders for follow-ups so no relationship slips through the cracks." },
   { icon: icons.shield,   color: "var(--nyx-accent)", title: "Compliance Document Management", desc: "Store and track agreements, certifications, licenses, and training records. Automated expiration alerts keep your team compliant and audit-ready." },
   { icon: icons.mobile,   color: "#f59e0b",   title: "Mobile-First Design",        desc: "Built for people on the move. Log a visit, update a referral count, or review your territory from any device, anywhere." },
-  { icon: icons.ai,       color: "#a78bfa",   title: "AI-Powered Insights",         desc: "NyxAegis AI surfaces your highest-value referral sources, flags relationships at risk of going cold, and generates plain-English performance summaries - so you always know where to focus next." },
+  { icon: icons.ai,       color: "#a78bfa",   title: "AI-Powered Insights",         desc: "DS CRM AI surfaces your highest-value referral sources, flags relationships at risk of going cold, and generates plain-English performance summaries - so you always know where to focus next." },
 ];
 
 const workflow = [
@@ -130,9 +130,9 @@ export default function LandingPage() {
       {/* NAV */}
       <nav style={{ position: "sticky", top: 0, zIndex: 50, borderBottom: `1px solid ${C.border}`, padding: "0 2rem", display: "flex", alignItems: "center", justifyContent: "space-between", height: 64, background: "color-mix(in srgb, var(--nyx-bg) 85%, transparent)", backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <Image src="/Aegislogo.png" alt="NyxAegis" width={120} height={120} placeholder="empty" style={{ background: "transparent", filter: "drop-shadow(0 0 12px rgba(201,168,76,0.45))" }} />
+          <Image src="/Aegislogo.png" alt="Destiny Springs CRM" width={120} height={120} placeholder="empty" style={{ background: "transparent", filter: "drop-shadow(0 0 12px rgba(201,168,76,0.45))" }} />
           <div>
-            <span style={{ fontWeight: 900, fontSize: "1.15rem", letterSpacing: "-0.03em", display: "block", lineHeight: 1.1 }}>NyxAegis<sup style={{ fontSize: "0.6em", verticalAlign: "super", marginLeft: 1, color: "var(--nyx-accent)" }}>™</sup></span>
+            <span style={{ fontWeight: 900, fontSize: "1.15rem", letterSpacing: "-0.03em", display: "block", lineHeight: 1.1 }}>Destiny Springs CRM<sup style={{ fontSize: "0.6em", verticalAlign: "super", marginLeft: 1, color: "var(--nyx-accent)" }}>ï¿½</sup></span>
             <span style={{ fontSize: "0.62rem", color: C.muted, letterSpacing: "0.06em", fontStyle: "italic" }}>Where Relationships Become Referrals.</span>
           </div>
         </div>
@@ -150,7 +150,7 @@ export default function LandingPage() {
           <div>
             {/* Logo */}
             <div style={{ marginBottom: 24 }}>
-              <Image src="/Aegislogo.png" alt="NyxAegis" width={280} height={280} placeholder="empty" style={{ background: "transparent", filter: "drop-shadow(0 0 48px rgba(201,168,76,0.65))" }} />
+              <Image src="/Aegislogo.png" alt="Destiny Springs CRM" width={280} height={280} placeholder="empty" style={{ background: "transparent", filter: "drop-shadow(0 0 48px rgba(201,168,76,0.65))" }} />
             </div>
             {/* Badge pill */}
             <div style={{ marginBottom: 20 }}>
@@ -169,7 +169,7 @@ export default function LandingPage() {
             </h1>
             {/* Value prop line */}
             <p style={{ fontSize: "clamp(0.95rem, 1.8vw, 1.1rem)", fontWeight: 700, color: C.muted, letterSpacing: "0.04em", textTransform: "uppercase", marginBottom: 20 }}>
-              High-Tech Precision&nbsp;&nbsp;·&nbsp;&nbsp;High-End Design&nbsp;&nbsp;·&nbsp;&nbsp;Highly Affordable
+              High-Tech Precision&nbsp;&nbsp;ï¿½&nbsp;&nbsp;High-End Design&nbsp;&nbsp;ï¿½&nbsp;&nbsp;Highly Affordable
             </p>
             <p style={{ fontSize: "1.05rem", color: C.muted, maxWidth: 480, lineHeight: 1.75, marginBottom: 36 }}>
               Built for teams who build relationships - log visits, track referral sources, and prove your outreach is turning into actual results.
@@ -182,7 +182,7 @@ export default function LandingPage() {
                 Sign In
               </Link>
             </div>
-            <p style={{ fontSize: "0.75rem", color: C.dim }}>No credit card required · 14-day free trial · Cancel anytime</p>
+            <p style={{ fontSize: "0.75rem", color: C.dim }}>No credit card required ï¿½ 14-day free trial ï¿½ Cancel anytime</p>
           </div>
           <div style={{ position: "relative" }}>
             <div style={{ position: "absolute", inset: -1, background: "linear-gradient(135deg, var(--nyx-accent-mid), var(--nyx-accent-dim), transparent)", borderRadius: 18, filter: "blur(1px)" }} />
@@ -218,7 +218,7 @@ export default function LandingPage() {
                 <p style={{ margin: 0, fontSize: "0.72rem", color: "rgba(255,255,255,0.65)" }}>{img.sub}</p>
               </div>
               <div style={{ position: "absolute", top: 14, left: 14, background: "rgba(201,168,76,0.15)", border: "1px solid rgba(201,168,76,0.3)", borderRadius: 999, padding: "3px 10px" }}>
-                <span style={{ fontSize: "0.6rem", fontWeight: 700, color: "#C9A84C", letterSpacing: "0.1em" }}>NYXAEGIS</span>
+                <span style={{ fontSize: "0.6rem", fontWeight: 700, color: "#C9A84C", letterSpacing: "0.1em" }}>DS CRM</span>
               </div>
             </div>
           ))}
@@ -257,7 +257,7 @@ export default function LandingPage() {
               Your data,<br /><span style={{ color: "var(--nyx-accent)" }}>made smarter.</span>
             </h2>
             <p style={{ color: C.muted, fontSize: "1rem", lineHeight: 1.75, marginBottom: 28, maxWidth: 480 }}>
-              NyxAegis AI analyzes your referral patterns, predicts drop-offs before they happen, and surfaces your highest-value opportunities - all without touching a spreadsheet.
+              DS CRM AI analyzes your referral patterns, predicts admission drop-offs before they happen, and surfaces your highest-value sending facilities - all without touching a spreadsheet.
             </p>
             <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 14 }}>
               {[
@@ -277,7 +277,7 @@ export default function LandingPage() {
           <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 16, overflow: "hidden" }}>
             <div style={{ background: "rgba(167,139,250,0.07)", borderBottom: `1px solid ${C.border}`, padding: "14px 20px", display: "flex", alignItems: "center", gap: 10 }}>
               <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#a78bfa", boxShadow: "0 0 8px rgba(167,139,250,0.6)" }} />
-              <span style={{ fontSize: "0.75rem", fontWeight: 700, color: C.muted, letterSpacing: "0.08em" }}>NyxAegis AI Assistant</span>
+              <span style={{ fontSize: "0.75rem", fontWeight: 700, color: C.muted, letterSpacing: "0.08em" }}>DS AI Assistant</span>
             </div>
             <div style={{ padding: "24px 20px", display: "flex", flexDirection: "column", gap: 16 }}>
               <div style={{ display: "flex", justifyContent: "flex-end" }}>
@@ -433,10 +433,10 @@ export default function LandingPage() {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 32, marginBottom: 40 }}>
             {/* Brand block */}
             <div style={{ display: "flex", alignItems: "flex-start", gap: 16 }}>
-              <Image src="/Aegislogo.png" alt="NyxAegis" width={120} height={120} placeholder="empty" style={{ background: "transparent", filter: "drop-shadow(0 0 14px rgba(201,168,76,0.4))" }} />
+              <Image src="/Aegislogo.png" alt="Destiny Springs CRM" width={120} height={120} placeholder="empty" style={{ background: "transparent", filter: "drop-shadow(0 0 14px rgba(201,168,76,0.4))" }} />
               <div>
                 <p style={{ margin: "0 0 4px", fontWeight: 900, fontSize: "1.1rem", color: C.text, letterSpacing: "-0.02em" }}>
-                  NyxAegis<sup style={{ fontSize: "0.55em", verticalAlign: "super", marginLeft: 2, color: "var(--nyx-accent)" }}>™</sup>
+                  Destiny Springs CRM<sup style={{ fontSize: "0.55em", verticalAlign: "super", marginLeft: 2, color: "var(--nyx-accent)" }}>ï¿½</sup>
                 </p>
                 <p style={{ margin: "0 0 8px", fontSize: "0.85rem", color: "var(--nyx-accent)", fontStyle: "italic", fontWeight: 600 }}>Where Relationships Become Referrals.</p>
                 <p style={{ margin: 0, fontSize: "0.75rem", color: C.dim, maxWidth: 280, lineHeight: 1.6 }}>Purpose-built CRM for BD teams tracking referral sources and proving outreach ROI in the field.</p>
@@ -465,7 +465,7 @@ export default function LandingPage() {
           {/* Footer bottom */}
           <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 20, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
             <p style={{ margin: 0, fontSize: "0.75rem", color: C.dim }}>
-              &copy; 2026 Destiny Springs Healthcare. All rights reserved. NyxAegis&#8482; is a trademark of Destiny Springs Healthcare.
+              &copy; 2026 Destiny Springs Healthcare. All rights reserved. Destiny Springs CRM&#8482; is a trademark of Destiny Springs Healthcare.
             </p>
             <p style={{ margin: 0, fontSize: "0.72rem", color: C.dim, fontStyle: "italic" }}>Where Relationships Become Referrals.&#8482;</p>
           </div>

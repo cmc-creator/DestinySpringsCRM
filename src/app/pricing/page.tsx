@@ -92,7 +92,7 @@ export default function PricingPage() {
             <path d="M16 6 L26 12 L26 20 L16 26 L6 20 L6 12 Z" stroke={CYAN} strokeWidth="1.5" fill="none" strokeOpacity="0.7"/>
             <circle cx="16" cy="16" r="4" fill={CYAN} fillOpacity="0.8"/>
           </svg>
-          <span style={{ fontWeight: 900, color: TEXT }}>NyxAegis</span>
+          <span style={{ fontWeight: 900, color: TEXT }}>Destiny Springs CRM</span>
         </Link>
         <div style={{ display: "flex", gap: 16 }}>
           <Link href="/login" style={{ color: "rgba(216,232,244,0.5)", textDecoration: "none", fontSize: "0.875rem", fontWeight: 500 }}>Sign In</Link>

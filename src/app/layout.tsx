@@ -12,7 +12,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "NyxAegis | Destiny Springs Healthcare",
+  title: "Destiny Springs CRM | Behavioral Health",
   description: "Behavioral Health CRM — Admission pipeline, referral tracking, and census management for Destiny Springs Healthcare.",
   icons: { icon: "/icon.svg", shortcut: "/icon.svg" },
 };

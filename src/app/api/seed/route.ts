@@ -6,7 +6,8 @@ export const maxDuration = 60;
 
 export async function GET(req: NextRequest) {
   const secret = req.nextUrl.searchParams.get("secret");
-  if (!secret || secret !== "destinysprings-seed-2026") {
+  const expectedSecret = process.env.SEED_SECRET;
+  if (!secret || !expectedSecret || secret !== expectedSecret) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

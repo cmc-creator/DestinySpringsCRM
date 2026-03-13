@@ -51,7 +51,7 @@ export default function SignupPage() {
               <path d="M16 6 L26 12 L26 20 L16 26 L6 20 L6 12 Z" stroke={CYAN} strokeWidth="1.5" fill="none" strokeOpacity="0.7"/>
               <circle cx="16" cy="16" r="4" fill={CYAN} fillOpacity="0.8"/>
             </svg>
-            <span style={{ fontWeight: 900, fontSize: "1.1rem", color: "#d8e8f4" }}>NyxAegis</span>
+            <span style={{ fontWeight: 900, fontSize: "1.1rem", color: "#d8e8f4" }}>Destiny Springs CRM</span>
           </Link>
           <h1 style={{ fontSize: "1.8rem", fontWeight: 900, color: "#d8e8f4", marginBottom: 8, letterSpacing: "-0.02em" }}>Request Access</h1>
           <p style={{ color: "rgba(216,232,244,0.5)", fontSize: "0.9rem" }}>Join the BD platform</p>
