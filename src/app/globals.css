@@ -1366,3 +1366,44 @@ img[data-nimg] {
     0 2px 14px rgba(0,0,0,0.10);
   animation: none;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Mobile-responsive sidebar  ≤ 768 px
+   ══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  /* ── Hamburger & close toggle buttons ─────────────────────────────────── */
+  .nyx-hamburger { display: flex !important; }
+
+  /* ── Sidebar: slide off-screen by default ─────────────────────────────── */
+  .nyx-sidebar {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    height: 100dvh !important;
+    z-index: 500 !important;
+    transform: translateX(-100%);
+    transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+    background: var(--nyx-sidebar-bg, var(--nyx-bg)) !important;
+    box-shadow: none;
+  }
+
+  /* ── Sidebar: slide in when open ──────────────────────────────────────── */
+  .nyx-sidebar.is-open {
+    transform: translateX(0);
+    box-shadow: 4px 0 32px rgba(0, 0, 0, 0.5);
+  }
+
+  /* ── Backdrop overlay ─────────────────────────────────────────────────── */
+  .nyx-mobile-overlay {
+    display: block !important;
+    position: fixed !important;
+    inset: 0 !important;
+    background: rgba(0, 0, 0, 0.55) !important;
+    z-index: 400 !important;
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+  }
+
+  /* ── Viewport: prevent horizontal scroll ──────────────────────────────── */
+  body { overflow-x: hidden; }
+}

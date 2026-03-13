@@ -245,10 +245,10 @@ export function Sidebar({ role, userName, userEmail }: SidebarProps) {
         <div style={{ display: "flex", alignItems: "center", gap: 9, justifyContent: "space-between" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
           <div style={{ width: 34, height: 34, borderRadius: 8, overflow: "hidden", flexShrink: 0 }}>
-            <Image src="/Aegislogo.png" alt="NyxAegis" width={34} height={34} style={{ objectFit: "cover", width: "100%", height: "100%" }} />
+            <Image src="/Aegislogo.png" alt="Destiny Springs" width={34} height={34} style={{ objectFit: "cover", width: "100%", height: "100%" }} />
           </div>
           <div>
-            <div style={{ fontWeight: 900, fontSize: "0.95rem", color: TEXT, letterSpacing: "-0.01em", lineHeight: 1 }}>NyxAegis</div>
+            <div style={{ fontWeight: 900, fontSize: "0.95rem", color: TEXT, letterSpacing: "-0.01em", lineHeight: 1 }}>Destiny Springs</div>
             <div style={{ fontSize: "0.62rem", color: TEXT_MUTED, letterSpacing: "0.08em", marginTop: 2 }}>{role === "ADMIN" ? "ADMIN" : role === "REP" ? "BD REP" : "ACCOUNT"}</div>
           </div>
           </div>
