@@ -174,7 +174,7 @@ export async function POST(req: NextRequest) {
         data: {
           name: referrerName ?? `Provider NPI ${referrerNpi}`,
           npi: referrerNpi ?? undefined,
-          type: "PHYSICIAN",
+          type: "PRIMARY_CARE_PHYSICIAN",
         },
       });
     }

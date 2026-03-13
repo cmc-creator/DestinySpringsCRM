@@ -61,7 +61,7 @@ type IntegrationConfig = {
   imports: { createdAt: string; imported: number; errors: number; method: string }[];
 };
 
-const empty = { name:"", type:"PHYSICIAN", specialty:"", practiceName:"", npi:"", contactName:"", email:"", phone:"", city:"", state:"", monthlyGoal:"", notes:"" };
+const empty = { name:"", type:"PRIMARY_CARE_PHYSICIAN", specialty:"", practiceName:"", npi:"", contactName:"", email:"", phone:"", city:"", state:"", monthlyGoal:"", notes:"" };
 
 export default function ReferralSourcesPage() {
   const [sources, setSources] = useState<Source[]>([]);

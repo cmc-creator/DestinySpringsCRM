@@ -180,7 +180,7 @@ export async function POST(req: NextRequest) {
           data: {
             name: providerName,
             npi,
-            type: "PHYSICIAN",
+            type: "PRIMARY_CARE_PHYSICIAN",
           },
         });
       }
