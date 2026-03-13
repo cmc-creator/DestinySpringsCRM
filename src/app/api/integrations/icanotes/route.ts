@@ -134,7 +134,7 @@ export async function POST(req: NextRequest) {
           contactName:     referringProvider,
           source:          "REFERRAL",
           status:          "NEW",
-          hospitalType:    "BEHAVIORAL_HEALTH",
+          hospitalType:    "OUTPATIENT_PSYCHIATRY",
           serviceInterest: serviceRequested || undefined,
           notes,
           createdAt:       parsedDate,
