@@ -49,11 +49,12 @@ export async function POST(req: NextRequest) {
     }
 
     const demoLeads = [
-      { hospitalName: "St. Mary's Medical Center", city: "Dallas", state: "TX", contactName: "Dr. James Wright", contactTitle: "CMO", contactEmail: "jwright@stmarys.org", status: "QUALIFIED" as const, source: "REFERRAL" as const, estimatedValue: 125000, assignedRepId: reps[0]?.id },
-      { hospitalName: "Coastal Health Network", city: "Miami", state: "FL", contactName: "Sarah Chen", contactTitle: "CFO", status: "NEW" as const, source: "CONFERENCE" as const, estimatedValue: 89000, assignedRepId: reps[0]?.id },
-      { hospitalName: "Blue Ridge Regional", city: "Asheville", state: "NC", contactName: "Mike Torres", contactTitle: "CEO", status: "PROPOSAL_SENT" as const, source: "COLD_OUTREACH" as const, estimatedValue: 210000, assignedRepId: reps[1]?.id ?? reps[0]?.id },
-      { hospitalName: "Midwest Children's Hospital", city: "Chicago", state: "IL", contactName: "Dr. Amy Patel", contactTitle: "CNO", status: "CONTACTED" as const, source: "INBOUND" as const, estimatedValue: 175000, assignedRepId: reps[1]?.id ?? reps[0]?.id },
-      { hospitalName: "Pacific Oncology Center", city: "Seattle", state: "WA", contactName: "Robert Kim", contactTitle: "COO", status: "NEGOTIATING" as const, source: "LINKEDIN" as const, estimatedValue: 340000, assignedRepId: reps[2]?.id ?? reps[0]?.id },
+      { hospitalName: "HonorHealth Deer Valley Medical Center", city: "Phoenix", state: "AZ", contactName: "Dr. Michelle Nguyen", contactTitle: "ED Medical Director", contactEmail: "m.nguyen@honorhealth.org", status: "QUALIFIED" as const, source: "REFERRAL" as const, estimatedValue: 0, assignedRepId: reps[0]?.id },
+      { hospitalName: "Abrazo Central Campus", city: "Phoenix", state: "AZ", contactName: "Rachel Ford", contactTitle: "BH Care Coordinator", status: "NEW" as const, source: "COLD_OUTREACH" as const, estimatedValue: 0, assignedRepId: reps[0]?.id },
+      { hospitalName: "Dignity Health - St. Joseph's Hospital", city: "Phoenix", state: "AZ", contactName: "Dr. Kevin Park", contactTitle: "Psychiatry Department Chair", status: "PROPOSAL_SENT" as const, source: "CONFERENCE" as const, estimatedValue: 0, assignedRepId: reps[1]?.id ?? reps[0]?.id },
+      { hospitalName: "Maricopa County Probation Department", city: "Phoenix", state: "AZ", contactName: "Officer Sandra Ruiz", contactTitle: "Senior Probation Officer", status: "CONTACTED" as const, source: "INBOUND" as const, estimatedValue: 0, assignedRepId: reps[1]?.id ?? reps[0]?.id },
+      { hospitalName: "Southern Arizona Mental Health Corp", city: "Tucson", state: "AZ", contactName: "Dr. Thomas Ely", contactTitle: "Clinical Director", status: "NEGOTIATING" as const, source: "EXISTING_RELATIONSHIP" as const, estimatedValue: 0, assignedRepId: reps[2]?.id ?? reps[0]?.id },
+      { hospitalName: "Banner Desert Medical Center ED", city: "Mesa", state: "AZ", contactName: "Ashley Tran", contactTitle: "Social Work Supervisor", status: "NEW" as const, source: "REFERRAL" as const, estimatedValue: 0, assignedRepId: reps[2]?.id ?? reps[0]?.id },
     ];
 
     await prisma.lead.createMany({ data: demoLeads });
