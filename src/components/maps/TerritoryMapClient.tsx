@@ -60,8 +60,8 @@ export default function TerritoryMapClient({ hospitals, repTerritories }: Props)
       });
 
       const map = L.map(containerRef.current!, {
-        center: [39.5, -98.35],
-        zoom: 4,
+        center: [34.3, -111.5],
+        zoom: 6,
         minZoom: 3,
         maxZoom: 12,
         scrollWheelZoom: true,
