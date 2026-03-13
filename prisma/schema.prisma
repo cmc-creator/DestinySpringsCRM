@@ -860,7 +860,7 @@ enum IntegrationMethod {
 model ReferralSource {
   id           String             @id @default(cuid())
   name         String
-  type         ReferralSourceType @default(PHYSICIAN)
+  type         ReferralSourceType @default(OTHER)
   specialty    String?
   practiceName String?
   npi          String?
