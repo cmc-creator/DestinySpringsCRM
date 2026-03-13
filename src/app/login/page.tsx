@@ -10,7 +10,7 @@ function getRoleHome(role?: string) {
     case "ADMIN":   return "/admin/dashboard";
     case "REP":     return "/rep/dashboard";
     case "ACCOUNT": return "/account/dashboard";
-    default:        return "/admin/dashboard";
+    default:        return null;
   }
 }
 
@@ -44,8 +44,17 @@ function LoginForm() {
       } else {
         // Get role from session to redirect to the correct portal
         const session = await getSession();
+        const role = session?.user?.role as string | undefined;
+        const home = getRoleHome(role);
+        if (!home) {
+          // Session wasn't readable — likely missing AUTH_SECRET in env
+          setError("Sign-in succeeded but session could not be established. Check AUTH_SECRET is set.");
+          return;
+        }
         const callbackUrl = searchParams.get("callbackUrl");
-        const destination = callbackUrl ?? getRoleHome(session?.user?.role as string | undefined);
+        // Don't follow callbackUrl back to /login to avoid redirect loops
+        const isSafeCallback = callbackUrl && !callbackUrl.startsWith("/login");
+        const destination = isSafeCallback ? callbackUrl : home;
         router.push(destination);
         router.refresh();
       }
