@@ -23,13 +23,24 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             where: { email: credentials.email as string },
           });
         } catch (err) {
-          // Surface DB errors as a readable message instead of opaque "Configuration"
+          console.error("[auth] DB error during findUnique:", err);
           throw new Error(`DB_ERROR: ${err instanceof Error ? err.message : String(err)}`);
         }
 
+        console.log("[auth] Login attempt for:", credentials.email, "| user found:", !!user);
+
         if (!user || !user.password) return null;
 
-        const isValid = await bcrypt.compare(credentials.password as string, user.password);
+        let isValid = false;
+        try {
+          isValid = await bcrypt.compare(credentials.password as string, user.password);
+        } catch (err) {
+          console.error("[auth] bcrypt error:", err);
+          return null;
+        }
+
+        console.log("[auth] Password valid:", isValid, "| role:", user.role);
+
         if (!isValid) return null;
 
         return { id: user.id, email: user.email, name: user.name, role: user.role };
