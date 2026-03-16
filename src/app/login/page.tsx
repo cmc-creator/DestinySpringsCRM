@@ -36,7 +36,7 @@ function LoginForm() {
   // Catch NextAuth redirect errors (e.g. /login?error=CredentialsSignin)
   useEffect(() => {
     const urlError = searchParams.get("error");
-    if (urlError) setError(`Sign-in failed: ${urlError}. Check your email and password.`);
+    if (urlError) setError(`Sign-in failed: ${urlError}`);
   }, [searchParams]);
 
   async function handleSubmit(e: React.FormEvent) {

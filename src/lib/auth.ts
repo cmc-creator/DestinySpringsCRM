@@ -17,9 +17,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
 
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email as string },
-        });
+        let user;
+        try {
+          user = await prisma.user.findUnique({
+            where: { email: credentials.email as string },
+          });
+        } catch (err) {
+          // Surface DB errors as a readable message instead of opaque "Configuration"
+          throw new Error(`DB_ERROR: ${err instanceof Error ? err.message : String(err)}`);
+        }
 
         if (!user || !user.password) return null;
 
