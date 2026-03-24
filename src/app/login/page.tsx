@@ -84,7 +84,7 @@ function LoginForm() {
     <div
       style={{
         background: BG,
-        minHeight: "100vh",
+        minHeight: "100dvh",
         display: "flex",
         flexDirection: "column",
         fontFamily: "system-ui, -apple-system, sans-serif",
@@ -93,107 +93,21 @@ function LoginForm() {
     >
       <div
         style={{
-          flex: "0 0 45%",
-          background: "var(--nyx-accent-dim)",
-          borderRight: "1px solid var(--nyx-accent-dim)",
-          padding: "60px 48px",
-          display: "none",
-          flexDirection: "column",
-          justifyContent: "space-between",
-          position: "relative",
-          overflow: "hidden",
-        }}
-        className="login-left-panel"
-      >
-        <div
-          style={{
-            position: "absolute",
-            top: "20%",
-            left: "10%",
-            width: 300,
-            height: 300,
-            borderRadius: "50%",
-            background: "radial-gradient(circle, var(--nyx-accent-dim) 0%, transparent 70%)",
-            pointerEvents: "none",
-          }}
-        />
-
-        <div>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 64 }}>
-            <Image src="/Aegislogo.png" alt="NyxAegis" width={34} height={34} style={{ objectFit: "contain" }} />
-            <span style={{ fontWeight: 900, fontSize: "1.2rem", color: "#d8e8f4" }}>NyxAegis</span>
-          </div>
-
-          <div className="login-fade-up">
-            <h1
-              style={{
-                fontSize: "2.2rem",
-                fontWeight: 900,
-                color: "#d8e8f4",
-                lineHeight: 1.15,
-                marginBottom: 16,
-                letterSpacing: "-0.02em",
-              }}
-            >
-              BD
-              <br />
-              <span className="login-text-glow" style={{ color: CYAN }}>
-                Command Center
-              </span>
-            </h1>
-
-            <p style={{ color: "rgba(216,232,244,0.55)", fontSize: "1rem", lineHeight: 1.7, maxWidth: 320, marginBottom: 40 }}>
-              Manage accounts, track your opportunity pipeline, and grow your BD business - all from one platform.
-            </p>
-
-            <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-              {[
-                { icon: "🏥", text: "360° account management" },
-                { icon: "📈", text: "Live opportunity pipeline tracking" },
-                { icon: "📍", text: "Geographic territory management" },
-                { icon: "🔒", text: "HIPAA compliance document storage" },
-              ].map((item) => (
-                <div key={item.text} style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <span style={{ fontSize: "1.3rem" }}>{item.icon}</span>
-                  <span style={{ fontSize: "0.9rem", color: "rgba(216,232,244,0.7)" }}>{item.text}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div style={{ display: "flex", gap: 24 }}>
-          {["HIPAA Ready", "SOC 2", "BD"].map((badge) => (
-            <div
-              key={badge}
-              style={{
-                background: "var(--nyx-accent-dim)",
-                border: "1px solid var(--nyx-accent-mid)",
-                borderRadius: 6,
-                padding: "6px 12px",
-                fontSize: "0.7rem",
-                color: CYAN,
-                fontWeight: 600,
-                letterSpacing: "0.08em",
-              }}
-            >
-              {badge}
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div
-        style={{
           flex: 1,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          padding: "40px 32px",
+          padding: "24px 16px",
+          width: "100%",
+          minHeight: "100dvh",
         }}
         className="login-form-panel"
       >
-        <div className="login-slide-in login-form-card" style={{ width: "100%", maxWidth: 400 }}>
+        <div className="login-slide-in login-form-card" style={{ width: "100%", maxWidth: 460 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginBottom: 18 }}>
+            <Image src="/Aegislogo.png" alt="Destiny Springs" width={34} height={34} style={{ objectFit: "contain" }} />
+            <span style={{ fontWeight: 900, fontSize: "1.05rem", color: "#d8e8f4" }}>Destiny Springs</span>
+          </div>
           <h2 style={{ fontSize: "1.8rem", fontWeight: 800, color: "#d8e8f4", marginBottom: 8, letterSpacing: "-0.02em" }}>Welcome back</h2>
           <p style={{ color: "rgba(216,232,244,0.5)", marginBottom: 32, fontSize: "0.9rem" }}>Sign in to Destiny Springs CRM</p>
 
@@ -274,47 +188,16 @@ function LoginForm() {
       </div>
 
       <style>{`
-        @media (min-width: 981px) {
-          .login-container {
-            flex-direction: row !important;
-          }
-          .login-left-panel {
-            display: flex !important;
-          }
-        }
-
-        @media (max-width: 980px) {
-          .login-container {
-            flex-direction: column !important;
-            min-height: 100dvh;
-          }
-          .login-left-panel {
-            display: none !important;
-          }
-          .login-form-panel {
-            flex: 1 !important;
-            width: 100% !important;
-            padding: 24px 16px !important;
-            align-items: stretch !important;
-            justify-content: flex-start !important;
-          }
-          .login-slide-in {
-            max-width: 100% !important;
-            animation: none !important;
-          }
-          .login-form-card {
-            background: rgba(255,255,255,0.02);
-            border: 1px solid var(--nyx-accent-dim);
-            border-radius: 14px;
-            padding: 18px 14px;
-          }
+        .login-form-card {
+          background: rgba(255,255,255,0.02);
+          border: 1px solid var(--nyx-accent-dim);
+          border-radius: 14px;
+          padding: 20px 16px;
         }
 
         @media (max-width: 560px) {
           .login-form-panel {
             padding: 12px 12px !important;
-            min-height: 100dvh;
-            justify-content: flex-start;
             padding-top: 20px !important;
           }
           .login-form-card {
