@@ -1,5 +1,5 @@
 ﻿import { prisma } from "@/lib/prisma";
-import { HospitalType } from "@prisma/client";
+import { HospitalType, Prisma } from "@prisma/client";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
@@ -46,7 +46,15 @@ export default async function AccountDashboard() {
     revalidatePath("/account/dashboard");
   }
 
-  let hospital: Awaited<ReturnType<typeof prisma.hospital.findUnique>>;
+  type HospitalWithRelations = Prisma.HospitalGetPayload<{
+    include: {
+      opportunities: true;
+      invoices: true;
+      contracts: true;
+      activities: true;
+    };
+  }>;
+  let hospital: HospitalWithRelations | null;
   try {
     hospital = await prisma.hospital.findUnique({
       where: { userId: session.user.id },
