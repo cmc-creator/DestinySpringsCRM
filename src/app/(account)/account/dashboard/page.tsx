@@ -1,4 +1,5 @@
 ﻿import { prisma } from "@/lib/prisma";
+import { HospitalType } from "@prisma/client";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
@@ -40,7 +41,7 @@ export default async function AccountDashboard() {
     if (!type || !(type in HOSPITAL_TYPE_LABELS)) return;
     await prisma.hospital.update({
       where: { userId: sess.user.id },
-      data: { hospitalType: type as keyof typeof HOSPITAL_TYPE_LABELS },
+      data: { hospitalType: type as HospitalType },
     });
     revalidatePath("/account/dashboard");
   }
