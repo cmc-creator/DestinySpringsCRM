@@ -12,8 +12,8 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "Destiny Springs CRM | Behavioral Health",
-  description: "Behavioral Health CRM — Admission pipeline, referral tracking, and census management for Destiny Springs Healthcare.",
+  title: "Destiny Springs Hospital CRM",
+  description: "Behavioral Health CRM for Destiny Springs Hospital, including admissions pipeline, referral tracking, and census management.",
   icons: { icon: "/icon.svg", shortcut: "/icon.svg" },
 };
 
@@ -26,7 +26,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="apple-touch-icon" href="/Aegislogo.png" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <meta name="apple-mobile-web-app-title" content="DS CRM" />
+        <meta name="apple-mobile-web-app-title" content="Destiny Springs Hospital" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="theme-color" content="#C9A84C" />
         {/* Apply saved theme immediately — prevents flash of wrong theme */}

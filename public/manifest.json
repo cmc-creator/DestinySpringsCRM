@@ -1,7 +1,7 @@
 {
-  "name": "NyxAegis CRM",
-  "short_name": "NyxAegis",
-  "description": "Business Development CRM Platform for high-performance BD teams",
+  "name": "Destiny Springs Hospital CRM",
+  "short_name": "DS Hospital",
+  "description": "Bespoke CRM platform for Destiny Springs Hospital.",
   "start_url": "/admin/dashboard",
   "display": "standalone",
   "background_color": "#0a0f1a",

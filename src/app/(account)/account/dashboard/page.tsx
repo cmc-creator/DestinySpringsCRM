@@ -12,20 +12,20 @@ const TEXT = "var(--nyx-text)";
 const TEXT_MUTED = "var(--nyx-text-muted)";
 
 const HOSPITAL_TYPE_LABELS: Record<string, string> = {
-  EMERGENCY_DEPARTMENT: "🚑 Emergency Department",
-  INPATIENT_MEDICAL: "🏥 Inpatient Medical",
-  PRIMARY_CARE: "👨‍⚕️ Primary Care",
-  OUTPATIENT_PSYCHIATRY: "🧠 Outpatient Psychiatry",
-  IOP_PHP: "📋 IOP / PHP Program",
-  CRISIS_STABILIZATION_UNIT: "⚡ Crisis Stabilization Unit",
-  CRISIS_LINE: "📞 Crisis Line",
-  COURT_LEGAL: "⚖️ Court / Legal",
-  COMMUNITY_MENTAL_HEALTH: "🏘️ Community Mental Health",
-  SCHOOL_COUNSELOR: "🏫 School Counselor",
-  PEER_SUPPORT: "🤝 Peer Support",
-  SNF_LTACH: "🛏️ SNF / LTACH",
-  SELF_REFERRAL: "👤 Self-Referral",
-  OTHER: "🏷️ Other",
+  EMERGENCY_DEPARTMENT: "Emergency Department",
+  INPATIENT_MEDICAL: "Inpatient Medical",
+  PRIMARY_CARE: "Primary Care",
+  OUTPATIENT_PSYCHIATRY: "Outpatient Psychiatry",
+  IOP_PHP: "IOP / PHP Program",
+  CRISIS_STABILIZATION_UNIT: "Crisis Stabilization Unit",
+  CRISIS_LINE: "Crisis Line",
+  COURT_LEGAL: "Court / Legal",
+  COMMUNITY_MENTAL_HEALTH: "Community Mental Health",
+  SCHOOL_COUNSELOR: "School Counselor",
+  PEER_SUPPORT: "Peer Support",
+  SNF_LTACH: "SNF / LTACH",
+  SELF_REFERRAL: "Self-Referral",
+  OTHER: "Other",
 };
 
 export default async function AccountDashboard() {
@@ -37,37 +37,47 @@ export default async function AccountDashboard() {
     const sess = await auth();
     if (!sess) return;
     const type = formData.get("type") as string;
-    if (!type) return;
+    if (!type || !(type in HOSPITAL_TYPE_LABELS)) return;
     await prisma.hospital.update({
       where: { userId: sess.user.id },
-      data: { hospitalType: type as "OTHER" },
+      data: { hospitalType: type as keyof typeof HOSPITAL_TYPE_LABELS },
     });
     revalidatePath("/account/dashboard");
   }
 
-  const hospital = await prisma.hospital.findUnique({
-    where: { userId: session.user.id },
-    include: {
-      opportunities: {
-        orderBy: { updatedAt: "desc" },
-        take: 5,
+  let hospital: Awaited<ReturnType<typeof prisma.hospital.findUnique>>;
+  try {
+    hospital = await prisma.hospital.findUnique({
+      where: { userId: session.user.id },
+      include: {
+        opportunities: {
+          orderBy: { updatedAt: "desc" },
+          take: 5,
+        },
+        invoices: {
+          orderBy: { createdAt: "desc" },
+          take: 4,
+          where: { status: { not: "VOID" } },
+        },
+        contracts: {
+          orderBy: { createdAt: "desc" },
+          take: 3,
+          where: { status: { in: ["ACTIVE", "SIGNED", "SENT"] } },
+        },
+        activities: {
+          orderBy: { createdAt: "desc" },
+          take: 5,
+        },
       },
-      invoices: {
-        orderBy: { createdAt: "desc" },
-        take: 4,
-        where: { status: { not: "VOID" } },
-      },
-      contracts: {
-        orderBy: { createdAt: "desc" },
-        take: 3,
-        where: { status: { in: ["ACTIVE", "SIGNED", "SENT"] } },
-      },
-      activities: {
-        orderBy: { createdAt: "desc" },
-        take: 5,
-      },
-    },
-  });
+    });
+  } catch {
+    return (
+      <div style={{ textAlign: "center", padding: "80px 20px", color: TEXT_MUTED }}>
+        <div style={{ fontSize: "2rem", marginBottom: 10 }}>Dashboard unavailable</div>
+        <p>We could not load your account dashboard right now. Please refresh in a moment.</p>
+      </div>
+    );
+  }
 
   if (!hospital) {
     return (
@@ -104,7 +114,7 @@ export default async function AccountDashboard() {
         {/* Account type badge + inline editor */}
         <form action={updateHospitalType} style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
           <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "var(--nyx-accent)", background: "var(--nyx-accent-dim)", border: "1px solid var(--nyx-accent-str)", padding: "3px 10px", borderRadius: 6 }}>
-            {HOSPITAL_TYPE_LABELS[hospital.hospitalType ?? ""] ?? "🏥 Uncategorized"}
+            {HOSPITAL_TYPE_LABELS[hospital.hospitalType ?? ""] ?? "Uncategorized"}
           </span>
           <select name="type" defaultValue={hospital.hospitalType ?? ""}
             style={{ background: "var(--nyx-card)", border: "1px solid var(--nyx-accent-dim)", borderRadius: 6, color: "var(--nyx-text-muted)", fontSize: "0.75rem", padding: "3px 8px", cursor: "pointer" }}>
