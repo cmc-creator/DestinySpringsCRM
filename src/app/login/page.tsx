@@ -73,11 +73,22 @@ function LoginForm() {
   return (
     <>
       <style>{`
+        /* Unlock html/body on the login page — override any global overflow/height/attachment fixes */
+        html, body {
+          overflow: auto !important;
+          height: auto !important;
+          min-height: 100% !important;
+          background-attachment: scroll !important;
+          overscroll-behavior-y: auto !important;
+        }
         .lp-wrap {
           min-height: 100dvh;
           width: 100%;
+          background: #100805;
           background: var(--nyx-bg, #100805);
           padding: 48px 16px 64px;
+          padding-top: max(48px, calc(48px + env(safe-area-inset-top)));
+          padding-bottom: max(64px, calc(64px + env(safe-area-inset-bottom)));
           box-sizing: border-box;
           font-family: system-ui, -apple-system, sans-serif;
         }
