@@ -226,7 +226,7 @@ function LoginForm() {
           </div>
 
           <h1 className="lp-title">Welcome back</h1>
-          <p className="lp-sub">Sign in to Destiny Springs Hospital CRM</p>
+          <p className="lp-sub">Sign in to your account</p>
 
           {error && <div className="lp-error">{error}</div>}
 
