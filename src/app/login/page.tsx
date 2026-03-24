@@ -86,7 +86,7 @@ function LoginForm() {
         background: BG,
         minHeight: "100vh",
         display: "flex",
-        flexDirection: "row",
+        flexDirection: "column",
         fontFamily: "system-ui, -apple-system, sans-serif",
       }}
       className="login-container"
@@ -97,7 +97,7 @@ function LoginForm() {
           background: "var(--nyx-accent-dim)",
           borderRight: "1px solid var(--nyx-accent-dim)",
           padding: "60px 48px",
-          display: "flex",
+          display: "none",
           flexDirection: "column",
           justifyContent: "space-between",
           position: "relative",
@@ -274,6 +274,15 @@ function LoginForm() {
       </div>
 
       <style>{`
+        @media (min-width: 981px) {
+          .login-container {
+            flex-direction: row !important;
+          }
+          .login-left-panel {
+            display: flex !important;
+          }
+        }
+
         @media (max-width: 980px) {
           .login-container {
             flex-direction: column !important;
