@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -15,8 +15,41 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  // Monday.com lookup state
+  const [mondayAvailable, setMondayAvailable] = useState(false);
+  const [mondayChecking, setMondayChecking] = useState(false);
+  const [mondayProfile, setMondayProfile] = useState<{ name: string; title: string; phone: string; territory: string } | null>(null);
+  const [mondayError, setMondayError] = useState("");
+
+  useEffect(() => {
+    fetch("/api/signup/monday-lookup")
+      .then((r) => r.json())
+      .then((d: { available?: boolean }) => setMondayAvailable(!!d.available))
+      .catch(() => {});
+  }, []);
+
   function update(field: string, value: string) {
     setForm((f) => ({ ...f, [field]: value }));
+  }
+
+  async function checkMonday() {
+    if (!form.email) return;
+    setMondayChecking(true);
+    setMondayProfile(null);
+    setMondayError("");
+    try {
+      const res = await fetch(`/api/signup/monday-lookup?email=${encodeURIComponent(form.email)}`);
+      const data = await res.json() as { found?: boolean; profile?: { name: string; title: string; phone: string; territory: string } };
+      if (data.found && data.profile) {
+        setMondayProfile(data.profile);
+      } else {
+        setMondayError("No Monday profile found for this email.");
+      }
+    } catch {
+      setMondayError("Could not reach Monday. Try again.");
+    } finally {
+      setMondayChecking(false);
+    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -254,6 +287,86 @@ export default function SignupPage() {
         .su-legal a {
           color: inherit;
         }
+        .su-monday {
+          background: rgba(201,168,76,0.06);
+          border: 1px solid rgba(201,168,76,0.2);
+          border-radius: 10px;
+          padding: 12px 14px;
+        }
+        .su-monday-row {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 10px;
+          flex-wrap: wrap;
+        }
+        .su-monday-label {
+          font-size: 0.78rem;
+          color: rgba(237,228,207,0.6);
+        }
+        .su-monday-btn {
+          background: rgba(201,168,76,0.15);
+          border: 1px solid rgba(201,168,76,0.35);
+          border-radius: 8px;
+          color: var(--nyx-accent, #c9a84c);
+          font-weight: 800;
+          font-size: 0.78rem;
+          padding: 7px 12px;
+          cursor: pointer;
+          white-space: nowrap;
+        }
+        .su-monday-btn:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+        .su-monday-found {
+          margin-top: 10px;
+          background: rgba(34,197,94,0.08);
+          border: 1px solid rgba(34,197,94,0.2);
+          border-radius: 8px;
+          padding: 10px 12px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 10px;
+          flex-wrap: wrap;
+        }
+        .su-monday-name {
+          font-size: 0.85rem;
+          color: rgba(237,228,207,0.88);
+          font-weight: 700;
+        }
+        .su-monday-name span {
+          color: rgba(237,228,207,0.5);
+          font-weight: 500;
+          font-size: 0.8rem;
+        }
+        .su-monday-apply {
+          background: rgba(34,197,94,0.18);
+          border: 1px solid rgba(34,197,94,0.32);
+          border-radius: 8px;
+          color: #86efac;
+          font-weight: 800;
+          font-size: 0.78rem;
+          padding: 7px 12px;
+          cursor: pointer;
+          white-space: nowrap;
+        }
+        .su-monday-err {
+          margin-top: 8px;
+          font-size: 0.8rem;
+          color: #fca5a5;
+        }
+        .su-footer {
+          margin-top: 28px;
+          text-align: center;
+          font-size: 0.72rem;
+          color: rgba(216,232,244,0.22);
+          line-height: 1.6;
+        }
+        .su-footer a {
+          color: inherit;
+        }
         @media (max-width: 1200px) {
           .su-shell {
             grid-template-columns: 1fr 1fr;
@@ -378,6 +491,44 @@ export default function SignupPage() {
               <input type="email" required value={form.email} onChange={(e) => update("email", e.target.value)} placeholder="jane@hospital.com" style={inputStyle} />
             </div>
 
+            {role === "REP" && mondayAvailable && (
+              <div className="su-monday">
+                <div className="su-monday-row">
+                  <span className="su-monday-label">Have a Monday.com profile? Pre-fill your details.</span>
+                  <button
+                    type="button"
+                    className="su-monday-btn"
+                    onClick={checkMonday}
+                    disabled={mondayChecking || !form.email}
+                  >
+                    {mondayChecking ? "Checking…" : "Look up in Monday"}
+                  </button>
+                </div>
+                {mondayProfile && (
+                  <div className="su-monday-found">
+                    <div>
+                      <p className="su-monday-name">
+                        {mondayProfile.name}
+                        {mondayProfile.title && <span> &middot; {mondayProfile.title}</span>}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      className="su-monday-apply"
+                      onClick={() => {
+                        update("name", mondayProfile.name);
+                        update("repTitle", mondayProfile.title);
+                        setMondayProfile(null);
+                      }}
+                    >
+                      Apply to form
+                    </button>
+                  </div>
+                )}
+                {mondayError && <p className="su-monday-err">{mondayError}</p>}
+              </div>
+            )}
+
             {role === "ACCOUNT" && (
               <div>
                 <label style={labelStyle}>Title / Department</label>
@@ -411,6 +562,14 @@ export default function SignupPage() {
           </p>
         </section>
       </div>
+
+      <footer className="su-footer">
+        NyxAegis &trade; is a product of NyxCollective LLC &trade; &middot; &copy; 2026 NyxCollective LLC. All rights reserved.{" "}
+        &middot;{" "}
+        <a href="https://www.nyxcollectivellc.com/" target="_blank" rel="noopener noreferrer">
+          Explore more solutions
+        </a>
+      </footer>
     </div>
   );
 }
