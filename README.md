@@ -18,7 +18,7 @@ NyxAegis gives Destiny Springs Healthcare's liaison team a unified platform to m
 - **Framework**: Next.js 16 (App Router) + TypeScript
 - **Database**: PostgreSQL + Prisma ORM
 - **Auth**: NextAuth v5 (JWT + Credentials)
-- **Payments**: Stripe
+- **Payments**: Internal invoicing
 - **Email**: Resend
 - **Styling**: Tailwind CSS + Radix UI
 - **Deployment**: Vercel
@@ -52,7 +52,6 @@ cp .env.example .env
 Required variables:
 - `DATABASE_URL` - PostgreSQL connection string
 - `AUTH_SECRET` - NextAuth secret (generate with `openssl rand -base64 32`)
-- `STRIPE_SECRET_KEY` - Stripe secret key
 - `RESEND_API_KEY` - Resend email API key
 
 ### 3. Database setup
@@ -60,6 +59,11 @@ Required variables:
 ```bash
 npx prisma db push
 npx prisma generate
+```
+
+Optional for local/demo environments only:
+
+```bash
 npm run db:seed
 ```
 
@@ -71,15 +75,22 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
-## Demo Credentials
+## Demo Credentials (Local Only)
 
-After seeding:
+After local seeding:
 
 | Role | Email | Password |
 |------|-------|----------|
 | Admin | `admin@nyxaegis.com` | `admin123!` |
 | BD Rep | `rep@nyxaegis.com` | `rep123!` |
 | Hospital | `contact@nashvillegeneral.com` | `account123!` |
+
+## Production Go-Live Checklist
+
+- Ensure no demo seed actions are used in production.
+- Ensure production database does not contain seeded/demo records.
+- Run smoke checks: `npm run lint` and `npm run build`.
+- Validate mobile critical paths: login, dashboard, nav drawer, search, tables, and quick actions.
 
 ## Project Structure
 
@@ -116,7 +127,7 @@ prisma/
 - **Opportunity** - Active BD opportunities (Discovery to Closed Won)
 - **Activity** - CRM activity log (calls, emails, meetings, etc.)
 - **Contract** - Service agreements and MSAs
-- **Invoice** - Billing records with Stripe integration
+- **Invoice** - Billing records
 - **ComplianceDoc** - HIPAA certs, state licenses, BAAs, W-9s
 
 ## Deployment (Vercel)

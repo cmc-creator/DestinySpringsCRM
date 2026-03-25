@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 export const maxDuration = 60;
 
 export async function POST(req: NextRequest) {
+  const isProduction = process.env.NODE_ENV === "production";
   const session = await auth();
   if (!session || session.user.role !== "ADMIN") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -35,6 +36,10 @@ export async function POST(req: NextRequest) {
   }
 
   if (action === "seed-demo") {
+    if (isProduction) {
+      return NextResponse.json({ ok: false, message: "Demo seeding is disabled in production." }, { status: 403 });
+    }
+
     // Check if demo data already exists
     const existingLeads = await prisma.lead.count();
     if (existingLeads > 5) {

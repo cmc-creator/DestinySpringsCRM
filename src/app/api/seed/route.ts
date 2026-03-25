@@ -5,6 +5,10 @@ import bcrypt from "bcryptjs";
 export const maxDuration = 60;
 
 export async function GET(req: NextRequest) {
+  if (process.env.NODE_ENV === "production") {
+    return NextResponse.json({ error: "Seed endpoint is disabled in production" }, { status: 403 });
+  }
+
   const secret = req.nextUrl.searchParams.get("secret");
   const expectedSecret = process.env.SEED_SECRET;
   if (!secret || !expectedSecret || secret !== expectedSecret) {
