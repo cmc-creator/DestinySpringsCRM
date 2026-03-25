@@ -1,6 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 
+type ChatMessage = { role: string; content: string };
+
+type ActionProposal = {
+  intent:
+    | "none"
+    | "create_referral"
+    | "update_referral"
+    | "delete_referral"
+    | "create_referral_source"
+    | "update_referral_source"
+    | "delete_referral_source"
+    | "create_lead"
+    | "update_lead"
+    | "delete_lead"
+    | "create_opportunity"
+    | "update_opportunity"
+    | "delete_opportunity";
+  targetId?: string;
+  data?: Record<string, unknown>;
+  rationale?: string;
+};
+
 const SYSTEM_PROMPT = `You are Aegis — the intelligent AI copilot built into Destiny Springs CRM, the behavioral health admission and referral management platform for Destiny Springs Healthcare (an inpatient acute psychiatric hospital in Arizona).
 
 ## Your Role
@@ -59,12 +81,68 @@ When a user mentions a location or service gap:
 
 You are NOT a general-purpose assistant. Stay focused on behavioral health business development, referral management, admission pipeline strategy, and platform navigation. Politely redirect unrelated requests.`;
 
+const ACTION_EXTRACTION_SYSTEM = `You extract a single CRM action from the latest user message.
+
+Rules:
+- Return strict JSON only, no markdown.
+- If the message is not clearly requesting a data change, return {"intent":"none"}.
+- Only use one intent from this list:
+  create_referral, update_referral, delete_referral,
+  create_referral_source, update_referral_source, delete_referral_source,
+  create_lead, update_lead, delete_lead,
+  create_opportunity, update_opportunity, delete_opportunity,
+  none
+- For delete intents, include targetId whenever available.
+- Put field updates in data.
+- Keep data minimal and avoid guessing identifiers.
+- Include rationale in plain text when intent is not none.
+
+Output JSON shape:
+{
+  "intent":"none|...",
+  "targetId":"optional",
+  "data":{},
+  "rationale":"optional"
+}`;
+
+async function inferActionProposal(apiKey: string, latestUserMessage: string): Promise<ActionProposal | null> {
+  const res = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: "gpt-4o-mini",
+      messages: [
+        { role: "system", content: ACTION_EXTRACTION_SYSTEM },
+        { role: "user", content: latestUserMessage },
+      ],
+      temperature: 0,
+      max_tokens: 300,
+    }),
+  });
+
+  if (!res.ok) return null;
+  const data = await res.json() as { choices?: { message?: { content?: string } }[] };
+  const raw = data.choices?.[0]?.message?.content?.trim();
+  if (!raw) return null;
+
+  try {
+    const parsed = JSON.parse(raw) as ActionProposal;
+    if (!parsed.intent) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
 export async function POST(req: NextRequest) {
   let session;
   try { session = await auth(); } catch { /* ignore */ }
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { messages } = await req.json() as { messages: { role: string; content: string }[] };
+  const { messages, allowEdits } = await req.json() as { messages: ChatMessage[]; allowEdits?: boolean };
 
   if (!Array.isArray(messages) || messages.length === 0) {
     return NextResponse.json({ error: "No messages provided" }, { status: 400 });
@@ -110,5 +188,18 @@ export async function POST(req: NextRequest) {
   const reply = data.choices?.[0]?.message;
   if (!reply) return NextResponse.json({ error: "No response from AI" }, { status: 502 });
 
-  return NextResponse.json(reply);
+  let actionProposal: ActionProposal | null = null;
+  if (allowEdits) {
+    const latestUser = [...messages].reverse().find((m) => m.role === "user")?.content ?? "";
+    if (latestUser.trim()) {
+      actionProposal = await inferActionProposal(apiKey, latestUser);
+      if (actionProposal?.intent === "none") actionProposal = null;
+    }
+  }
+
+  return NextResponse.json({
+    role: reply.role,
+    content: reply.content,
+    actionProposal,
+  });
 }

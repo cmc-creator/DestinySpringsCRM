@@ -79,6 +79,29 @@ const featuredIntegrations = [
       </svg>
     ),
   },
+  {
+    name: "Microsoft 365 Intake Sync",
+    badges: [{ label: "SETUP REQUIRED", color: "#f59e0b" }, { label: "REFERRALS", color: "#60a5fa" }],
+    desc: "Sync intake spreadsheet rows from Microsoft 365 into referrals so leadership and BD can see incoming patients, source channels, and referral attribution in real time.",
+    href: "/admin/integrations/m365-intake",
+    icon: (
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="3" width="18" height="18" rx="3"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="9" x2="9" y2="21"/>
+      </svg>
+    ),
+  },
+  {
+    name: "Microsoft 365 Discharge Sync",
+    badges: [{ label: "SETUP REQUIRED", color: "#f59e0b" }, { label: "CENSUS", color: "#34d399" }],
+    desc: "Sync the Discharge List from SharePoint into referral records. Updates discharge dates on matched intake records and creates new records for any unmatched discharge rows.",
+    href: "/admin/integrations/discharge-sync",
+    icon: (
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#34d399" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+        <polyline points="9 22 9 12 15 12 15 22"/>
+      </svg>
+    ),
+  },
 ];
 
 export default function IntegrationsPage() {

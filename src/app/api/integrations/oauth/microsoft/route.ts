@@ -5,7 +5,7 @@ export const maxDuration = 10;
 
 // GET /api/integrations/oauth/microsoft
 // Redirects the user to Microsoft OAuth consent screen
-export async function GET(_req: NextRequest) {
+export async function GET(req: NextRequest) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -17,8 +17,12 @@ export async function GET(_req: NextRequest) {
     return NextResponse.json({ error: "MICROSOFT_CLIENT_ID not configured" }, { status: 500 });
   }
 
-  // state encodes the userId for verification in the callback (CSRF-safe opaque token)
-  const state = Buffer.from(JSON.stringify({ userId: session.user.id })).toString("base64url");
+  // Accept an optional returnTo param (must be a relative /admin or /rep path)
+  const rawReturnTo = new URL(req.url).searchParams.get("returnTo") ?? "";
+  const returnTo = /^\/(?:admin|rep)\//.test(rawReturnTo) ? rawReturnTo : null;
+
+  // state encodes userId + optional returnTo for post-auth redirect (CSRF-safe opaque token)
+  const state = Buffer.from(JSON.stringify({ userId: session.user.id, returnTo })).toString("base64url");
 
   const scopes = [
     "openid",
@@ -29,6 +33,8 @@ export async function GET(_req: NextRequest) {
     "https://graph.microsoft.com/Mail.ReadWrite",
     "https://graph.microsoft.com/User.Read",
     "https://graph.microsoft.com/Calendars.ReadWrite",
+    "https://graph.microsoft.com/Files.Read",
+    "https://graph.microsoft.com/Sites.Read.All",
   ].join(" ");
 
   const params = new URLSearchParams({

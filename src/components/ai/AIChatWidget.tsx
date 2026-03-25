@@ -9,9 +9,47 @@ type Message = {
   content: string;
 };
 
-const GOLD = "#C9A84C";
-const GOLD_DIM = "rgba(201,168,76,0.12)";
-const GOLD_MID = "rgba(201,168,76,0.28)";
+type ActionProposal = {
+  intent:
+    | "create_referral"
+    | "update_referral"
+    | "delete_referral"
+    | "create_referral_source"
+    | "update_referral_source"
+    | "delete_referral_source"
+    | "create_lead"
+    | "update_lead"
+    | "delete_lead"
+    | "create_opportunity"
+    | "update_opportunity"
+    | "delete_opportunity";
+  targetId?: string;
+  data?: Record<string, unknown>;
+  rationale?: string;
+};
+
+type SpeechRecognitionLike = {
+  lang: string;
+  interimResults: boolean;
+  maxAlternatives: number;
+  continuous: boolean;
+  onresult: ((ev: Event) => void) | null;
+  onerror: ((ev: Event) => void) | null;
+  onend: (() => void) | null;
+  start: () => void;
+  stop: () => void;
+};
+
+declare global {
+  interface Window {
+    SpeechRecognition?: new () => SpeechRecognitionLike;
+    webkitSpeechRecognition?: new () => SpeechRecognitionLike;
+  }
+}
+
+const GOLD = "var(--nyx-accent)";
+const GOLD_DIM = "var(--nyx-accent-dim)";
+const GOLD_MID = "var(--nyx-accent-mid)";
 const TEXT = "var(--nyx-text)";
 const MUTED = "var(--nyx-text-muted)";
 const CARD = "var(--nyx-card)";
@@ -51,8 +89,13 @@ export default function AIChatWidget() {
   const [messages, setMessages] = useState<Message[]>([WELCOME_MESSAGE]);
   const [input, setInput]       = useState("");
   const [loading, setLoading]   = useState(false);
+  const [allowEdits, setAllowEdits] = useState(true);
+  const [proposal, setProposal] = useState<ActionProposal | null>(null);
+  const [listening, setListening] = useState(false);
+  const [speechSupported, setSpeechSupported] = useState(false);
   const bottomRef               = useRef<HTMLDivElement>(null);
   const inputRef                = useRef<HTMLTextAreaElement>(null);
+  const speechRef               = useRef<SpeechRecognitionLike | null>(null);
   const pendingPromptRef        = useRef<string | null>(null);
 
   useEffect(() => {
@@ -62,6 +105,11 @@ export default function AIChatWidget() {
   useEffect(() => {
     if (open) setTimeout(() => inputRef.current?.focus(), 80);
   }, [open]);
+
+  useEffect(() => {
+    const Ctor = window.SpeechRecognition ?? window.webkitSpeechRecognition;
+    setSpeechSupported(!!Ctor);
+  }, []);
 
   // External trigger: aegis:prompt pre-fills + auto-sends, aegis:open just opens
   useEffect(() => {
@@ -84,6 +132,7 @@ export default function AIChatWidget() {
     const text = input.trim();
     if (!text || loading) return;
     setInput("");
+    setProposal(null);
 
     const userMsg: Message = { id: crypto.randomUUID(), role: "user", content: text };
     setMessages((prev) => [...prev, userMsg]);
@@ -97,22 +146,91 @@ export default function AIChatWidget() {
       const res = await fetch("/api/ai/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: history }),
+        body: JSON.stringify({ messages: history, allowEdits }),
       });
 
-      const data = await res.json() as { role?: string; content?: string; error?: string };
+      const data = await res.json() as { role?: string; content?: string; error?: string; actionProposal?: ActionProposal | null };
       const reply: Message = {
         id: crypto.randomUUID(),
         role: "assistant",
         content: data.content ?? data.error ?? "Sorry, something went wrong.",
       };
       setMessages((prev) => [...prev, reply]);
+      setProposal(data.actionProposal ?? null);
     } catch {
       setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: "assistant", content: "Network error. Please try again." }]);
     } finally {
       setLoading(false);
     }
-  }, [input, loading, messages]);
+  }, [input, loading, messages, allowEdits]);
+
+  const startMic = () => {
+    const Ctor = window.SpeechRecognition ?? window.webkitSpeechRecognition;
+    if (!Ctor || listening) return;
+
+    const recognition = new Ctor();
+    recognition.lang = "en-US";
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+    recognition.continuous = false;
+
+    recognition.onresult = (event) => {
+      const ev = event as unknown as { results?: { 0?: { 0?: { transcript?: string } } }[] };
+      const transcript = ev.results?.[0]?.[0]?.transcript?.trim() ?? "";
+      if (!transcript) return;
+      setInput((prev) => (prev ? `${prev} ${transcript}` : transcript));
+      setTimeout(() => inputRef.current?.focus(), 40);
+    };
+
+    recognition.onerror = () => {
+      setListening(false);
+    };
+
+    recognition.onend = () => {
+      setListening(false);
+      speechRef.current = null;
+    };
+
+    speechRef.current = recognition;
+    setListening(true);
+    recognition.start();
+  };
+
+  const stopMic = () => {
+    speechRef.current?.stop();
+    setListening(false);
+  };
+
+  const executeProposal = async () => {
+    if (!proposal || loading) return;
+
+    const deleting = proposal.intent.startsWith("delete_");
+    if (deleting) {
+      const ok = window.confirm("Confirm delete action? This cannot be undone.");
+      if (!ok) return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await fetch("/api/ai/execute", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...proposal, confirmedDelete: deleting }),
+      });
+      const data = await res.json() as { summary?: string; error?: string };
+      const message: Message = {
+        id: crypto.randomUUID(),
+        role: "assistant",
+        content: res.ok ? (data.summary ?? "Action completed.") : (data.error ?? "Action failed."),
+      };
+      setMessages((prev) => [...prev, message]);
+      if (res.ok) setProposal(null);
+    } catch {
+      setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: "assistant", content: "Could not execute action due to a network error." }]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Auto-send when a pending prompt has been set into input
   useEffect(() => {
@@ -136,8 +254,8 @@ export default function AIChatWidget() {
           40%            { opacity: 1;   transform: scale(1.2); }
         }
         @keyframes aegis-fab-pulse {
-          0%, 100% { box-shadow: 0 0 0 0 rgba(201,168,76,0.45); }
-          60%       { box-shadow: 0 0 0 10px rgba(201,168,76,0); }
+          0%, 100% { box-shadow: 0 0 0 0 var(--nyx-accent-glow); }
+          60%       { box-shadow: 0 0 0 10px transparent; }
         }
         @keyframes aegis-slide-up {
           from { opacity: 0; transform: translateY(20px) scale(0.97); }
@@ -151,7 +269,7 @@ export default function AIChatWidget() {
         }
         .aegis-fab:hover {
           transform: scale(1.08) !important;
-          box-shadow: 0 0 22px rgba(201,168,76,0.5) !important;
+          box-shadow: 0 0 22px var(--nyx-accent-glow) !important;
         }
         .aegis-msg-user {
           background: ${GOLD_DIM};
@@ -166,7 +284,7 @@ export default function AIChatWidget() {
         }
         .aegis-input:focus {
           outline: none;
-          border-color: rgba(201,168,76,0.5) !important;
+          border-color: var(--nyx-accent-str) !important;
         }
       `}</style>
 
@@ -178,7 +296,7 @@ export default function AIChatWidget() {
         style={{
           position: "fixed", bottom: 24, right: 24, zIndex: 9999,
           width: 56, height: 56, borderRadius: "50%", border: `1.5px solid ${GOLD_MID}`,
-          background: `radial-gradient(circle at 35% 35%, rgba(201,168,76,0.22), rgba(0,0,0,0.7))`,
+          background: `radial-gradient(circle at 35% 35%, var(--nyx-accent-dim), rgba(0,0,0,0.7))`,
           cursor: "pointer", padding: 0, display: "flex", alignItems: "center", justifyContent: "center",
           transition: "transform 0.2s, box-shadow 0.2s",
           overflow: "hidden",
@@ -213,10 +331,10 @@ export default function AIChatWidget() {
           <div style={{
             display: "flex", alignItems: "center", gap: 12, padding: "14px 16px",
             borderBottom: `1px solid ${GOLD_MID}`,
-            background: `linear-gradient(135deg, rgba(201,168,76,0.1) 0%, rgba(0,0,0,0) 100%)`,
+            background: `linear-gradient(135deg, var(--nyx-accent-dim) 0%, rgba(0,0,0,0) 100%)`,
             flexShrink: 0,
           }}>
-            <div style={{ width: 36, height: 36, borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: "rgba(201,168,76,0.15)" }}>
+            <div style={{ width: 36, height: 36, borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: "var(--nyx-accent-dim)" }}>
               <Image src="/Aegislogo.png" alt="Aegis" width={36} height={36} style={{ objectFit: "cover", width: "100%", height: "100%" }} />
             </div>
             <div style={{ flex: 1 }}>
@@ -249,7 +367,7 @@ export default function AIChatWidget() {
             {messages.map((m) => (
               <div key={m.id} style={{ display: "flex", gap: 9, alignItems: "flex-start", flexDirection: m.role === "user" ? "row-reverse" : "row" }}>
                 {m.role === "assistant" && (
-                  <div style={{ width: 28, height: 28, borderRadius: "50%", overflow: "hidden", flexShrink: 0, marginTop: 2, background: "rgba(201,168,76,0.15)" }}>
+                  <div style={{ width: 28, height: 28, borderRadius: "50%", overflow: "hidden", flexShrink: 0, marginTop: 2, background: "var(--nyx-accent-dim)" }}>
                     <Image src="/Aegislogo.png" alt="Aegis" width={28} height={28} style={{ objectFit: "cover", width: "100%", height: "100%" }} />
                   </div>
                 )}
@@ -266,7 +384,7 @@ export default function AIChatWidget() {
             ))}
             {loading && (
               <div style={{ display: "flex", gap: 9, alignItems: "flex-start" }}>
-                <div style={{ width: 28, height: 28, borderRadius: "50%", overflow: "hidden", flexShrink: 0, marginTop: 2, background: "rgba(201,168,76,0.15)" }}>
+                <div style={{ width: 28, height: 28, borderRadius: "50%", overflow: "hidden", flexShrink: 0, marginTop: 2, background: "var(--nyx-accent-dim)" }}>
                   <Image src="/Aegislogo.png" alt="Aegis" width={28} height={28} style={{ objectFit: "cover", width: "100%", height: "100%" }} />
                 </div>
                 <div className="aegis-msg-ai" style={{ borderRadius: "4px 14px 14px 14px", padding: "10px 14px" }}>
@@ -279,6 +397,33 @@ export default function AIChatWidget() {
 
           {/* Input */}
           <div style={{ padding: "10px 12px", borderTop: `1px solid ${BORDER}`, flexShrink: 0, background: BG, display: "flex", gap: 8, alignItems: "flex-end" }}>
+            {proposal && (
+              <div style={{ position: "absolute", left: 12, right: 12, bottom: 60, background: "rgba(0,0,0,0.72)", border: `1px solid ${GOLD_MID}`, borderRadius: 10, padding: "10px 12px", zIndex: 2 }}>
+                <div style={{ fontSize: "0.7rem", color: GOLD, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", marginBottom: 4 }}>
+                  Action Proposed
+                </div>
+                <div style={{ fontSize: "0.78rem", color: TEXT, marginBottom: 8 }}>
+                  {proposal.intent.replaceAll("_", " ")}
+                  {proposal.targetId ? ` (${proposal.targetId})` : ""}
+                </div>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button
+                    onClick={executeProposal}
+                    disabled={loading}
+                    style={{ background: GOLD_DIM, border: `1px solid ${GOLD_MID}`, color: GOLD, borderRadius: 8, fontSize: "0.74rem", fontWeight: 700, padding: "6px 10px", cursor: "pointer" }}
+                  >
+                    {proposal.intent.startsWith("delete_") ? "Confirm Delete" : "Apply"}
+                  </button>
+                  <button
+                    onClick={() => setProposal(null)}
+                    style={{ background: "transparent", border: `1px solid ${BORDER}`, color: MUTED, borderRadius: 8, fontSize: "0.74rem", fontWeight: 700, padding: "6px 10px", cursor: "pointer" }}
+                  >
+                    Dismiss
+                  </button>
+                </div>
+              </div>
+            )}
+
             <textarea
               ref={inputRef}
               className="aegis-input"
@@ -300,6 +445,24 @@ export default function AIChatWidget() {
                 el.style.height = `${Math.min(el.scrollHeight, 120)}px`;
               }}
             />
+
+            {speechSupported && (
+              <button
+                onClick={listening ? stopMic : startMic}
+                title={listening ? "Stop microphone" : "Use microphone"}
+                style={{
+                  width: 38, height: 38, borderRadius: 10, border: `1px solid ${GOLD_MID}`,
+                  background: listening ? "rgba(248,113,113,0.2)" : GOLD_DIM,
+                  cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+                  color: listening ? "#f87171" : GOLD,
+                }}
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 1a3 3 0 0 1 3 3v7a3 3 0 0 1-6 0V4a3 3 0 0 1 3-3z"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/><line x1="12" y1="18" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/>
+                </svg>
+              </button>
+            )}
+
             <button
               className="aegis-send"
               onClick={send}
@@ -316,6 +479,21 @@ export default function AIChatWidget() {
                 <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
               </svg>
             </button>
+          </div>
+
+          <div style={{ padding: "0 12px 10px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, background: BG }}>
+            <label style={{ fontSize: "0.69rem", color: MUTED, display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
+              <input
+                type="checkbox"
+                checked={allowEdits}
+                onChange={(e) => setAllowEdits(e.target.checked)}
+                style={{ accentColor: "var(--nyx-accent)" }}
+              />
+              Allow AI edit actions
+            </label>
+            <span style={{ fontSize: "0.63rem", color: "rgba(216,232,244,0.46)" }}>
+              Delete always requires confirmation
+            </span>
           </div>
         </div>
       )}
