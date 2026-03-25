@@ -320,8 +320,8 @@ export default function SignupPage() {
           <div className="su-chip">Bespoke Whitelabel Deployment</div>
           <h1 className={`${headingFace.className} su-title`}>Submit a new access request</h1>
           <p className="su-sub">
-            New team members can request secure portal access for facility accounts or business development workflows.
-            Every request is routed through internal approval before activation.
+            New team members can request secure portal access for Destiny Springs leadership, operations,
+            and business development workflows. Every request is routed through internal approval before activation.
           </p>
           <div className="su-points">
             <div className="su-point">
@@ -330,7 +330,7 @@ export default function SignupPage() {
             </div>
             <div className="su-point">
               <p className="su-point-title">Role-specific routing</p>
-              <p className="su-point-sub">Hospital and rep requests capture the right profile fields automatically.</p>
+              <p className="su-point-sub">Internal and BD requests capture the right profile fields automatically.</p>
             </div>
             <div className="su-point">
               <p className="su-point-title">Client-ready presentation</p>
@@ -346,7 +346,7 @@ export default function SignupPage() {
           </Link>
 
           <h2 className={`${headingFace.className} su-heading`}>Request Access</h2>
-          <p className="su-heading-sub">Select your role and submit details for approval.</p>
+          <p className="su-heading-sub">Select your user type and submit details for approval.</p>
 
           <div className="su-toggle">
             <button
@@ -354,14 +354,14 @@ export default function SignupPage() {
               onClick={() => setRole("ACCOUNT")}
               className={`su-tab ${role === "ACCOUNT" ? "active" : "inactive"}`}
             >
-              Facility / Hospital
+              Leadership / Operations
             </button>
             <button
               type="button"
               onClick={() => setRole("REP")}
               className={`su-tab ${role === "REP" ? "active" : "inactive"}`}
             >
-              BD Representative
+              Business Development
             </button>
           </div>
 
@@ -380,15 +380,15 @@ export default function SignupPage() {
 
             {role === "ACCOUNT" && (
               <div>
-                <label style={labelStyle}>Facility / Organization Name</label>
-                <input type="text" value={form.hospitalName} onChange={(e) => update("hospitalName", e.target.value)} placeholder="Nashville General Medical Center" style={inputStyle} />
+                <label style={labelStyle}>Title / Department</label>
+                <input type="text" value={form.hospitalName} onChange={(e) => update("hospitalName", e.target.value)} placeholder="CEO, Admissions Director, Operations" style={inputStyle} />
               </div>
             )}
 
             {role === "REP" && (
               <div>
-                <label style={labelStyle}>Your Title</label>
-                <input type="text" value={form.repTitle} onChange={(e) => update("repTitle", e.target.value)} placeholder="Account Executive" style={inputStyle} />
+                <label style={labelStyle}>Business Development Title</label>
+                <input type="text" value={form.repTitle} onChange={(e) => update("repTitle", e.target.value)} placeholder="Regional BD Manager" style={inputStyle} />
               </div>
             )}
 
