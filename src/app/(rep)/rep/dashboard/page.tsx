@@ -90,6 +90,7 @@ export default async function RepDashboard() {
   const pipelineValue = openOpps.reduce((s, o) => s + (o.value ? Number(o.value) : 0), 0);
 
   return (
+    <>
     <div>
       <div style={{ marginBottom: 28 }}>
         <p style={{ color: "var(--nyx-accent-label)", fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 4 }}>REP PORTAL</p>
@@ -204,5 +205,6 @@ export default async function RepDashboard() {
         h1 { font-size: 1.4rem !important; }
       }
     `}</style>
+    </>
   );
 }
