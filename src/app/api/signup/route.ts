@@ -61,7 +61,28 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json({ id: user.id, email: user.email, role: user.role }, { status: 201 });
-  } catch {
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+  } catch (err) {
+    // Always log the real error server-side (visible in Vercel logs)
+    console.error("[signup] Error:", err);
+
+    // Handle known Prisma error codes
+    if (err && typeof err === "object" && "code" in err) {
+      const code = (err as { code: string }).code;
+      if (code === "P2002") return NextResponse.json({ error: "Email already registered" }, { status: 409 });
+      if (code === "P1001") return NextResponse.json({ error: "Cannot reach the database. Please try again in a moment." }, { status: 503 });
+      if (code === "P1003") return NextResponse.json({ error: "Database setup is incomplete. Please contact support." }, { status: 503 });
+    }
+
+    const message = err instanceof Error ? err.message : String(err);
+    if (message.includes("database URL") || message.includes("DATABASE_URL")) {
+      return NextResponse.json({ error: "Service is not configured. Please contact support." }, { status: 503 });
+    }
+
+    // In development, expose the real message to ease debugging
+    if (process.env.NODE_ENV !== "production") {
+      return NextResponse.json({ error: message }, { status: 500 });
+    }
+
+    return NextResponse.json({ error: "Server error. Please try again." }, { status: 500 });
   }
 }

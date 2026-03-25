@@ -121,13 +121,6 @@ const ADMIN_NAV: NavGroup[] = [
     ],
   },
   {
-    group: "Finance", tint: "purple",
-    items: [
-      { href: "/admin/invoices",   label: "Invoices" },
-      { href: "/admin/contracts",  label: "Contracts" },
-    ],
-  },
-  {
     group: "Intelligence", tint: "pink",
     items: [
       { href: "/admin/analytics",  label: "Analytics" },
@@ -140,6 +133,8 @@ const ADMIN_NAV: NavGroup[] = [
   {
     group: "Settings", tint: "red",
     items: [
+      { href: "/admin/users",        label: "User Accounts" },
+      { href: "/admin/import",       label: "Import Data" },
       { href: "/admin/integrations", label: "Integrations" },
       { href: "/admin/settings",     label: "Settings" },
     ],
@@ -167,12 +162,6 @@ const REP_NAV: NavGroup[] = [
       { href: "/rep/documents", label: "Documents" },
     ],
   },
-  {
-    group: "Finance", tint: "purple",
-    items: [
-      { href: "/rep/payments", label: "Payments" },
-    ],
-  },
 ];
 
 const ACCOUNT_NAV: NavGroup[] = [
@@ -181,12 +170,6 @@ const ACCOUNT_NAV: NavGroup[] = [
     items: [
       { href: "/account/dashboard",    label: "Dashboard" },
       { href: "/account/engagements",  label: "Engagements" },
-    ],
-  },
-  {
-    group: "Billing", tint: "purple",
-    items: [
-      { href: "/account/invoices", label: "Invoices" },
     ],
   },
 ];
@@ -232,7 +215,7 @@ export function Sidebar({ role, userName, userEmail }: SidebarProps) {
         <div
           className="nyx-mobile-overlay"
           onClick={() => setMobileOpen(false)}
-          style={{ display: "none" }}
+          style={{ position: "fixed", inset: 0, background: "rgba(0, 0, 0, 0.55)", zIndex: 299 }}
         />
       )}
 
