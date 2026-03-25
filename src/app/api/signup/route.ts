@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
+import { Resend } from "resend";
 import { prisma } from "@/lib/prisma";
 
 export const maxDuration = 30;
+
+const ADMIN_NOTIFY_EMAIL = "cmc@conniemichelleconsulting.com";
 
 // Basic email format validation — prevents obviously malformed inputs
 function isValidEmail(email: string) {
@@ -59,6 +62,38 @@ export async function POST(req: NextRequest) {
         }),
       },
     });
+
+    // Fire-and-forget notification email to admin — don't let failure block the response
+    const resendKey = process.env.RESEND_API_KEY;
+    if (resendKey) {
+      const resend = new Resend(resendKey);
+      const roleLabel = role === "REP" ? "Business Development Rep" : "Leadership / Operations (Account)";
+      const titleLine = role === "REP" && repTitle
+        ? `<tr><td style="padding:7px 12px;background:#f8fafc;font-weight:600;">Title</td><td style="padding:7px 12px;background:#f8fafc;">${repTitle}</td></tr>`
+        : role === "ACCOUNT" && hospitalName
+        ? `<tr><td style="padding:7px 12px;background:#f8fafc;font-weight:600;">Organization</td><td style="padding:7px 12px;background:#f8fafc;">${hospitalName}</td></tr>`
+        : "";
+      const fromEmail = process.env.RESEND_FROM_EMAIL ?? "onboarding@resend.dev";
+      resend.emails.send({
+        from: `NyxAegis Alerts <${fromEmail}>`,
+        to: ADMIN_NOTIFY_EMAIL,
+        subject: `New access request: ${name.trim()} (${roleLabel})`,
+        html: `
+          <div style="font-family:sans-serif;max-width:560px;margin:0 auto;padding:24px;border:1px solid #e5e7eb;border-radius:10px;">
+            <h2 style="margin:0 0 16px;color:#1e293b;">New Access Request</h2>
+            <p style="color:#475569;margin:0 0 14px;">A new account request was submitted and is pending your review.</p>
+            <table style="width:100%;border-collapse:collapse;font-size:0.9rem;">
+              <tr><td style="padding:7px 12px;font-weight:600;width:140px;">Name</td><td style="padding:7px 12px;">${name.trim()}</td></tr>
+              <tr><td style="padding:7px 12px;background:#f8fafc;font-weight:600;">Email</td><td style="padding:7px 12px;background:#f8fafc;">${email.toLowerCase().trim()}</td></tr>
+              <tr><td style="padding:7px 12px;font-weight:600;">Role</td><td style="padding:7px 12px;">${roleLabel}</td></tr>
+              ${titleLine}
+              <tr><td style="padding:7px 12px;background:#f8fafc;font-weight:600;">Submitted</td><td style="padding:7px 12px;background:#f8fafc;">${new Date().toLocaleString("en-US", { timeZone: "America/Phoenix", month: "long", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" })} MST</td></tr>
+            </table>
+            <p style="margin:18px 0 0;font-size:0.8rem;color:#94a3b8;">Log into your admin portal (Admin &rarr; User Accounts) to manage this account.</p>
+          </div>
+        `,
+      }).catch((e: unknown) => console.error("[signup] notification email failed:", e));
+    }
 
     return NextResponse.json({ id: user.id, email: user.email, role: user.role }, { status: 201 });
   } catch (err) {
