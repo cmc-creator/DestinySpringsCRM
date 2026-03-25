@@ -102,33 +102,56 @@ export type QuickAction = {
   icon: string;
 };
 
-const ALL_ACTIONS: QuickAction[] = [
-  { id: "referral",      label: "Add Referral",     href: "/admin/leads",         icon: "referral" },
-  { id: "lead",          label: "Add Lead",          href: "/admin/leads",         icon: "target" },
-  { id: "opportunity",   label: "New Opportunity",   href: "/admin/opportunities", icon: "chart" },
-  { id: "rep",           label: "Add Rep",           href: "/admin/reps",          icon: "user" },
-  { id: "hospital",      label: "Add Hospital",      href: "/admin/hospitals",     icon: "hospital" },
-  { id: "contract",      label: "New Contract",      href: "/admin/contracts",     icon: "contract" },
-  { id: "invoice",       label: "New Invoice",       href: "/admin/invoices",      icon: "invoice" },
-  { id: "calendar",      label: "Calendar",          href: "/admin/calendar",      icon: "calendar" },
-  { id: "analytics",     label: "Analytics",         href: "/admin/analytics",     icon: "analytics" },
-  { id: "reports",       label: "Reports",           href: "/admin/reports",       icon: "reports" },
-  { id: "territory",     label: "Territory",         href: "/admin/territory",     icon: "territory" },
-  { id: "notifications", label: "Notifications",     href: "/admin/notifications", icon: "notifications" },
-];
+const ACTIONS_BY_ROLE: Record<"ADMIN" | "REP" | "ACCOUNT", QuickAction[]> = {
+  ADMIN: [
+    { id: "referral",      label: "Add Referral",    href: "/admin/leads",         icon: "referral" },
+    { id: "lead",          label: "Add Lead",         href: "/admin/leads",         icon: "target" },
+    { id: "opportunity",   label: "New Opportunity",  href: "/admin/opportunities", icon: "chart" },
+    { id: "rep",           label: "Add Rep",          href: "/admin/reps",          icon: "user" },
+    { id: "hospital",      label: "Add Hospital",     href: "/admin/hospitals",     icon: "hospital" },
+    { id: "contract",      label: "New Contract",     href: "/admin/contracts",     icon: "contract" },
+    { id: "calendar",      label: "Calendar",         href: "/admin/calendar",      icon: "calendar" },
+    { id: "analytics",     label: "Analytics",        href: "/admin/analytics",     icon: "analytics" },
+    { id: "reports",       label: "Reports",          href: "/admin/reports",       icon: "reports" },
+    { id: "territory",     label: "Territory",        href: "/admin/territory",     icon: "territory" },
+    { id: "notifications", label: "Notifications",    href: "/admin/notifications", icon: "notifications" },
+  ],
+  REP: [
+    { id: "opportunity",    label: "New Opportunity", href: "/rep/opportunities",  icon: "chart" },
+    { id: "territory",      label: "Territory Map",   href: "/rep/territory",      icon: "territory" },
+    { id: "communications", label: "Communications",  href: "/rep/communications", icon: "notifications" },
+    { id: "documents",      label: "Documents",       href: "/rep/documents",      icon: "contract" },
+    { id: "calendar",       label: "Calendar",        href: "/rep/dashboard",      icon: "calendar" },
+  ],
+  ACCOUNT: [
+    { id: "engagements", label: "Engagements", href: "/account/engagements", icon: "referral" },
+  ],
+};
 
-const DEFAULT_IDS = ["referral", "lead", "opportunity", "rep"];
-const STORAGE_KEY = "nyx_quick_actions";
+const DEFAULT_IDS_BY_ROLE: Record<"ADMIN" | "REP" | "ACCOUNT", string[]> = {
+  ADMIN:   ["referral", "lead", "opportunity", "rep"],
+  REP:     ["opportunity", "territory", "communications"],
+  ACCOUNT: ["engagements"],
+};
 
-export default function QuickActionsWidget() {
-  const [enabled, setEnabled]   = useState<string[]>(DEFAULT_IDS);
+const STORAGE_KEY_BY_ROLE: Record<"ADMIN" | "REP" | "ACCOUNT", string> = {
+  ADMIN:   "nyx_quick_actions_admin",
+  REP:     "nyx_quick_actions_rep",
+  ACCOUNT: "nyx_quick_actions_account",
+};
+
+export default function QuickActionsWidget({ role = "ADMIN" }: { role?: "ADMIN" | "REP" | "ACCOUNT" }) {
+  const actions    = ACTIONS_BY_ROLE[role];
+  const defaultIds = DEFAULT_IDS_BY_ROLE[role];
+  const storageKey = STORAGE_KEY_BY_ROLE[role];
+  const [enabled, setEnabled]   = useState<string[]>(defaultIds);
   const [editing, setEditing]   = useState(false);
   const [mounted, setMounted]   = useState(false);
 
   useEffect(() => {
     setMounted(true);
     try {
-      const stored = localStorage.getItem(STORAGE_KEY);
+      const stored = localStorage.getItem(storageKey);
       if (stored) setEnabled(JSON.parse(stored) as string[]);
     } catch {
       // ignore
@@ -137,14 +160,14 @@ export default function QuickActionsWidget() {
 
   const save = (ids: string[]) => {
     setEnabled(ids);
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(ids)); } catch { /* ignore */ }
+    try { localStorage.setItem(storageKey, JSON.stringify(ids)); } catch { /* ignore */ }
   };
 
   const toggle = (id: string) => {
     save(enabled.includes(id) ? enabled.filter((x) => x !== id) : [...enabled, id]);
   };
 
-  const active = ALL_ACTIONS.filter((a) => enabled.includes(a.id));
+  const active = actions.filter((a) => enabled.includes(a.id));
 
   if (!mounted) {
     // SSR placeholder — renders default actions non-interactively
@@ -154,7 +177,7 @@ export default function QuickActionsWidget() {
           QUICK ACTIONS
         </p>
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-          {ALL_ACTIONS.filter((a) => DEFAULT_IDS.includes(a.id)).map((a) => (
+          {actions.filter((a) => defaultIds.includes(a.id)).map((a) => (
             <span key={a.id} style={{ display: "inline-flex", alignItems: "center", gap: 7, background: "var(--nyx-accent-dim)", border: "1px solid var(--nyx-accent-mid)", borderRadius: 8, padding: "8px 14px", color: CYAN, fontSize: "0.8rem", fontWeight: 600 }}>
               <Icon id={a.icon} /> {a.label}
             </span>
@@ -215,7 +238,7 @@ export default function QuickActionsWidget() {
             Toggle which actions appear in your quick actions bar. Changes save automatically.
           </p>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-            {ALL_ACTIONS.map((a) => {
+            {actions.map((a) => {
               const on = enabled.includes(a.id);
               return (
                 <button

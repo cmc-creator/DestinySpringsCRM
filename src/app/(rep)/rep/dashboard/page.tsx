@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { formatCurrency, formatRelativeTime } from "@/lib/utils";
 import AIInsightsPanel from "@/components/ai/AIInsightsPanel";
+import QuickActionsWidget from "@/components/dashboard/QuickActionsWidget";
 
 const CYAN = "var(--nyx-accent)";
 const CARD = "var(--nyx-card)";
@@ -14,22 +15,75 @@ export default async function RepDashboard() {
   const session = await auth();
   if (!session) redirect("/login");
 
-  const rep = await prisma.rep.findUnique({
-    where: { userId: session.user.id },
-    include: {
-      user: { select: { name: true } },
-      opportunities: {
-        include: { hospital: { select: { hospitalName: true } } },
-        orderBy: { updatedAt: "desc" },
-        take: 6,
+  let rep: Awaited<ReturnType<typeof prisma.rep.findUnique>>;
+  let overdueLeads: { id: string; hospitalName: string; nextFollowUp: Date | null }[] = [];
+  let overdueOpps: { id: string; title: string; nextFollowUp: Date | null; hospital: { hospitalName: string } }[] = [];
+
+  try {
+    rep = await prisma.rep.findUnique({
+      where: { userId: session.user.id },
+      include: {
+        user: { select: { name: true } },
+        opportunities: {
+          include: { hospital: { select: { hospitalName: true } } },
+          orderBy: { updatedAt: "desc" },
+          take: 6,
+        },
+        activities: { orderBy: { createdAt: "desc" }, take: 5 },
+        territories: true,
+        _count: { select: { opportunities: true, leads: true, territories: true } },
       },
-      activities: { orderBy: { createdAt: "desc" }, take: 5 },
-      territories: true,
-      _count: { select: { opportunities: true, leads: true, territories: true } },
-    },
-  });
+    });
+  } catch {
+    rep = null;
+  }
 
   if (!rep) redirect("/login");
+
+  try {
+    const now = new Date();
+    const weekAhead = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+    [overdueLeads, overdueOpps] = await Promise.all([
+      prisma.lead.findMany({
+        where: { assignedRepId: rep.id, nextFollowUp: { lte: weekAhead } },
+        select: { id: true, hospitalName: true, nextFollowUp: true },
+        orderBy: { nextFollowUp: "asc" },
+        take: 10,
+      }),
+      prisma.opportunity.findMany({
+        where: {
+          assignedRepId: rep.id,
+          nextFollowUp: { lte: weekAhead },
+          stage: { notIn: ["DISCHARGED", "DECLINED"] },
+        },
+        select: { id: true, title: true, nextFollowUp: true, hospital: { select: { hospitalName: true } } },
+        orderBy: { nextFollowUp: "asc" },
+        take: 10,
+      }),
+    ]);
+  } catch {
+    // non-fatal — follow-ups just won't show
+  }
+
+  const now = new Date();
+  const overdueFollowUps = [
+    ...overdueLeads.map(l => ({ id: l.id, label: l.hospitalName, date: l.nextFollowUp, type: "LEAD" as const })),
+    ...overdueOpps.map(o => ({ id: o.id, label: `${o.title} — ${o.hospital.hospitalName}`, date: o.nextFollowUp, type: "OPP" as const })),
+  ]
+    .filter(f => f.date !== null)
+    .sort((a, b) => (a.date!.getTime()) - (b.date!.getTime()));
+
+  const pastDue = overdueFollowUps.filter(f => f.date! < now);
+  const upcoming = overdueFollowUps.filter(f => f.date! >= now);
+
+  if (!rep) {
+    return (
+      <div style={{ textAlign: "center", padding: "80px 20px", color: TEXT_MUTED }}>
+        <div style={{ fontSize: "2rem", marginBottom: 10 }}>Dashboard unavailable</div>
+        <p>We could not load your dashboard right now. Please refresh in a moment.</p>
+      </div>
+    );
+  }
 
   const openOpps = rep.opportunities.filter(o => !["DISCHARGED", "DECLINED"].includes(o.stage));
   const closedWon = rep.opportunities.filter(o => o.stage === "DISCHARGED");
@@ -42,6 +96,45 @@ export default async function RepDashboard() {
         <h1 style={{ fontSize: "1.8rem", fontWeight: 900, color: TEXT }}>Welcome, {rep.user.name?.split(" ")[0]}</h1>
         <p style={{ color: TEXT_MUTED, fontSize: "0.875rem", marginTop: 4 }}>{rep.title} · {rep.territory ?? "No territory set"}</p>
       </div>
+
+      {/* Follow-up alerts */}
+      {pastDue.length > 0 && (
+        <div style={{ background: "rgba(248,113,113,0.06)", border: "1px solid rgba(248,113,113,0.25)", borderRadius: 12, padding: "14px 18px", marginBottom: 20 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+            <p style={{ fontSize: "0.72rem", fontWeight: 800, color: "#f87171", letterSpacing: "0.1em", textTransform: "uppercase" }}>
+              ⚠ {pastDue.length} OVERDUE FOLLOW-UP{pastDue.length > 1 ? "S" : ""}
+            </p>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            {pastDue.map(f => (
+              <div key={f.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 4 }}>
+                <span style={{ fontSize: "0.83rem", color: TEXT }}>{f.label}</span>
+                <span style={{ fontSize: "0.72rem", color: "#f87171", fontWeight: 600 }}>
+                  Was due {f.date!.toLocaleDateString("en-US", { month: "short", day: "numeric" })} · {f.type}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {upcoming.length > 0 && (
+        <div style={{ background: "rgba(251,191,36,0.05)", border: "1px solid rgba(251,191,36,0.2)", borderRadius: 12, padding: "14px 18px", marginBottom: 20 }}>
+          <p style={{ fontSize: "0.72rem", fontWeight: 800, color: "#fbbf24", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 10 }}>
+            UPCOMING FOLLOW-UPS — NEXT 7 DAYS
+          </p>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            {upcoming.map(f => (
+              <div key={f.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 4 }}>
+                <span style={{ fontSize: "0.83rem", color: TEXT }}>{f.label}</span>
+                <span style={{ fontSize: "0.72rem", color: "#fbbf24", fontWeight: 600 }}>
+                  {f.date!.toLocaleDateString("en-US", { month: "short", day: "numeric" })} · {f.type}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 16, marginBottom: 28 }}>
         {[
@@ -62,6 +155,9 @@ export default async function RepDashboard() {
       <div style={{ marginBottom: 28 }}>
         <AIInsightsPanel role="rep" />
       </div>
+
+      {/* Quick Actions */}
+      <QuickActionsWidget role="REP" />
 
       <div className="nyx-page-grid-2col" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
         <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: "20px" }}>
@@ -97,5 +193,16 @@ export default async function RepDashboard() {
         </div>
       </div>
     </div>
+
+    <style>{`
+      @media (max-width: 900px) {
+        .nyx-page-grid-2col {
+          grid-template-columns: 1fr !important;
+        }
+      }
+      @media (max-width: 560px) {
+        h1 { font-size: 1.4rem !important; }
+      }
+    `}</style>
   );
 }

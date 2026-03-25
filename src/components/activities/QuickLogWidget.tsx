@@ -57,6 +57,7 @@ export default function QuickLogWidget({ repId, role }: { repId?: string; role: 
     <>
       {/* FAB — offset above the AIChatWidget FAB (bottom:24 right:24) to prevent overlap */}
       <button
+        className="quick-log-fab"
         onClick={() => setOpen(true)}
         title="Quick log activity"
         style={{

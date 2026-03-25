@@ -736,6 +736,7 @@ function TwoFactorToggle() {
 export default function SettingsClient() {
   const { data: session } = useSession();
   const isAdmin = session?.user?.role === "ADMIN";
+  const isProduction = process.env.NODE_ENV === "production";
   const [activeTheme, setActiveTheme]     = useState("luxury");
   const [orgName, setOrgName]             = useState("Destiny Springs Healthcare");
   const [supportEmail, setSupportEmail]   = useState("intake@destinysprings.com");
@@ -843,6 +844,11 @@ export default function SettingsClient() {
   }
 
   async function devAction(action: string) {
+    if (isProduction && action === "seed-demo") {
+      setDevMsg("Demo seeding is disabled in production.");
+      return;
+    }
+
     if (action !== "seed-demo" && !confirmAction) { setConfirmAction(action); return; }
     if (confirmAction && confirmAction !== action) { setConfirmAction(action); return; }
     setDevLoading(action); setDevMsg(""); setConfirmAction(null);
@@ -983,7 +989,7 @@ export default function SettingsClient() {
         </div>
       </Section>
       <Section title="Organization">
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>
           <div>
             <label style={{ fontSize: "0.72rem", color: "var(--nyx-text-muted)", display: "block", marginBottom: 4 }}>ORG / BRAND NAME</label>
             <input style={inp} value={orgName} onChange={e => setOrgName(e.target.value)} />
@@ -1043,14 +1049,15 @@ export default function SettingsClient() {
         )}
         <p style={{ fontSize: "0.8rem", color: "var(--nyx-text-muted)", marginBottom: 18 }}>Manage demo data for testing and presentations. Use with caution in production.</p>
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          {/* Seed */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "rgba(0,0,0,0.2)", borderRadius: 9, padding: "14px 18px", border: "1px solid rgba(52,211,153,0.12)" }}>
-            <div>
-              <div style={{ fontSize: "0.875rem", fontWeight: 600, color: "#34d399" }}>Seed Demo Data</div>
-              <div style={{ fontSize: "0.75rem", color: "var(--nyx-text-muted)", marginTop: 2 }}>Creates sample leads, opportunities, and activities for demonstration</div>
+          {!isProduction && (
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "rgba(0,0,0,0.2)", borderRadius: 9, padding: "14px 18px", border: "1px solid rgba(52,211,153,0.12)" }}>
+              <div>
+                <div style={{ fontSize: "0.875rem", fontWeight: 600, color: "#34d399" }}>Seed Demo Data</div>
+                <div style={{ fontSize: "0.75rem", color: "var(--nyx-text-muted)", marginTop: 2 }}>Creates sample leads, opportunities, and activities for demonstration</div>
+              </div>
+              <button onClick={() => devAction("seed-demo")} disabled={devLoading !== null} style={{ background: "rgba(52,211,153,0.1)", border: "1px solid rgba(52,211,153,0.25)", borderRadius: 7, padding: "8px 18px", color: "#34d399", cursor: "pointer", fontWeight: 700, fontSize: "0.8rem", whiteSpace: "nowrap" }}>{devLoading === "seed-demo" ? "Seeding\u2026" : "Seed Demo"}</button>
             </div>
-            <button onClick={() => devAction("seed-demo")} disabled={devLoading !== null} style={{ background: "rgba(52,211,153,0.1)", border: "1px solid rgba(52,211,153,0.25)", borderRadius: 7, padding: "8px 18px", color: "#34d399", cursor: "pointer", fontWeight: 700, fontSize: "0.8rem", whiteSpace: "nowrap" }}>{devLoading === "seed-demo" ? "Seeding\u2026" : "Seed Demo"}</button>
-          </div>
+          )}
 
           {/* Clear Demo */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "rgba(0,0,0,0.2)", borderRadius: 9, padding: "14px 18px", border: "1px solid rgba(251,191,36,0.18)", opacity: isAdmin ? 1 : 0.45 }}>

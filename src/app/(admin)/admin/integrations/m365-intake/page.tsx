@@ -27,7 +27,7 @@ export default function M365IntakeIntegrationPage() {
   const [syncing, setSyncing]     = useState(false);
   const [result, setResult]       = useState<SyncResult | null>(null);
   const [lastSync, setLastSync]   = useState<string | null>(null);
-  const [connected, setConnected] = useState<string | null>(null);
+  const [_connected, setConnected] = useState<string | null>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);

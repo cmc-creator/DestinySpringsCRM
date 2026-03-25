@@ -101,21 +101,59 @@ function Icon({ id, color }: { id: string; color: string }) {
 export default async function AdminDashboard() {
   const REP_COLORS = ["var(--nyx-accent)","#34d399","#fbbf24","#a78bfa","#f59e0b","#60a5fa","#f87171","#fb923c"];
 
-  const [
-    repCount, hospitalCount, leadCount, openOpps, closedWon,
-    pendingInvoices, recentActivities, recentOpps, mapReps, mapHospitalsRaw
-  ] = await Promise.all([
-    prisma.rep.count({ where: { status: "ACTIVE" } }),
-    prisma.hospital.count({ where: { status: { not: "CHURNED" } } }),
-    prisma.lead.count({ where: { status: { in: ["NEW", "CONTACTED", "QUALIFIED"] } } }),
-    prisma.opportunity.count({ where: { stage: { notIn: ["DISCHARGED", "DECLINED"] } } }),
-    prisma.opportunity.count({ where: { stage: "DISCHARGED" } }),
-    prisma.invoice.count({ where: { status: { in: ["SENT", "OVERDUE"] } } }),
-    prisma.activity.findMany({ take: 8, orderBy: { createdAt: "desc" }, include: { hospital: { select: { hospitalName: true } }, rep: { include: { user: { select: { name: true } } } } } }),
-    prisma.opportunity.findMany({ take: 6, orderBy: { createdAt: "desc" }, include: { hospital: { select: { hospitalName: true } }, assignedRep: { include: { user: { select: { name: true } } } } } }),
-    prisma.rep.findMany({ where: { status: "ACTIVE" }, include: { user: { select: { name: true, email: true } }, territories: true } }),
-    prisma.hospital.findMany({ select: { id: true, hospitalName: true, city: true, state: true, status: true, assignedRepId: true }, orderBy: { hospitalName: "asc" } }),
-  ]);
+  let repCount = 0;
+  let hospitalCount = 0;
+  let leadCount = 0;
+  let openOpps = 0;
+  let closedWon = 0;
+  let pendingInvoices = 0;
+  let recentActivities: Awaited<ReturnType<typeof prisma.activity.findMany>> = [];
+  let recentOpps: Awaited<ReturnType<typeof prisma.opportunity.findMany>> = [];
+  let mapReps: Awaited<ReturnType<typeof prisma.rep.findMany>> = [];
+  let mapHospitalsRaw: Awaited<ReturnType<typeof prisma.hospital.findMany>> = [];
+  let expiringDocs: Awaited<ReturnType<typeof prisma.complianceDoc.findMany>> = [];
+
+  try {
+    [
+      repCount, hospitalCount, leadCount, openOpps, closedWon,
+      pendingInvoices, recentActivities, recentOpps, mapReps, mapHospitalsRaw
+    ] = await Promise.all([
+      prisma.rep.count({ where: { status: "ACTIVE" } }),
+      prisma.hospital.count({ where: { status: { not: "CHURNED" } } }),
+      prisma.lead.count({ where: { status: { in: ["NEW", "CONTACTED", "QUALIFIED"] } } }),
+      prisma.opportunity.count({ where: { stage: { notIn: ["DISCHARGED", "DECLINED"] } } }),
+      prisma.opportunity.count({ where: { stage: "DISCHARGED" } }),
+      prisma.invoice.count({ where: { status: { in: ["SENT", "OVERDUE"] } } }),
+      prisma.activity.findMany({ take: 8, orderBy: { createdAt: "desc" }, include: { hospital: { select: { hospitalName: true } }, rep: { include: { user: { select: { name: true } } } } } }),
+      prisma.opportunity.findMany({ take: 6, orderBy: { createdAt: "desc" }, include: { hospital: { select: { hospitalName: true } }, assignedRep: { include: { user: { select: { name: true } } } } } }),
+      prisma.rep.findMany({ where: { status: "ACTIVE" }, include: { user: { select: { name: true, email: true } }, territories: true } }),
+      prisma.hospital.findMany({ select: { id: true, hospitalName: true, city: true, state: true, status: true, assignedRepId: true }, orderBy: { hospitalName: "asc" } }),
+    ]);
+  } catch {
+    expiringDocs = [];
+    return (
+      <div style={{ textAlign: "center", padding: "80px 20px", color: TEXT_MUTED }}>
+        <div style={{ fontSize: "2rem", marginBottom: 10 }}>Dashboard unavailable</div>
+        <p>We could not load dashboard data right now. Please refresh in a moment.</p>
+      </div>
+    );
+  }
+
+  try {
+    const in30 = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+    expiringDocs = await prisma.complianceDoc.findMany({
+      where: { expiresAt: { lte: in30 } },
+      include: { rep: { include: { user: { select: { name: true } } } } },
+      orderBy: { expiresAt: "asc" },
+      take: 20,
+    });
+  } catch {
+    // non-fatal
+  }
+
+  const now = new Date();
+  const expiredDocs = expiringDocs.filter(d => d.expiresAt && d.expiresAt < now);
+  const soonDocs    = expiringDocs.filter(d => d.expiresAt && d.expiresAt >= now);
 
   const repTerritories = mapReps.map((rep, i) => ({
     id: rep.id,
@@ -174,6 +212,48 @@ export default async function AdminDashboard() {
 
       {/* Quick Actions */}
       <QuickActionsWidget />
+
+      {/* Compliance Alerts */}
+      {expiringDocs.length > 0 && (
+        <div style={{ marginBottom: 28 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+            <p style={{ fontSize: "0.7rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.12em", textTransform: "uppercase" }}>COMPLIANCE ALERTS</p>
+            <Link href="/admin/compliance" style={{ fontSize: "0.75rem", color: CYAN, textDecoration: "none", opacity: 0.7 }}>Manage →</Link>
+          </div>
+          <div style={{ background: expiredDocs.length ? "rgba(248,113,113,0.06)" : "rgba(251,191,36,0.05)", border: `1px solid ${expiredDocs.length ? "rgba(248,113,113,0.25)" : "rgba(251,191,36,0.2)"}`, borderRadius: 12, padding: "16px 18px" }}>
+            {expiredDocs.length > 0 && (
+              <div style={{ marginBottom: soonDocs.length ? 12 : 0 }}>
+                <p style={{ fontSize: "0.68rem", fontWeight: 800, color: "#f87171", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>
+                  ⚠ {expiredDocs.length} EXPIRED DOCUMENT{expiredDocs.length > 1 ? "S" : ""}
+                </p>
+                <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+                  {expiredDocs.slice(0, 5).map(d => (
+                    <div key={d.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "2px 12px" }}>
+                      <span style={{ fontSize: "0.82rem", color: TEXT }}>{(d as { rep: { user: { name: string | null } } }).rep.user.name ?? "Unknown Rep"} — {d.type.replace(/_/g, " ")}</span>
+                      <span style={{ fontSize: "0.72rem", color: "#f87171", fontWeight: 600 }}>Expired {d.expiresAt ? new Date(d.expiresAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : ""}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            {soonDocs.length > 0 && (
+              <div>
+                <p style={{ fontSize: "0.68rem", fontWeight: 800, color: "#fbbf24", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>
+                  EXPIRING WITHIN 30 DAYS
+                </p>
+                <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+                  {soonDocs.slice(0, 5).map(d => (
+                    <div key={d.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "2px 12px" }}>
+                      <span style={{ fontSize: "0.82rem", color: TEXT }}>{(d as { rep: { user: { name: string | null } } }).rep.user.name ?? "Unknown Rep"} — {d.type.replace(/_/g, " ")}</span>
+                      <span style={{ fontSize: "0.72rem", color: "#fbbf24", fontWeight: 600 }}>Expires {d.expiresAt ? new Date(d.expiresAt).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : ""}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* AI Insights */}
       <div style={{ marginBottom: 32 }}>

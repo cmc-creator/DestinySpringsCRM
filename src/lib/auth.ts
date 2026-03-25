@@ -23,11 +23,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             where: { email: credentials.email as string },
           });
         } catch (err) {
-          console.error("[auth] DB error during findUnique:", err);
-          throw new Error(`DB_ERROR: ${err instanceof Error ? err.message : String(err)}`);
+          console.error("[auth] DB error during credential lookup");
+          return null;
         }
-
-        console.log("[auth] Login attempt for:", credentials.email, "| user found:", !!user);
 
         if (!user || !user.password) return null;
 
@@ -38,8 +36,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           console.error("[auth] bcrypt error:", err);
           return null;
         }
-
-        console.log("[auth] Password valid:", isValid, "| role:", user.role);
 
         if (!isValid) return null;
 
