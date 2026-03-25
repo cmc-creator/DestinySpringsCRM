@@ -430,7 +430,7 @@ function LoginForm() {
           )}
 
           <div className="lp-terms">
-            <Link href="/terms">Terms</Link> &middot; <Link href="/privacy">Privacy</Link> &middot; &copy; 2026 Destiny Springs Healthcare
+            <Link href="/terms">Terms</Link> &middot; <Link href="/privacy">Privacy</Link> &middot; NyxAegis &trade; by NyxCollective LLC &trade; &middot; &copy; 2026 NyxCollective LLC
           </div>
           </div>
         </div>
