@@ -319,10 +319,10 @@ export default function SignupPage() {
       <div className="su-shell">
         <section className="su-left" aria-hidden="true">
           <div className="su-chip">Bespoke Whitelabel Deployment</div>
-          <h1 className={`${headingFace.className} su-title`}>Request access to Destiny Springs CRM</h1>
+          <h1 className={`${headingFace.className} su-title`}>Submit a new access request</h1>
           <p className="su-sub">
-            New team members can request secure portal access for either facility accounts or business development operations.
-            Requests route through your internal approval flow.
+            New team members can request secure portal access for facility accounts or business development workflows.
+            Every request is routed through internal approval before activation.
           </p>
           <div className="su-points">
             <div className="su-point">
@@ -347,7 +347,7 @@ export default function SignupPage() {
           </Link>
 
           <h2 className={`${headingFace.className} su-heading`}>Request Access</h2>
-          <p className="su-heading-sub">Join the platform with the role that matches your work.</p>
+          <p className="su-heading-sub">Select your role and submit details for approval.</p>
 
           <div className="su-toggle">
             <button
@@ -355,14 +355,14 @@ export default function SignupPage() {
               onClick={() => setRole("ACCOUNT")}
               className={`su-tab ${role === "ACCOUNT" ? "active" : "inactive"}`}
             >
-              Hospital Account
+              Facility / Hospital
             </button>
             <button
               type="button"
               onClick={() => setRole("REP")}
               className={`su-tab ${role === "REP" ? "active" : "inactive"}`}
             >
-              BD Rep
+              BD Representative
             </button>
           </div>
 
@@ -381,7 +381,7 @@ export default function SignupPage() {
 
             {role === "ACCOUNT" && (
               <div>
-                <label style={labelStyle}>Hospital / Organization Name</label>
+                <label style={labelStyle}>Facility / Organization Name</label>
                 <input type="text" value={form.hospitalName} onChange={(e) => update("hospitalName", e.target.value)} placeholder="Nashville General Medical Center" style={inputStyle} />
               </div>
             )}
@@ -399,16 +399,16 @@ export default function SignupPage() {
             </div>
 
             <button type="submit" disabled={loading} className="su-submit">
-              {loading ? "Creating account..." : "Create Account"}
+              {loading ? "Submitting request..." : "Submit Access Request"}
             </button>
           </form>
 
           <p className="su-login">
-            Already have an account? <Link href="/login">Sign In</Link>
+            Already approved? <Link href="/login">Sign In</Link>
           </p>
 
           <p className="su-legal">
-            By signing up, you agree to our <Link href="/terms">Terms</Link> and <Link href="/privacy">Privacy Policy</Link>.
+            By submitting this request, you agree to our <Link href="/terms">Terms</Link> and <Link href="/privacy">Privacy Policy</Link>.
           </p>
         </section>
       </div>
