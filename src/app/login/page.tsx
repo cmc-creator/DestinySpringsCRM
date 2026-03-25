@@ -430,7 +430,7 @@ function LoginForm() {
           )}
 
           <div className="lp-terms">
-            <Link href="/terms">Terms</Link> &middot; <Link href="/privacy">Privacy</Link> &middot; NyxAegis &trade; by NyxCollective LLC &trade; &middot; &copy; 2026 NyxCollective LLC
+            <Link href="/terms">Terms</Link> &middot; <Link href="/privacy">Privacy</Link> &middot; NyxAegis &trade; by NyxCollective LLC &trade; &middot; &copy; 2026 NyxCollective LLC &middot; <a href="https://www.nyxcollectivellc.com/" target="_blank" rel="noopener noreferrer" style={{ color: "inherit", textDecoration: "underline" }}>Explore more solutions</a>
           </div>
           </div>
         </div>
