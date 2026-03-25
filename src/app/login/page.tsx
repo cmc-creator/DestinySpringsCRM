@@ -299,7 +299,18 @@ function LoginForm() {
           color: rgba(237,228,207,0.22);
         }
         .lp-terms a { color: inherit; }
-        @media (max-width: 1080px) {
+        @media (max-width: 1200px) {
+          .lp-shell {
+            grid-template-columns: 1fr 1fr;
+          }
+          .lp-brand {
+            padding: 26px 24px 22px;
+          }
+          .lp-card {
+            padding: 24px 22px 20px;
+          }
+        }
+        @media (max-width: 920px) {
           .lp-shell { grid-template-columns: 1fr; }
           .lp-brand { display: none; }
           .lp-card { max-width: 470px; margin: 0 auto; border-radius: 16px; }
