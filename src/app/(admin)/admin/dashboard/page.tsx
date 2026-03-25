@@ -5,7 +5,7 @@ import Link from "next/link";
 import TerritoryMapWrapper from "@/components/maps/TerritoryMapWrapper";
 import QuickActionsWidget from "@/components/dashboard/QuickActionsWidget";
 import AIInsightsPanel from "@/components/ai/AIInsightsPanel";
-import type { Decimal } from "@prisma/client/runtime/library";
+import { Prisma } from "@prisma/client";
 
 const CYAN = "var(--nyx-accent)";
 const BORDER = "var(--nyx-accent-dim)";
@@ -109,7 +109,7 @@ export default async function AdminDashboard() {
   let closedWon = 0;
   let pendingInvoices = 0;
   let recentActivities: { id: string; title: string; notes: string | null; createdAt: Date; updatedAt: Date; hospital: { hospitalName: string } | null; rep: { user: { name: string | null } } | null }[] = [];
-  let recentOpps: { id: string; title: string; stage: string; value: Decimal | null; metadata: unknown; notes: string | null; hospitalId: string; createdAt: Date; updatedAt: Date; assignedRepId: string | null; priority: string; hospital: { hospitalName: string }; assignedRep: { user: { name: string | null } } | null }[] = [];
+  let recentOpps: { id: string; title: string; stage: string; value: Prisma.Decimal | null; metadata: unknown; notes: string | null; hospitalId: string; createdAt: Date; updatedAt: Date; assignedRepId: string | null; priority: string; hospital: { hospitalName: string }; assignedRep: { user: { name: string | null } } | null }[] = [];
   let mapReps: { id: string; licensedStates: string[] | null; user: { name: string | null; email: string }; territories: { state: string }[] }[] = [];
   let mapHospitalsRaw: { id: string; hospitalName: string; city: string | null; state: string | null; status: string; assignedRepId: string | null }[] = [];
   let expiringDocs: { id: string; type: string; title: string; notes: string | null; repId: string; createdAt: Date; updatedAt: Date; expiresAt: Date | null; fileUrl: string | null; verified: boolean; rep: { user: { name: string | null } } }[] = [];
