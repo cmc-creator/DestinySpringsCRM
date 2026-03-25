@@ -190,7 +190,7 @@ export async function POST(req: NextRequest) {
             ...(data.monthlyGoal !== undefined ? { monthlyGoal: data.monthlyGoal ? Number(data.monthlyGoal) : null } : {}),
             ...(data.notes !== undefined ? { notes: data.notes as string | null } : {}),
             ...(data.active !== undefined ? { active: Boolean(data.active) } : {}),
-          },
+          } as never,
         });
         await logAudit({ userId: session.user.id, userEmail: session.user.email, userName: session.user.name, action: "UPDATE", resource: "ReferralSource", resourceId: updated.id, diff: { before, after: updated } });
         return NextResponse.json({ ok: true, result: updated, summary: `Updated referral source ${updated.name}` });
@@ -258,7 +258,7 @@ export async function POST(req: NextRequest) {
             ...(data.priority !== undefined ? { priority: String(data.priority).toUpperCase() as never } : {}),
             ...(data.nextFollowUp !== undefined ? { nextFollowUp: data.nextFollowUp ? new Date(String(data.nextFollowUp)) : null } : {}),
             ...(data.assignedRepId !== undefined ? { assignedRepId: data.assignedRepId as string | null } : {}),
-          },
+          } as never,
         });
         await logAudit({ userId: session.user.id, userEmail: session.user.email, userName: session.user.name, action: "UPDATE", resource: "Lead", resourceId: updated.id, diff: { before, after: updated } });
         return NextResponse.json({ ok: true, result: updated, summary: `Updated lead ${updated.id}` });
@@ -310,7 +310,7 @@ export async function POST(req: NextRequest) {
             ...(data.priority !== undefined ? { priority: String(data.priority).toUpperCase() as never } : {}),
             ...(data.description !== undefined ? { description: data.description as string | null } : {}),
             ...(data.notes !== undefined ? { notes: data.notes as string | null } : {}),
-          },
+          } as never,
         });
         await logAudit({ userId: session.user.id, userEmail: session.user.email, userName: session.user.name, action: "UPDATE", resource: "Opportunity", resourceId: updated.id, diff: { before, after: updated } });
         return NextResponse.json({ ok: true, result: updated, summary: `Updated opportunity ${updated.id}` });
