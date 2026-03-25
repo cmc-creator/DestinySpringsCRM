@@ -2,7 +2,6 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { Sidebar } from "@/components/layout/sidebar";
 import AIChatWidget from "@/components/ai/AIChatWidget";
-import GlobalSearch from "@/components/search/GlobalSearch";
 import QuickLogWidget from "@/components/activities/QuickLogWidget";
 
 export const dynamic = "force-dynamic";
@@ -19,7 +18,6 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         <div className="px-4 pt-14 pb-6 md:p-8 page-enter">{children}</div>
       </main>
       <AIChatWidget />
-      <GlobalSearch role="ADMIN" />
       <QuickLogWidget role="ADMIN" />
     </div>
   );

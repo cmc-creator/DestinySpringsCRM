@@ -77,3 +77,66 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Failed to create admin account.", detail: message }, { status: 500 });
   }
 }
+
+/**
+ * Provision any user account using the BOOTSTRAP_SECRET (no admin login required).
+ *
+ * POST /api/admin/bootstrap
+ * Body: { secret, name, email, password, role: "ADMIN"|"REP"|"ACCOUNT", repTitle?, hospitalName? }
+ *
+ * Usage: create accounts for Shawn, Melissa, or any team member before the admin can log in.
+ */
+export async function POST(req: NextRequest) {
+  try {
+    const { secret, name, email, password, role = "REP", repTitle, hospitalName } = await req.json();
+
+    const expectedSecret = process.env.BOOTSTRAP_SECRET;
+    if (!expectedSecret || !secret || secret !== expectedSecret) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    if (!name || !email || !password) {
+      return NextResponse.json({ error: "name, email, and password are required" }, { status: 400 });
+    }
+
+    if (password.length < 8) {
+      return NextResponse.json({ error: "Password must be at least 8 characters" }, { status: 400 });
+    }
+
+    const validRoles = ["ADMIN", "REP", "ACCOUNT"];
+    if (!validRoles.includes(role)) {
+      return NextResponse.json({ error: "Invalid role — must be ADMIN, REP, or ACCOUNT" }, { status: 400 });
+    }
+
+    const existing = await prisma.user.findUnique({ where: { email: email.toLowerCase().trim() } });
+    if (existing) {
+      return NextResponse.json({ ok: true, message: "Account already exists — no changes made.", user: { id: existing.id, email: existing.email, role: existing.role } });
+    }
+
+    const hashed = await bcrypt.hash(password, 12);
+
+    const user = await prisma.user.create({
+      data: {
+        name: name.trim(),
+        email: email.toLowerCase().trim(),
+        password: hashed,
+        role: role as "ADMIN" | "REP" | "ACCOUNT",
+        ...(role === "REP"
+          ? { rep: { create: { title: repTitle ?? "Business Development Representative", status: "ACTIVE" } } }
+          : role === "ACCOUNT"
+          ? { hospital: { create: { hospitalName: hospitalName ?? name.trim(), status: "ACTIVE" } } }
+          : {}),
+      },
+      select: { id: true, name: true, email: true, role: true, createdAt: true },
+    });
+
+    console.log(`[bootstrap] User provisioned: ${user.email} (${user.role})`);
+    return NextResponse.json({ ok: true, message: `Account created for ${user.name}. They can now sign in at /login.`, user }, { status: 201 });
+  } catch (err) {
+    console.error("[bootstrap] POST Error:", err);
+    if (err && typeof err === "object" && "code" in err && (err as { code: string }).code === "P2002") {
+      return NextResponse.json({ error: "Email already registered" }, { status: 409 });
+    }
+    return NextResponse.json({ error: "Failed to create user", detail: err instanceof Error ? err.message : String(err) }, { status: 500 });
+  }
+}

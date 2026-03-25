@@ -59,7 +59,7 @@ const BG = "var(--nyx-bg)";
 const WELCOME_MESSAGE: Message = {
   id: "welcome",
   role: "assistant",
-  content: "Hi! I'm **Aegis**, your intelligent NyxAegis assistant. I can help you manage your pipeline, find new referral sources by location, draft outreach, surface relationships at risk, navigate the platform, and proactively suggest your next best action. What can I help you with?",
+  content: "Hi! I'm **Aegis**, your intelligent Destiny Springs CRM copilot. I can help you manage your admission pipeline, **scout your territory** for new BH referral sources, draft outreach, surface at-risk relationships, and suggest your next best action. Use the quick actions below or just ask me anything!",
 };
 
 function renderMarkdown(text: string): string {
@@ -246,6 +246,32 @@ export default function AIChatWidget() {
 
   const clearChat = () => setMessages([WELCOME_MESSAGE]);
 
+  const triggerPrompt = (prompt: string) => {
+    setInput(prompt);
+    pendingPromptRef.current = prompt;
+  };
+
+  const scoutTerritory = () => {
+    setOpen(true);
+    if (!navigator.geolocation) {
+      const p = "I want to scout for behavioral health referral sources in my area (Arizona). What hospital EDs, crisis stabilization units, outpatient practices, and other BH facilities should I be targeting? Give me prioritized outreach strategies.";
+      triggerPrompt(p);
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude, longitude } = pos.coords;
+        const p = `I'm currently at GPS coordinates ${latitude.toFixed(4)}, ${longitude.toFixed(4)} in Arizona. What behavioral health and mental health referral sources, hospital EDs, crisis stabilization units, outpatient practices, FQHCs, or other BH facilities should I be targeting near this location? Give me specific facility types, outreach strategies, and priority order.`;
+        triggerPrompt(p);
+      },
+      () => {
+        const p = "I want to scout my territory in Arizona for behavioral health referral sources. What hospital EDs, crisis units, outpatient practices, and other BH facilities should I be targeting? Give me specific outreach strategies.";
+        triggerPrompt(p);
+      },
+      { timeout: 8000 }
+    );
+  };
+
   return (
     <>
       <style>{`
@@ -339,7 +365,7 @@ export default function AIChatWidget() {
             </div>
             <div style={{ flex: 1 }}>
               <p style={{ margin: 0, fontWeight: 800, fontSize: "0.9rem", color: GOLD, letterSpacing: "0.03em" }}>Aegis AI</p>
-              <p style={{ margin: 0, fontSize: "0.68rem", color: MUTED }}>NyxAegis Assistant</p>
+              <p style={{ margin: 0, fontSize: "0.68rem", color: MUTED }}>Destiny Springs AI Copilot</p>
             </div>
             <div style={{ display: "flex", gap: 6 }}>
               <button
@@ -394,6 +420,37 @@ export default function AIChatWidget() {
             )}
             <div ref={bottomRef} />
           </div>
+
+          {/* Quick action chips — shown only on fresh chat */}
+          {messages.length === 1 && messages[0].id === "welcome" && (
+            <div style={{ padding: "0 12px 10px", display: "flex", flexWrap: "wrap", gap: 6 }}>
+              {([
+                { label: "🗺️ Scout My Territory", action: scoutTerritory },
+                { label: "📊 Pipeline Summary", prompt: "Summarize my current admission pipeline — what\'s stalled, what stage has the most volume, and what needs immediate attention?" },
+                { label: "⚡ Who Needs Attention?", prompt: "Which referral sources or sending facilities haven\'t referred in 30+ days and need a visit or outreach call?" },
+                { label: "📝 Draft ED Outreach", prompt: "Draft a short, professional outreach message I can send to a hospital emergency department social worker to introduce Destiny Springs Healthcare and request a facility visit." },
+              ] as { label: string; action?: () => void; prompt?: string }[]).map(({ label, action, prompt }) => (
+                <button
+                  key={label}
+                  onClick={() => action ? action() : triggerPrompt(prompt!)}
+                  style={{
+                    background: GOLD_DIM,
+                    border: `1px solid ${GOLD_MID}`,
+                    borderRadius: 20,
+                    padding: "5px 11px",
+                    fontSize: "0.71rem",
+                    color: GOLD,
+                    cursor: "pointer",
+                    fontWeight: 600,
+                    transition: "background 0.15s",
+                    whiteSpace: "nowrap",
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.background = "rgba(201,168,76,0.22)")}
+                  onMouseLeave={e => (e.currentTarget.style.background = GOLD_DIM)}
+                >{label}</button>
+              ))}
+            </div>
+          )}
 
           {/* Input */}
           <div style={{ padding: "10px 12px", borderTop: `1px solid ${BORDER}`, flexShrink: 0, background: BG, display: "flex", gap: 8, alignItems: "flex-end" }}>

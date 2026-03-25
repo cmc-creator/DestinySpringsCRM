@@ -1,8 +1,8 @@
 "use client";
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useState, useRef, useEffect } from "react";
 import { signOut } from "next-auth/react";
 
 const CYAN       = "var(--nyx-accent)";
@@ -193,8 +193,59 @@ interface SidebarProps {
 
 export function Sidebar({ role, userName, userEmail }: SidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const nav = getNav(role);
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  // ── Inline search ──────────────────────────────────────────────────────────
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<{
+    hospitals: { id: string; hospitalName: string; city?: string | null; state?: string | null }[];
+    leads: { id: string; hospitalName: string; contactName?: string | null }[];
+    opportunities: { id: string; title: string; hospital: { hospitalName: string } }[];
+    reps: { id: string; user: { name?: string | null; email?: string | null }; territory?: string | null }[];
+  } | null>(null);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const searchRef = useRef<HTMLInputElement>(null);
+  const searchDropRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (searchQuery.length < 2) { setSearchResults(null); setSearchLoading(false); return; }
+    setSearchLoading(true);
+    const t = setTimeout(() => {
+      fetch(`/api/search?q=${encodeURIComponent(searchQuery)}`)
+        .then(r => r.json())
+        .then(d => { setSearchResults(d); setSearchLoading(false); })
+        .catch(() => setSearchLoading(false));
+    }, 280);
+    return () => clearTimeout(t);
+  }, [searchQuery]);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "k") {
+        e.preventDefault();
+        searchRef.current?.focus();
+        searchRef.current?.select();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
+
+  const searchItems = searchResults ? [
+    ...searchResults.hospitals.map(h => ({ icon: "🏥", label: h.hospitalName, sub: [h.city, h.state].filter(Boolean).join(", "), href: "/admin/hospitals", typeLabel: "Account" })),
+    ...searchResults.leads.map(l => ({ icon: "🎯", label: l.hospitalName, sub: l.contactName ?? "", href: "/admin/leads", typeLabel: "Lead" })),
+    ...searchResults.opportunities.map(o => ({ icon: "📊", label: o.title, sub: o.hospital.hospitalName, href: "/admin/opportunities", typeLabel: "Opportunity" })),
+    ...searchResults.reps.map(r => ({ icon: "👤", label: r.user.name ?? r.user.email ?? "", sub: r.territory ?? "", href: "/admin/reps", typeLabel: "Rep" })),
+  ] : [];
+
+  function goToResult(href: string) {
+    router.push(href);
+    setSearchQuery("");
+    setSearchResults(null);
+    setMobileOpen(false);
+  }
 
   return (
     <>
@@ -243,6 +294,87 @@ export function Sidebar({ role, userName, userEmail }: SidebarProps) {
             aria-label="Close menu"
           >✕</button>
         </div>
+      </div>
+
+      {/* Inline search */}
+      <div style={{ padding: "8px 10px 6px", borderBottom: `1px solid ${BORDER}`, position: "relative" }}>
+        <div style={{ position: "relative" }}>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={TEXT_MUTED} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+            style={{ position: "absolute", left: 9, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}>
+            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+          </svg>
+          <input
+            ref={searchRef}
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === "Escape") { setSearchQuery(""); setSearchResults(null); (e.target as HTMLInputElement).blur(); }
+            }}
+            onBlur={() => setTimeout(() => setSearchResults(null), 160)}
+            placeholder="Search…  ⌘K"
+            style={{
+              width: "100%", boxSizing: "border-box",
+              background: "rgba(255,255,255,0.04)",
+              border: `1px solid ${BORDER}`,
+              borderRadius: 7,
+              padding: "7px 10px 7px 28px",
+              color: TEXT, fontSize: "0.78rem",
+              outline: "none",
+              transition: "border-color 0.15s",
+            }}
+            onFocus={e => (e.target.style.borderColor = CYAN)}
+          />
+          {searchLoading && (
+            <span style={{ position: "absolute", right: 9, top: "50%", transform: "translateY(-50%)", fontSize: "0.6rem", color: TEXT_MUTED }}>…</span>
+          )}
+        </div>
+        {/* Results dropdown */}
+        {(searchItems.length > 0 || (searchQuery.length >= 2 && !searchLoading && searchResults !== null)) && (
+          <div
+            ref={searchDropRef}
+            style={{
+              position: "absolute",
+              left: 10, right: 10,
+              top: "calc(100% - 4px)",
+              background: "var(--nyx-card)",
+              border: `1px solid ${ACCENT_MID}`,
+              borderRadius: 9,
+              boxShadow: "0 8px 32px rgba(0,0,0,0.65)",
+              zIndex: 9999,
+              overflow: "hidden",
+              maxHeight: 300,
+              overflowY: "auto",
+            }}
+          >
+            {searchItems.length === 0 ? (
+              <div style={{ padding: "14px 12px", fontSize: "0.72rem", color: TEXT_MUTED, textAlign: "center" }}>
+                No results for &ldquo;{searchQuery}&rdquo;
+              </div>
+            ) : (
+              searchItems.slice(0, 8).map((item, i) => (
+                <button
+                  key={i}
+                  onMouseDown={e => { e.preventDefault(); goToResult(item.href); }}
+                  style={{
+                    width: "100%", display: "flex", alignItems: "center", gap: 8,
+                    padding: "9px 12px", background: "none", border: "none",
+                    borderBottom: i < Math.min(searchItems.length, 8) - 1 ? `1px solid rgba(255,255,255,0.05)` : "none",
+                    cursor: "pointer", textAlign: "left", color: TEXT, transition: "background 0.1s",
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.06)")}
+                  onMouseLeave={e => (e.currentTarget.style.background = "none")}
+                >
+                  <span style={{ fontSize: "0.85rem", flexShrink: 0 }}>{item.icon}</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: "0.75rem", fontWeight: 600, color: TEXT, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.label}</div>
+                    {item.sub && <div style={{ fontSize: "0.65rem", color: TEXT_MUTED, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.sub}</div>}
+                  </div>
+                  <span style={{ fontSize: "0.58rem", fontWeight: 700, color: ACCENT_LBL, background: "rgba(255,255,255,0.06)", padding: "1px 5px", borderRadius: 3, flexShrink: 0 }}>{item.typeLabel}</span>
+                </button>
+              ))
+            )}
+          </div>
+        )}
       </div>
 
       {/* Nav */}
