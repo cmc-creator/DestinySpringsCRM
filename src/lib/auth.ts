@@ -22,7 +22,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           user = await prisma.user.findUnique({
             where: { email: credentials.email as string },
           });
-        } catch (err) {
+        } catch (_err) {
           console.error("[auth] DB error during credential lookup");
           return null;
         }

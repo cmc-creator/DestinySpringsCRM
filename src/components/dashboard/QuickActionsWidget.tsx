@@ -156,7 +156,7 @@ export default function QuickActionsWidget({ role = "ADMIN" }: { role?: "ADMIN" 
     } catch {
       // ignore
     }
-  }, []);
+  }, [storageKey]);
 
   const save = (ids: string[]) => {
     setEnabled(ids);
