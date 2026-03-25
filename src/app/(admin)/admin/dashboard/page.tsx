@@ -110,7 +110,7 @@ export default async function AdminDashboard() {
   let recentActivities: Awaited<ReturnType<typeof prisma.activity.findMany>> = [];
   let recentOpps: Awaited<ReturnType<typeof prisma.opportunity.findMany>> = [];
   let mapReps: Awaited<ReturnType<typeof prisma.rep.findMany>> = [];
-  let mapHospitalsRaw: Awaited<ReturnType<typeof prisma.hospital.findMany>> = [];
+  let mapHospitalsRaw: { id: string; hospitalName: string; city: string | null; state: string | null; status: string; assignedRepId: string | null }[] = [];
   let expiringDocs: Awaited<ReturnType<typeof prisma.complianceDoc.findMany>> = [];
 
   try {
