@@ -300,7 +300,7 @@ export async function POST(_req: NextRequest) {
           };
         }
         const match = await prisma.referral.findFirst({
-          where: whereClause as Parameters<typeof prisma.referral.findFirst>[0]["where"],
+          where: whereClause as never,
           select: { id: true, dischargeDate: true },
           orderBy: { createdAt: "desc" },
         });

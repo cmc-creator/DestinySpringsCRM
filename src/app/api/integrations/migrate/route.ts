@@ -345,7 +345,7 @@ export async function POST(req: NextRequest) {
             phone:       get(row, "phone")      || undefined,
             department:  get(row, "department") || undefined,
             notes:       get(row, "notes")      || undefined,
-            type:        mapEnum(typeRaw, CONTACT_TYPE_MAP, "OTHER") as Parameters<typeof prisma.contact.create>[0]["data"]["type"],
+            type:        mapEnum(typeRaw, CONTACT_TYPE_MAP, "OTHER") as never,
           },
         });
         imported++;

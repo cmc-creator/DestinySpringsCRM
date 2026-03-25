@@ -272,7 +272,7 @@ async function main() {
   ];
 
   for (const lead of leadsData) {
-    await prisma.lead.create({ data: lead as Parameters<typeof prisma.lead.create>[0]["data"] });
+    await prisma.lead.create({ data: lead as never });
   }
 
   // ── PAYORS ─────────────────────────────────────────────────────────────────
@@ -325,7 +325,7 @@ async function main() {
 
   const opportunities = [];
   for (const opp of oppsData) {
-    const created = await prisma.opportunity.create({ data: opp as Parameters<typeof prisma.opportunity.create>[0]["data"] });
+    const created = await prisma.opportunity.create({ data: opp as never });
     opportunities.push(created);
   }
 
