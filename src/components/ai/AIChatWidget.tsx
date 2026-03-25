@@ -175,7 +175,7 @@ export default function AIChatWidget() {
     recognition.continuous = false;
 
     recognition.onresult = (event) => {
-      const ev = event as unknown as { results?: { 0?: { 0?: { transcript?: string } } }[] };
+      const ev = event as unknown as { results?: { 0?: { transcript?: string } }[] };
       const transcript = ev.results?.[0]?.[0]?.transcript?.trim() ?? "";
       if (!transcript) return;
       setInput((prev) => (prev ? `${prev} ${transcript}` : transcript));
