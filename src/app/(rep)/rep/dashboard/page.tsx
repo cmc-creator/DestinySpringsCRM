@@ -1,4 +1,5 @@
 ﻿import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { formatCurrency, formatRelativeTime } from "@/lib/utils";
@@ -15,7 +16,14 @@ export default async function RepDashboard() {
   const session = await auth();
   if (!session) redirect("/login");
 
-  let rep: Awaited<ReturnType<typeof prisma.rep.findUnique>>;
+  let rep: null | {
+    id: string; title: string | null; territory: string | null; userId: string;
+    user: { name: string | null };
+    opportunities: { id: string; title: string; stage: string; value: Prisma.Decimal | null; updatedAt: Date; hospital: { hospitalName: string } }[];
+    activities: { id: string; title: string; type: string; createdAt: Date }[];
+    territories: { id: string }[];
+    _count: { opportunities: number; leads: number; territories: number };
+  } = null;
   let overdueLeads: { id: string; hospitalName: string; nextFollowUp: Date | null }[] = [];
   let overdueOpps: { id: string; title: string; nextFollowUp: Date | null; hospital: { hospitalName: string } }[] = [];
 
