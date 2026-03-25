@@ -211,7 +211,7 @@ export async function POST(req: NextRequest) {
           data: {
             hospitalName: String(data.hospitalName),
             systemName: (data.systemName as string | undefined) ?? null,
-            hospitalType: (data.hospitalType as string | undefined) ?? null,
+            hospitalType: (data.hospitalType as string | undefined) ? (data.hospitalType as string) as never : null,
             bedCount: data.bedCount ? Number(data.bedCount) : null,
             state: (data.state as string | undefined) ?? null,
             city: (data.city as string | undefined) ?? null,
