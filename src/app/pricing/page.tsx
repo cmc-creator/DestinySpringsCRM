@@ -78,14 +78,14 @@ const faqs = [
   { q: "What counts as an 'account'?", a: "Each distinct facility or health system entity counts as one account. A 10-facility IDN would count as 10 accounts on Solo Liaison, or unlimited on Team and above." },
   { q: "Can I add more liaisons to my team?", a: "Yes. Team plans support up to 10 liaisons. Additional liaison seats are $25/seat/mo. Enterprise plans include unlimited liaisons." },
   { q: "Do you offer nonprofit or community health discounts?", a: "Yes - contact us at ops@destinyspringshealthcare.com for nonprofit, FQHC, or government healthcare pricing." },
-  { q: "What integrations do you support?", a: "Enterprise plans include custom integration development. We currently support Stripe for payments, Resend for email, and have open APIs for CRM, EHR (HL7/FHIR), and BI tool integrations." },
+  { q: "What integrations do you support?", a: "Enterprise plans include custom integration development. We currently support Resend for email and have open APIs for CRM, EHR (HL7/FHIR), and BI tool integrations." },
 ];
 
 export default function PricingPage() {
   return (
-    <div style={{ background: BG, color: TEXT, fontFamily: "system-ui, -apple-system, sans-serif", minHeight: "100vh" }}>
+    <div style={{ background: BG, color: TEXT, fontFamily: "system-ui, -apple-system, sans-serif", minHeight: "100vh" }} className="pricing-page">
       {/* NAV */}
-      <nav style={{ borderBottom: `1px solid ${BORDER}`, padding: "0 2rem", display: "flex", alignItems: "center", justifyContent: "space-between", height: 60, background: "var(--nyx-bg)", backdropFilter: "blur(12px)" }}>
+      <nav className="pricing-nav" style={{ borderBottom: `1px solid ${BORDER}`, padding: "0 2rem", display: "flex", alignItems: "center", justifyContent: "space-between", height: 60, background: "var(--nyx-bg)", backdropFilter: "blur(12px)" }}>
         <Link href="/" style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none" }}>
           <svg width="24" height="24" viewBox="0 0 32 32" fill="none">
             <rect width="32" height="32" rx="8" fill="var(--nyx-bg)"/>
@@ -94,23 +94,23 @@ export default function PricingPage() {
           </svg>
           <span style={{ fontWeight: 900, color: TEXT }}>Destiny Springs CRM</span>
         </Link>
-        <div style={{ display: "flex", gap: 16 }}>
+        <div className="pricing-nav-actions" style={{ display: "flex", gap: 16 }}>
           <Link href="/login" style={{ color: "rgba(216,232,244,0.5)", textDecoration: "none", fontSize: "0.875rem", fontWeight: 500 }}>Sign In</Link>
           <Link href="/signup" style={{ background: CYAN, color: BG, padding: "7px 18px", borderRadius: 7, fontWeight: 700, textDecoration: "none", fontSize: "0.875rem" }}>Get Started</Link>
         </div>
       </nav>
 
       {/* HEADER */}
-      <section style={{ padding: "64px 2rem 48px", textAlign: "center" }}>
+      <section className="pricing-header" style={{ padding: "64px 2rem 48px", textAlign: "center" }}>
         <p style={{ color: CYAN, fontSize: "0.75rem", fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: 12 }}>PRICING</p>
         <h1 style={{ fontSize: "clamp(2rem, 5vw, 3rem)", fontWeight: 900, color: TEXT, letterSpacing: "-0.02em", marginBottom: 16 }}>Simple, transparent pricing</h1>
         <p style={{ color: "rgba(216,232,244,0.55)", maxWidth: 480, margin: "0 auto", fontSize: "1rem", lineHeight: 1.7 }}>No hidden fees. No per-account charges. Just straightforward pricing for BD teams.</p>
       </section>
 
       {/* TIERS */}
-      <section style={{ maxWidth: 1060, margin: "0 auto", padding: "0 2rem 72px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 24 }}>
+      <section className="pricing-tiers" style={{ maxWidth: 1060, margin: "0 auto", padding: "0 2rem 72px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 24 }}>
         {tiers.map((t) => (
-          <div key={t.name} style={{ background: t.highlight ? "var(--nyx-accent-dim)" : "rgba(255,255,255,0.02)", border: `1px solid ${t.highlight ? "var(--nyx-accent-str)" : BORDER}`, borderRadius: 14, padding: "32px 28px", display: "flex", flexDirection: "column", position: "relative" }}>
+          <div key={t.name} className={`pricing-card${t.highlight ? " pricing-card--highlight" : ""}`} style={{ background: t.highlight ? "var(--nyx-accent-dim)" : "rgba(255,255,255,0.02)", border: `1px solid ${t.highlight ? "var(--nyx-accent-str)" : BORDER}`, borderRadius: 14, padding: "32px 28px", display: "flex", flexDirection: "column", position: "relative" }}>
             {t.highlight && <div style={{ position: "absolute", top: -1, left: "50%", transform: "translateX(-50%)", background: CYAN, color: BG, padding: "3px 14px", borderRadius: "0 0 8px 8px", fontSize: "0.68rem", fontWeight: 800, letterSpacing: "0.1em", whiteSpace: "nowrap" }}>MOST POPULAR</div>}
             <div>
               <div style={{ fontSize: "0.75rem", fontWeight: 700, color: CYAN, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 6 }}>{t.name}</div>
@@ -140,7 +140,7 @@ export default function PricingPage() {
       </section>
 
       {/* FAQ */}
-      <section style={{ maxWidth: 720, margin: "0 auto", padding: "0 2rem 80px" }}>
+      <section className="pricing-faq" style={{ maxWidth: 720, margin: "0 auto", padding: "0 2rem 80px" }}>
         <h2 style={{ fontSize: "1.6rem", fontWeight: 800, color: TEXT, marginBottom: 32, textAlign: "center" }}>Frequently Asked Questions</h2>
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           {faqs.map((faq) => (
@@ -160,6 +160,58 @@ export default function PricingPage() {
           <Link href="/privacy" style={{ color: "inherit" }}>Privacy</Link>
         </p>
       </footer>
+
+      <style>{`
+        @media (max-width: 920px) {
+          .pricing-nav {
+            padding: 10px 14px !important;
+            height: auto !important;
+            flex-wrap: wrap;
+            gap: 10px;
+          }
+          .pricing-nav-actions {
+            width: 100%;
+            justify-content: flex-end;
+          }
+          .pricing-header {
+            padding: 44px 14px 28px !important;
+          }
+          .pricing-tiers {
+            padding: 0 14px 40px !important;
+            gap: 14px !important;
+          }
+          .pricing-faq {
+            padding: 0 14px 52px !important;
+          }
+        }
+
+        @media (max-width: 560px) {
+          .pricing-nav-actions {
+            justify-content: space-between;
+          }
+          .pricing-tiers {
+            grid-template-columns: 1fr !important;
+          }
+          .pricing-card {
+            padding: 22px 16px !important;
+            border-radius: 12px !important;
+          }
+          .pricing-header h1 {
+            font-size: 1.7rem !important;
+            line-height: 1.15;
+          }
+          .pricing-header p {
+            font-size: 0.92rem !important;
+          }
+          .pricing-faq h2 {
+            font-size: 1.3rem !important;
+            margin-bottom: 18px !important;
+          }
+          .pricing-faq > div > div {
+            padding: 16px 14px !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }

@@ -3,7 +3,18 @@ import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(request: Request) {
+  if (process.env.NODE_ENV === "production") {
+    const expectedToken = process.env.HEALTH_TOKEN;
+    const providedToken =
+      request.headers.get("x-health-token") ??
+      new URL(request.url).searchParams.get("token");
+
+    if (!expectedToken || !providedToken || providedToken !== expectedToken) {
+      return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+    }
+  }
+
   const checks: Record<string, string> = {
     DATABASE_URL: process.env.DATABASE_URL ? "SET" : "MISSING",
     AUTH_SECRET:  process.env.AUTH_SECRET  ? "SET" : "MISSING",
@@ -15,8 +26,8 @@ export async function GET() {
   try {
     userCount = await prisma.user.count();
     dbStatus = "connected";
-  } catch (err) {
-    dbStatus = `ERROR: ${err instanceof Error ? err.message : String(err)}`;
+  } catch {
+    dbStatus = "ERROR: database query failed";
   }
 
   const ok = dbStatus === "connected" && checks.DATABASE_URL === "SET" && checks.AUTH_SECRET === "SET";

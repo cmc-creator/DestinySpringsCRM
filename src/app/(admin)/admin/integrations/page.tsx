@@ -7,7 +7,6 @@ const TEXT = "var(--nyx-text)";
 const TEXT_MUTED = "var(--nyx-text-muted)";
 
 const integrations = [
-  { name: "Stripe",             desc: "Payment processing for invoices and rep commissions",              icon: "💳", status: "connected", href: null },
   { name: "Resend",             desc: "Transactional email for notifications and digests",                icon: "📧", status: "connected", href: null },
   { name: "Microsoft Outlook",  desc: "Send emails and sync Outlook Calendar events via Microsoft Graph API",   icon: "📮", status: "available", href: "/admin/communications" },
   { name: "Microsoft Calendar", desc: "Auto-sync scheduled activities and meetings to Outlook Calendar",          icon: "📅", status: "available", href: "/admin/communications" },
