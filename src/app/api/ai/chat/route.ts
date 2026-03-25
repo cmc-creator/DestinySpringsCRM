@@ -106,26 +106,26 @@ Output JSON shape:
 }`;
 
 async function inferActionProposal(apiKey: string, latestUserMessage: string): Promise<ActionProposal | null> {
-  const res = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model: "gpt-4o-mini",
-      messages: [
-        { role: "system", content: ACTION_EXTRACTION_SYSTEM },
-        { role: "user", content: latestUserMessage },
-      ],
-      temperature: 0,
-      max_tokens: 300,
-    }),
-  });
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: ACTION_EXTRACTION_SYSTEM }] },
+        contents: [{ role: "user", parts: [{ text: latestUserMessage }] }],
+        generationConfig: {
+          temperature: 0,
+          maxOutputTokens: 300,
+          responseMimeType: "application/json",
+        },
+      }),
+    }
+  );
 
   if (!res.ok) return null;
-  const data = await res.json() as { choices?: { message?: { content?: string } }[] };
-  const raw = data.choices?.[0]?.message?.content?.trim();
+  const data = await res.json() as { candidates?: { content?: { parts?: { text?: string }[] } }[] };
+  const raw = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
   if (!raw) return null;
 
   try {
@@ -148,45 +148,50 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "No messages provided" }, { status: 400 });
   }
 
-  const apiKey = process.env.OPENAI_API_KEY;
+  const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     return NextResponse.json({
       role: "assistant",
-      content: "⚠️ The AI assistant isn't configured yet. Please add your **OPENAI_API_KEY** to your Vercel environment variables and redeploy.",
+      content: "⚠️ The AI assistant isn't configured yet. Please add your **GEMINI_API_KEY** to your Vercel environment variables and redeploy.",
     });
   }
 
-  const body = {
-    model: "gpt-4o-mini",
-    messages: [
-      { role: "system", content: SYSTEM_PROMPT },
-      ...messages.map((m) => ({ role: m.role, content: m.content })),
-    ],
-    max_tokens: 1024,
-    temperature: 0.7,
-  };
+  // Map OpenAI-style roles to Gemini roles (assistant -> model)
+  const geminiContents = messages.map((m) => ({
+    role: m.role === "assistant" ? "model" : "user",
+    parts: [{ text: m.content }],
+  }));
 
-  const res = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify(body),
-  });
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${apiKey}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+        contents: geminiContents,
+        generationConfig: { maxOutputTokens: 1024, temperature: 0.7 },
+      }),
+    }
+  );
 
   if (!res.ok) {
     const err = await res.text();
-    console.error("OpenAI error:", err);
-    return NextResponse.json({ error: "AI service error — please try again." }, { status: 502 });
+    console.error("Gemini error:", err);
+    return NextResponse.json({ error: "AI service error - please try again." }, { status: 502 });
   }
 
   const data = await res.json() as {
-    choices: { message: { role: string; content: string } }[];
+    candidates: { content: { role: string; parts: { text: string }[] } }[];
   };
 
-  const reply = data.choices?.[0]?.message;
-  if (!reply) return NextResponse.json({ error: "No response from AI" }, { status: 502 });
+  const candidate = data.candidates?.[0]?.content;
+  if (!candidate) return NextResponse.json({ error: "No response from AI" }, { status: 502 });
+
+  const reply = {
+    role: "assistant",
+    content: candidate.parts.map((p) => p.text).join(""),
+  };
 
   let actionProposal: ActionProposal | null = null;
   if (allowEdits) {
