@@ -5,10 +5,10 @@
   "scripts": {
     "dev": "next dev",
     "build": "prisma generate && next build",
-    "vercel-build": "prisma generate && next build",
+    "vercel-build": "prisma generate && prisma db push --accept-data-loss && next build",
     "postinstall": "prisma generate",
     "prepare": "git config core.hooksPath .githooks || true",
-    "start": "node -e \"const vars=['DATABASE_URL','DATABASE_PRIVATE_URL','POSTGRES_URL','POSTGRES_PRIVATE_URL','AUTH_SECRET','NEXTAUTH_URL'];vars.forEach(k=>console.log('[env]',k,process.env[k]?'SET':'NOT SET'))\" && prisma db push --accept-data-loss && tsx prisma/seed.ts && next start",
+    "start": "next start",
     "lint": "next lint",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
@@ -48,6 +48,7 @@
     "recharts": "^2.15.0",
     "resend": "^6.9.2",
     "stripe": "^17.7.0",
+    "xlsx": "^0.18.5",
     "tailwind-merge": "^2.6.0",
     "tailwindcss-animate": "^1.0.7",
     "zod": "^3.24.1"
