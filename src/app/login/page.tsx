@@ -364,8 +364,8 @@ function LoginForm() {
 
           <div className="lp-card">
           <div className="lp-logo">
-            <Image src="/Aegislogo.png" alt="Destiny Springs" width={32} height={32} style={{ objectFit: "contain" }} />
-            <span className="lp-logo-name">Destiny Springs</span>
+            <Image src="/Aegislogo.png" alt="NyxAegis for Destiny Springs" width={32} height={32} style={{ objectFit: "contain" }} />
+            <span className="lp-logo-name">NyxAegis for Destiny Springs</span>
           </div>
 
           <h1 className={`${headingFace.className} lp-title`}>Welcome back</h1>

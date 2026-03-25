@@ -276,8 +276,8 @@ export default async function RootPage() {
       <div className="home-shell">
         <nav className="home-nav">
           <Link href="/" className="home-brand">
-            <Image src="/Aegislogo.png" alt="Destiny Springs" width={26} height={26} style={{ objectFit: "contain" }} />
-            <span className="home-brand-name">Destiny Springs</span>
+            <Image src="/Aegislogo.png" alt="NyxAegis for Destiny Springs" width={26} height={26} style={{ objectFit: "contain" }} />
+            <span className="home-brand-name">NyxAegis for Destiny Springs</span>
           </Link>
           <div className="home-nav-actions">
             <Link href="/pricing" className="home-nav-link">Pricing</Link>
