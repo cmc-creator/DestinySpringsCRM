@@ -14,14 +14,14 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   title: "Destiny Springs CRM",
   description: "Behavioral Health CRM for Destiny Springs Hospital, including admissions pipeline, referral tracking, and census management.",
-  icons: { icon: "/icon.svg", shortcut: "/icon.svg" },
+  icons: { icon: "/Aegislogo.png", shortcut: "/Aegislogo.png", apple: "/Aegislogo.png" },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <head>
-        <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+        <link rel="icon" href="/Aegislogo.png" type="image/png" />
         <link rel="manifest" href="/manifest.json" />
         <link rel="apple-touch-icon" href="/Aegislogo.png" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
