@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const TEXT   = "var(--nyx-text)";
 const MUTED  = "var(--nyx-text-muted)";
@@ -27,6 +27,15 @@ export default function M365IntakeIntegrationPage() {
   const [syncing, setSyncing]     = useState(false);
   const [result, setResult]       = useState<SyncResult | null>(null);
   const [lastSync, setLastSync]   = useState<string | null>(null);
+  const [connected, setConnected] = useState<string | null>(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("connected") === "microsoft") {
+      setConnected("Microsoft 365 connected — you can now sync.");
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+  }, []);
 
   async function runSync() {
     setSyncing(true);

@@ -17,12 +17,16 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(`${appUrl}/admin/communications?oauth_error=${encodeURIComponent(desc)}`);
   }
 
-  // Decode state to extract userId (CSRF: verifying the state was issued by us)
+  // Decode state to extract userId + optional returnTo (CSRF: verifying the state was issued by us)
   let userId: string;
+  let returnTo: string | null = null;
   try {
     const decoded = JSON.parse(Buffer.from(state, "base64url").toString("utf-8"));
     userId = decoded.userId;
     if (!userId) throw new Error("No userId in state");
+    // Validate returnTo to prevent open redirect
+    const raw = decoded.returnTo ?? "";
+    returnTo = /^\/(?:admin|rep)\//.test(raw) ? (raw as string) : null;
   } catch {
     return NextResponse.redirect(`${appUrl}/admin/communications?oauth_error=Invalid+state`);
   }
@@ -92,9 +96,10 @@ export async function GET(req: NextRequest) {
     },
   });
 
-  // Detect which portal to redirect to based on user role
+  // Redirect: use returnTo if provided, otherwise fall back to communications hub
   const user = await prisma.user.findUnique({ where: { id: userId }, select: { role: true } });
   const base = user?.role === "REP" ? "/rep" : "/admin";
+  const destination = returnTo ?? `${base}/communications`;
 
-  return NextResponse.redirect(`${appUrl}${base}/communications?connected=microsoft`);
+  return NextResponse.redirect(`${appUrl}${destination}?connected=microsoft`);
 }
