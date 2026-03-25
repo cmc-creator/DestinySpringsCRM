@@ -299,7 +299,18 @@ function LoginForm() {
           color: rgba(237,228,207,0.22);
         }
         .lp-terms a { color: inherit; }
-        @media (max-width: 1080px) {
+        @media (max-width: 1200px) {
+          .lp-shell {
+            grid-template-columns: 1fr 1fr;
+          }
+          .lp-brand {
+            padding: 26px 24px 22px;
+          }
+          .lp-card {
+            padding: 24px 22px 20px;
+          }
+        }
+        @media (max-width: 920px) {
           .lp-shell { grid-template-columns: 1fr; }
           .lp-brand { display: none; }
           .lp-card { max-width: 470px; margin: 0 auto; border-radius: 16px; }
@@ -353,8 +364,8 @@ function LoginForm() {
 
           <div className="lp-card">
           <div className="lp-logo">
-            <Image src="/Aegislogo.png" alt="Destiny Springs" width={32} height={32} style={{ objectFit: "contain" }} />
-            <span className="lp-logo-name">Destiny Springs</span>
+            <Image src="/Aegislogo.png" alt="NyxAegis for Destiny Springs" width={32} height={32} style={{ objectFit: "contain" }} />
+            <span className="lp-logo-name">NyxAegis for Destiny Springs</span>
           </div>
 
           <h1 className={`${headingFace.className} lp-title`}>Welcome back</h1>
@@ -419,7 +430,7 @@ function LoginForm() {
           )}
 
           <div className="lp-terms">
-            <Link href="/terms">Terms</Link> &middot; <Link href="/privacy">Privacy</Link> &middot; &copy; 2026 Destiny Springs Healthcare
+            <Link href="/terms">Terms</Link> &middot; <Link href="/privacy">Privacy</Link> &middot; NyxAegis &trade; by NyxCollective LLC &trade; &middot; &copy; 2026 NyxCollective LLC &middot; <a href="https://www.nyxcollectivellc.com/" target="_blank" rel="noopener noreferrer" style={{ color: "inherit", textDecoration: "underline" }}>Explore more solutions</a>
           </div>
           </div>
         </div>

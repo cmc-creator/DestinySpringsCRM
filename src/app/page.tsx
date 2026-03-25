@@ -228,6 +228,13 @@ export default async function RootPage() {
           line-height: 1.45;
           color: rgba(237,228,207,0.6);
         }
+        .home-footer {
+          margin-top: 24px;
+          text-align: center;
+          font-size: 0.74rem;
+          color: rgba(237,228,207,0.4);
+          letter-spacing: 0.02em;
+        }
         @media (max-width: 980px) {
           .home-wrap { padding: 20px 14px 34px; }
           .home-hero { grid-template-columns: 1fr; }
@@ -276,8 +283,8 @@ export default async function RootPage() {
       <div className="home-shell">
         <nav className="home-nav">
           <Link href="/" className="home-brand">
-            <Image src="/Aegislogo.png" alt="Destiny Springs" width={26} height={26} style={{ objectFit: "contain" }} />
-            <span className="home-brand-name">Destiny Springs</span>
+            <Image src="/Aegislogo.png" alt="NyxAegis for Destiny Springs" width={26} height={26} style={{ objectFit: "contain" }} />
+            <span className="home-brand-name">NyxAegis for Destiny Springs</span>
           </Link>
           <div className="home-nav-actions">
             <Link href="/pricing" className="home-nav-link">Pricing</Link>
@@ -342,6 +349,10 @@ export default async function RootPage() {
             </div>
           </aside>
         </section>
+
+        <footer className="home-footer">
+          NyxAegis &trade; is a product of NyxCollective LLC &trade; &middot; &copy; 2026 NyxCollective LLC. All rights reserved. &middot; <a href="https://www.nyxcollectivellc.com/" target="_blank" rel="noopener noreferrer" style={{ color: "inherit", textDecoration: "underline" }}>Explore more solutions</a>
+        </footer>
       </div>
     </main>
   );
