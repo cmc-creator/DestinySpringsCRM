@@ -111,7 +111,7 @@ export default async function AdminDashboard() {
   let recentOpps: Awaited<ReturnType<typeof prisma.opportunity.findMany>> = [];
   let mapReps: { id: string; licensedStates: string[] | null; user: { name: string | null; email: string }; territories: { state: string }[] }[] = [];
   let mapHospitalsRaw: { id: string; hospitalName: string; city: string | null; state: string | null; status: string; assignedRepId: string | null }[] = [];
-  let expiringDocs: Awaited<ReturnType<typeof prisma.complianceDoc.findMany>> = [];
+  let expiringDocs: { id: string; type: string; title: string; notes: string | null; repId: string; createdAt: Date; updatedAt: Date; expiresAt: Date | null; fileUrl: string | null; verified: boolean; rep: { user: { name: string | null } } }[] = [];
 
   try {
     [
@@ -229,7 +229,7 @@ export default async function AdminDashboard() {
                 <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
                   {expiredDocs.slice(0, 5).map(d => (
                     <div key={d.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "2px 12px" }}>
-                      <span style={{ fontSize: "0.82rem", color: TEXT }}>{(d as { rep: { user: { name: string | null } } }).rep.user.name ?? "Unknown Rep"} — {d.type.replace(/_/g, " ")}</span>
+                      <span style={{ fontSize: "0.82rem", color: TEXT }}>{d.rep.user.name ?? "Unknown Rep"} — {d.type.replace(/_/g, " ")}</span>
                       <span style={{ fontSize: "0.72rem", color: "#f87171", fontWeight: 600 }}>Expired {d.expiresAt ? new Date(d.expiresAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : ""}</span>
                     </div>
                   ))}
@@ -244,7 +244,7 @@ export default async function AdminDashboard() {
                 <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
                   {soonDocs.slice(0, 5).map(d => (
                     <div key={d.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "2px 12px" }}>
-                      <span style={{ fontSize: "0.82rem", color: TEXT }}>{(d as { rep: { user: { name: string | null } } }).rep.user.name ?? "Unknown Rep"} — {d.type.replace(/_/g, " ")}</span>
+                      <span style={{ fontSize: "0.82rem", color: TEXT }}>{d.rep.user.name ?? "Unknown Rep"} — {d.type.replace(/_/g, " ")}</span>
                       <span style={{ fontSize: "0.72rem", color: "#fbbf24", fontWeight: 600 }}>Expires {d.expiresAt ? new Date(d.expiresAt).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : ""}</span>
                     </div>
                   ))}
