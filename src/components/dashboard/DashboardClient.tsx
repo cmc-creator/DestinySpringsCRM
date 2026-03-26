@@ -89,47 +89,6 @@ function Icon({ id, color }: { id: string; color: string }) {
 }
 
 // ─── Section components ───────────────────────────────────────────────────────
-function StatsSection({ stats, hiddenStats, customizing, onToggleStat }: {
-  stats: StatItem[];
-  hiddenStats: Set<string>;
-  customizing: boolean;
-  onToggleStat: (id: string) => void;
-}) {
-  return (
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 16, marginBottom: 32 }}>
-      {stats.map((s) => {
-        const hidden = hiddenStats.has(s.id);
-        if (!customizing && hidden) return null;
-        return (
-          <div key={s.id} style={{ position: "relative", opacity: hidden ? 0.3 : 1, transition: "opacity 0.2s" }}>
-            <Link href={s.href} style={{ textDecoration: "none" }}>
-              <div className="gold-card" style={{ borderRadius: 12, padding: "20px 18px", cursor: "pointer", transition: "box-shadow 0.2s" }}>
-                <div style={{ marginBottom: 10, opacity: 0.85 }}><Icon id={s.icon} color="var(--nyx-accent)" /></div>
-                <div style={{ fontSize: "1.8rem", fontWeight: 900, color: TEXT, lineHeight: 1, marginBottom: 4 }}>{s.value}</div>
-                <div style={{ fontSize: "0.75rem", color: MUTED, fontWeight: 500 }}>{s.label}</div>
-              </div>
-            </Link>
-            {customizing && (
-              <button
-                onClick={() => onToggleStat(s.id)}
-                title={hidden ? "Show card" : "Hide card"}
-                style={{
-                  position: "absolute", top: 6, right: 6, width: 22, height: 22, borderRadius: "50%",
-                  background: hidden ? "rgba(201,168,76,0.2)" : "rgba(255,80,80,0.15)",
-                  border: `1px solid ${hidden ? "rgba(201,168,76,0.5)" : "rgba(255,80,80,0.4)"}`,
-                  color: hidden ? GOLD : "rgba(255,80,80,0.8)", cursor: "pointer",
-                  fontSize: "0.7rem", fontWeight: 900, display: "flex", alignItems: "center", justifyContent: "center",
-                }}
-              >
-                {hidden ? "+" : "×"}
-              </button>
-            )}
-          </div>
-        );
-      })}
-    </div>
-  );
-}
 
 function ComplianceSection({ expiredDocs, soonDocs }: { expiredDocs: ComplianceDocItem[]; soonDocs: ComplianceDocItem[] }) {
   if (expiredDocs.length === 0 && soonDocs.length === 0) return null;
@@ -258,12 +217,16 @@ export default function DashboardClient({
   expiredDocs,
   soonDocs,
 }: DashboardClientProps) {
+  const statIds = stats.map((s) => s.id);
   const [order, setOrder]           = useState<SectionId[]>(ALL_SECTIONS);
+  const [statOrder, setStatOrder]   = useState<string[]>(statIds);
   const [hidden, setHidden]         = useState<Set<SectionId>>(new Set());
   const [hiddenStats, setHiddenStats] = useState<Set<string>>(new Set());
   const [customizing, setCustomizing] = useState(false);
   const [dragging, setDragging]     = useState<SectionId | null>(null);
   const [dragOver, setDragOver]     = useState<SectionId | null>(null);
+  const [draggingStatId, setDraggingStatId] = useState<string | null>(null);
+  const [dragOverStatId, setDragOverStatId] = useState<string | null>(null);
   const [mounted, setMounted]       = useState(false);
 
   useEffect(() => {
@@ -271,15 +234,16 @@ export default function DashboardClient({
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return;
-      const parsed = JSON.parse(raw) as { order?: SectionId[]; hidden?: SectionId[]; hiddenStats?: string[] };
+      const parsed = JSON.parse(raw) as { order?: SectionId[]; orderStats?: string[]; hidden?: SectionId[]; hiddenStats?: string[] };
       if (Array.isArray(parsed.order) && parsed.order.length) setOrder(parsed.order);
+      if (Array.isArray(parsed.orderStats) && parsed.orderStats.length) setStatOrder(parsed.orderStats);
       if (Array.isArray(parsed.hidden)) setHidden(new Set(parsed.hidden));
       if (Array.isArray(parsed.hiddenStats)) setHiddenStats(new Set(parsed.hiddenStats));
     } catch { /* ignore */ }
   }, []);
 
-  const persist = (o: SectionId[], h: Set<SectionId>, hs: Set<string>) => {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ order: o, hidden: [...h], hiddenStats: [...hs] })); } catch { /* ignore */ }
+  const persist = (o: SectionId[], os: string[], h: Set<SectionId>, hs: Set<string>) => {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ order: o, orderStats: os, hidden: [...h], hiddenStats: [...hs] })); } catch { /* ignore */ }
   };
 
   const toggleSection = (id: SectionId) => {
@@ -290,7 +254,7 @@ export default function DashboardClient({
       next.add(id);
     }
     setHidden(next);
-    persist(order, next, hiddenStats);
+    persist(order, statOrder, next, hiddenStats);
   };
 
   const toggleStat = (id: string) => {
@@ -301,7 +265,7 @@ export default function DashboardClient({
       next.add(id);
     }
     setHiddenStats(next);
-    persist(order, hidden, next);
+    persist(order, statOrder, hidden, next);
   };
 
   const onDragStart = (id: SectionId) => setDragging(id);
@@ -315,29 +279,113 @@ export default function DashboardClient({
     next.splice(from, 1);
     next.splice(to, 0, dragging);
     setOrder(next);
-    persist(next, hidden, hiddenStats);
+    persist(next, statOrder, hidden, hiddenStats);
     setDragging(null);
     setDragOver(null);
   };
   const onDragEnd = () => { setDragging(null); setDragOver(null); };
 
+  const onStatDragStart = (id: string) => setDraggingStatId(id);
+  const onStatDragOver = (e: React.DragEvent, id: string) => {
+    e.preventDefault();
+    setDragOverStatId(id);
+  };
+  const onStatDrop = (e: React.DragEvent, targetId: string) => {
+    e.preventDefault();
+    if (!draggingStatId || draggingStatId === targetId) {
+      setDraggingStatId(null);
+      setDragOverStatId(null);
+      return;
+    }
+    const from = statOrder.indexOf(draggingStatId);
+    const to = statOrder.indexOf(targetId);
+    if (from === -1 || to === -1) {
+      setDraggingStatId(null);
+      setDragOverStatId(null);
+      return;
+    }
+    const next = [...statOrder];
+    next.splice(from, 1);
+    next.splice(to, 0, draggingStatId);
+    setStatOrder(next);
+    persist(order, next, hidden, hiddenStats);
+    setDraggingStatId(null);
+    setDragOverStatId(null);
+  };
+  const onStatDragEnd = () => {
+    setDraggingStatId(null);
+    setDragOverStatId(null);
+  };
+
   const resetLayout = () => {
     setOrder(ALL_SECTIONS);
+    setStatOrder(statIds);
     setHidden(new Set());
     setHiddenStats(new Set());
-    persist(ALL_SECTIONS, new Set(), new Set());
+    persist(ALL_SECTIONS, statIds, new Set(), new Set());
   };
+
+  const orderedStats = [
+    ...statOrder.map((id) => stats.find((s) => s.id === id)).filter((s): s is StatItem => Boolean(s)),
+    ...stats.filter((s) => !statOrder.includes(s.id)),
+  ];
 
   const renderSection = (id: SectionId) => {
     switch (id) {
       case "stats":
         return (
-          <StatsSection
-            stats={stats}
-            hiddenStats={hiddenStats}
-            customizing={customizing}
-            onToggleStat={toggleStat}
-          />
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 16, marginBottom: 32 }}>
+            {orderedStats.map((s) => {
+              const hidden = hiddenStats.has(s.id);
+              if (!customizing && hidden) return null;
+              const statDragTarget = dragOverStatId === s.id && draggingStatId !== s.id;
+
+              return (
+                <div
+                  key={s.id}
+                  draggable={customizing}
+                  onDragStart={() => onStatDragStart(s.id)}
+                  onDragOver={(e) => onStatDragOver(e, s.id)}
+                  onDrop={(e) => onStatDrop(e, s.id)}
+                  onDragEnd={onStatDragEnd}
+                  style={{
+                    position: "relative",
+                    opacity: hidden ? 0.3 : draggingStatId === s.id ? 0.4 : 1,
+                    transition: "opacity 0.2s, outline 0.1s",
+                    cursor: customizing ? "grab" : "default",
+                    outline: statDragTarget ? "2px dashed rgba(201,168,76,0.45)" : "2px dashed transparent",
+                    borderRadius: 12,
+                  }}
+                >
+                  <Link href={s.href} style={{ textDecoration: "none" }}>
+                    <div className="gold-card" style={{ borderRadius: 12, padding: "20px 18px", cursor: "pointer", transition: "box-shadow 0.2s" }}>
+                      <div style={{ marginBottom: 10, opacity: 0.85 }}><Icon id={s.icon} color="var(--nyx-accent)" /></div>
+                      <div style={{ fontSize: "1.8rem", fontWeight: 900, color: TEXT, lineHeight: 1, marginBottom: 4 }}>{s.value}</div>
+                      <div style={{ fontSize: "0.75rem", color: MUTED, fontWeight: 500 }}>{s.label}</div>
+                    </div>
+                  </Link>
+                  {customizing && (
+                    <>
+                      <div style={{ position: "absolute", top: 7, left: 8, color: "var(--nyx-accent-label)", fontWeight: 900, fontSize: "0.7rem" }}>⋮⋮</div>
+                      <button
+                        onClick={() => toggleStat(s.id)}
+                        title={hidden ? "Show card" : "Hide card"}
+                        style={{
+                          position: "absolute", top: 6, right: 6, width: 22, height: 22, borderRadius: "50%",
+                          background: hidden ? "rgba(201,168,76,0.2)" : "rgba(255,80,80,0.15)",
+                          border: `1px solid ${hidden ? "rgba(201,168,76,0.5)" : "rgba(255,80,80,0.4)"}`,
+                          color: hidden ? GOLD : "rgba(255,80,80,0.8)", cursor: "pointer",
+                          fontSize: "0.7rem", fontWeight: 900, display: "flex", alignItems: "center", justifyContent: "center",
+                        }}
+                      >
+                        {hidden ? "+" : "×"}
+                      </button>
+                    </>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         );
       case "quick-actions":
         return <QuickActionsWidget role="ADMIN" />;

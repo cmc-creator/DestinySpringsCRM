@@ -147,6 +147,8 @@ export default function QuickActionsWidget({ role = "ADMIN" }: { role?: "ADMIN" 
   const [enabled, setEnabled]   = useState<string[]>(defaultIds);
   const [editing, setEditing]   = useState(false);
   const [mounted, setMounted]   = useState(false);
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [dragOverId, setDragOverId] = useState<string | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -167,7 +169,20 @@ export default function QuickActionsWidget({ role = "ADMIN" }: { role?: "ADMIN" 
     save(enabled.includes(id) ? enabled.filter((x) => x !== id) : [...enabled, id]);
   };
 
-  const active = actions.filter((a) => enabled.includes(a.id));
+  const reorderEnabled = (fromId: string, toId: string) => {
+    if (fromId === toId) return;
+    const from = enabled.indexOf(fromId);
+    const to = enabled.indexOf(toId);
+    if (from === -1 || to === -1) return;
+    const next = [...enabled];
+    next.splice(from, 1);
+    next.splice(to, 0, fromId);
+    save(next);
+  };
+
+  const active = enabled
+    .map((id) => actions.find((a) => a.id === id))
+    .filter((a): a is QuickAction => Boolean(a));
 
   if (!mounted) {
     // SSR placeholder — renders default actions non-interactively
@@ -223,11 +238,58 @@ export default function QuickActionsWidget({ role = "ADMIN" }: { role?: "ADMIN" 
         {active.length === 0 ? (
           <span style={{ fontSize: "0.78rem", color: MUTED, fontStyle: "italic" }}>No actions selected. Use Customize to add some.</span>
         ) : (
-          active.map((a) => (
-            <Link key={a.id} href={a.href} style={{ display: "inline-flex", alignItems: "center", gap: 7, background: "var(--nyx-accent-dim)", border: "1px solid var(--nyx-accent-mid)", borderRadius: 8, padding: "8px 14px", textDecoration: "none", color: CYAN, fontSize: "0.8rem", fontWeight: 600 }}>
-              <Icon id={a.icon} /> {a.label}
-            </Link>
-          ))
+          active.map((a) => {
+            const isDragTarget = editing && dragOverId === a.id && draggingId !== a.id;
+
+            if (!editing) {
+              return (
+                <Link key={a.id} href={a.href} style={{ display: "inline-flex", alignItems: "center", gap: 7, background: "var(--nyx-accent-dim)", border: "1px solid var(--nyx-accent-mid)", borderRadius: 8, padding: "8px 14px", textDecoration: "none", color: CYAN, fontSize: "0.8rem", fontWeight: 600 }}>
+                  <Icon id={a.icon} /> {a.label}
+                </Link>
+              );
+            }
+
+            return (
+              <button
+                key={a.id}
+                type="button"
+                draggable
+                onDragStart={() => setDraggingId(a.id)}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setDragOverId(a.id);
+                }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  if (draggingId) reorderEnabled(draggingId, a.id);
+                  setDraggingId(null);
+                  setDragOverId(null);
+                }}
+                onDragEnd={() => {
+                  setDraggingId(null);
+                  setDragOverId(null);
+                }}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 7,
+                  background: "var(--nyx-accent-dim)",
+                  border: "1px solid var(--nyx-accent-mid)",
+                  borderRadius: 8,
+                  padding: "8px 14px",
+                  color: CYAN,
+                  fontSize: "0.8rem",
+                  fontWeight: 700,
+                  cursor: "grab",
+                  opacity: draggingId === a.id ? 0.45 : 1,
+                  outline: isDragTarget ? "2px dashed var(--nyx-accent-str)" : "none",
+                }}
+              >
+                <span style={{ color: "var(--nyx-accent-label)", fontWeight: 900 }}>⋮⋮</span>
+                <Icon id={a.icon} /> {a.label}
+              </button>
+            );
+          })
         )}
       </div>
 
@@ -235,7 +297,7 @@ export default function QuickActionsWidget({ role = "ADMIN" }: { role?: "ADMIN" 
       {editing && (
         <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: "18px 20px" }}>
           <p style={{ fontSize: "0.72rem", color: MUTED, marginBottom: 14 }}>
-            Toggle which actions appear in your quick actions bar. Changes save automatically.
+            Toggle which actions appear in your quick actions bar. Drag active chips above to reorder for quick use. Changes save automatically.
           </p>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
             {actions.map((a) => {
