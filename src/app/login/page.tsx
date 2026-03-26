@@ -43,9 +43,25 @@ function LoginForm() {
   const [error,    setError]    = useState("");
   const isDev = process.env.NODE_ENV !== "production";
 
+  function mapLoginError(errorCode: string) {
+    if (errorCode === "RateLimit") {
+      return "Too many sign-in attempts. Please wait a few minutes and try again.";
+    }
+
+    if (errorCode === "CredentialsSignin") {
+      return "Sign-in failed. Check your email and password. If you recently signed up, your account may still be awaiting admin approval.";
+    }
+
+    if (errorCode === "AccessDenied") {
+      return "Access denied. Your account may still be awaiting admin approval.";
+    }
+
+    return `Sign-in failed (${errorCode}). Please check your credentials or contact your admin.`;
+  }
+
   useEffect(() => {
     const urlError = searchParams.get("error");
-    if (urlError) setError(`Sign-in failed: ${urlError}`);
+    if (urlError) setError(mapLoginError(urlError));
   }, [searchParams]);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -55,8 +71,7 @@ function LoginForm() {
     try {
       const result = await signIn("credentials", { email, password, redirect: false });
       if (result?.error) {
-        // Show exact error code to help diagnose (CredentialsSignin = wrong pw, Configuration = setup issue)
-        setError(`Sign-in failed (${result.error}). Please check your credentials or contact your admin.`);
+        setError(mapLoginError(result.error));
         return;
       }
       const session = await getSession();

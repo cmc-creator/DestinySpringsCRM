@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { Resend } from "resend";
 import { prisma } from "@/lib/prisma";
+import { checkRateLimit, getRequestIdentity } from "@/lib/rate-limit";
 
 export const maxDuration = 30;
 
@@ -17,6 +18,24 @@ const MIN_PASSWORD_LENGTH = 8;
 
 export async function POST(req: NextRequest) {
   try {
+    const requestIdentity = getRequestIdentity(req);
+    const identityLimit = checkRateLimit({
+      namespace: "signup-ip",
+      key: requestIdentity,
+      limit: 10,
+      windowMs: 15 * 60 * 1000,
+    });
+
+    if (!identityLimit.allowed) {
+      return NextResponse.json(
+        { error: "Too many signup attempts. Please wait a few minutes and try again." },
+        {
+          status: 429,
+          headers: { "Retry-After": String(identityLimit.retryAfterSeconds) },
+        }
+      );
+    }
+
     const { name, email, password, role = "ACCOUNT", hospitalName, repTitle, plan = "starter" } = await req.json();
 
     if (!email || !password || !name) {
@@ -25,6 +44,23 @@ export async function POST(req: NextRequest) {
 
     if (!isValidEmail(email)) {
       return NextResponse.json({ error: "Invalid email address" }, { status: 400 });
+    }
+
+    const emailIdentityLimit = checkRateLimit({
+      namespace: "signup-email",
+      key: `${email.toLowerCase().trim()}|${requestIdentity}`,
+      limit: 5,
+      windowMs: 15 * 60 * 1000,
+    });
+
+    if (!emailIdentityLimit.allowed) {
+      return NextResponse.json(
+        { error: "Too many signup attempts for this email. Please wait before trying again." },
+        {
+          status: 429,
+          headers: { "Retry-After": String(emailIdentityLimit.retryAfterSeconds) },
+        }
+      );
     }
 
     if (typeof password !== "string" || password.length < MIN_PASSWORD_LENGTH) {
