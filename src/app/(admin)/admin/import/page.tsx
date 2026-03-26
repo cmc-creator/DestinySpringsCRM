@@ -39,16 +39,23 @@ export default function AdminImportPage() {
   const [file, setFile]         = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [result, setResult]     = useState<ImportResult | null>(null);
+  const [dragging, setDragging] = useState(false);
   const fileRef                 = useRef<HTMLInputElement>(null);
 
-  async function runImport(e: React.FormEvent) {
+  function handleDrop(e: React.DragEvent) {
     e.preventDefault();
-    if (!file) return;
+    e.stopPropagation();
+    setDragging(false);
+    const dropped = e.dataTransfer.files?.[0];
+    if (dropped) { setFile(dropped); setResult(null); startImport(dropped); }
+  }
+
+  async function startImport(fileToImport: File) {
     setUploading(true);
     setResult(null);
 
     const fd = new FormData();
-    fd.append("file", file);
+    fd.append("file", fileToImport);
     fd.append("type", type);
 
     try {
@@ -60,6 +67,12 @@ export default function AdminImportPage() {
     } finally {
       setUploading(false);
     }
+  }
+
+  async function runImport(e: React.FormEvent) {
+    e.preventDefault();
+    if (!file) return;
+    await startImport(file);
   }
 
   const active = IMPORT_TYPES.find((t) => t.value === type)!;
@@ -106,14 +119,18 @@ export default function AdminImportPage() {
       <form onSubmit={runImport} style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(201,168,76,0.12)", borderRadius: 14, padding: "22px 24px" }}>
         <div
           onClick={() => fileRef.current?.click()}
+          onDrop={handleDrop}
+          onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+          onDragEnter={(e) => { e.preventDefault(); setDragging(true); }}
+          onDragLeave={() => setDragging(false)}
           style={{
-            border: `2px dashed ${file ? "rgba(34,197,94,0.4)" : "rgba(201,168,76,0.2)"}`,
+            border: `2px dashed ${file ? "rgba(34,197,94,0.4)" : dragging ? "rgba(201,168,76,0.7)" : "rgba(201,168,76,0.2)"}`,
             borderRadius: 12,
             padding: "32px 24px",
             textAlign: "center",
             cursor: "pointer",
             marginBottom: 18,
-            background: file ? "rgba(34,197,94,0.04)" : "transparent",
+            background: file ? "rgba(34,197,94,0.04)" : dragging ? "rgba(201,168,76,0.06)" : "transparent",
             transition: "all 0.15s ease",
           }}
         >
@@ -122,7 +139,10 @@ export default function AdminImportPage() {
             type="file"
             accept=".xlsx,.xls,.csv"
             style={{ display: "none" }}
-            onChange={(e) => { setFile(e.target.files?.[0] ?? null); setResult(null); }}
+            onChange={(e) => {
+              const picked = e.target.files?.[0] ?? null;
+              if (picked) { setFile(picked); setResult(null); startImport(picked); }
+            }}
           />
           {file ? (
             <>
@@ -142,7 +162,7 @@ export default function AdminImportPage() {
           disabled={!file || uploading}
           style={{ background: file && !uploading ? "#c9a84c" : "rgba(201,168,76,0.25)", color: file && !uploading ? "#100805" : "rgba(237,228,207,0.4)", fontWeight: 800, fontSize: "0.9rem", border: "none", borderRadius: 10, padding: "13px 24px", cursor: file && !uploading ? "pointer" : "not-allowed", width: "100%" }}
         >
-          {uploading ? "Importing — please wait…" : `Import ${active.label}`}
+          {uploading ? `⏳ Importing ${active.label} — this may take up to 30 seconds…` : `Import ${active.label}`}
         </button>
       </form>
 

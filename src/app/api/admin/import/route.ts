@@ -66,12 +66,10 @@ async function importAccounts(rows: Record<string, unknown>[]) {
           primaryContactPhone: contactPhone || phone || undefined,
           hospitalType: mapFacilityType(type),
           status: "PROSPECT",
-          // Accounts imported without a linked User — create a placeholder user
+          // Each account needs a unique placeholder user
           user: {
             create: {
-              email: contactEmail
-                ? contactEmail.toLowerCase().trim()
-                : `imported-${Date.now()}-${Math.random().toString(36).slice(2)}@noreply.import`,
+              email: `imported-${Date.now()}-${Math.random().toString(36).slice(2, 9)}@noreply.import`,
               name: contactName || name,
               role: "ACCOUNT",
             },
