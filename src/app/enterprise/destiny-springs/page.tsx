@@ -28,7 +28,7 @@ const PLATFORM_FEATURES = [
 
 const monthlyTotal = PER_SEAT_PRICE * INCLUDED_SEATS;
 const annualTotal  = monthlyTotal * 12;
-const marketMonthly = MARKET_RATE_PER_SEAT * INCLUDED_SEATS;
+const marketMonthlyBaseline = MARKET_RATE_PER_SEAT * INCLUDED_SEATS;
 
 export default function DSHPartnerPage() {
   return (
@@ -76,17 +76,17 @@ export default function DSHPartnerPage() {
           <div style={{ padding: "28px 40px", textAlign: "center" }}>
             <div style={{ fontSize: "0.65rem", fontWeight: 800, color: "rgba(216,232,244,0.35)", letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: 8 }}>Market Rate</div>
             <div style={{ display: "flex", alignItems: "baseline", gap: 4, justifyContent: "center" }}>
-              <span style={{ fontSize: "3.2rem", fontWeight: 900, color: "rgba(216,232,244,0.2)", lineHeight: 1, textDecoration: "line-through" }}>${marketMonthly}</span>
-              <span style={{ color: "rgba(216,232,244,0.2)", fontSize: "0.9rem" }}>/mo</span>
+              <span style={{ fontSize: "3.2rem", fontWeight: 900, color: "rgba(216,232,244,0.28)", lineHeight: 1 }}>${MARKET_RATE_PER_SEAT}+</span>
+              <span style={{ color: "rgba(216,232,244,0.35)", fontSize: "0.9rem" }}>/seat/mo</span>
             </div>
-            <div style={{ fontSize: "0.78rem", color: "rgba(216,232,244,0.4)", marginTop: 4 }}>{INCLUDED_SEATS} seats × ${MARKET_RATE_PER_SEAT} retail</div>
+            <div style={{ fontSize: "0.78rem", color: "rgba(216,232,244,0.4)", marginTop: 4 }}>Typical market starting point</div>
           </div>
         </div>
 
         {/* Savings Banner */}
         <div style={{ marginBottom: 36 }}>
           <div style={{ display: "inline-block", background: GOLD_DIM, border: `1px solid ${BORDER}`, borderRadius: 8, padding: "8px 20px", fontSize: "0.85rem", color: GOLD, fontWeight: 700 }}>
-            You save ${(marketMonthly - monthlyTotal).toLocaleString()}/mo | ${((marketMonthly - monthlyTotal) * 12).toLocaleString()}/yr vs. standard pricing
+            You save ${(marketMonthlyBaseline - monthlyTotal).toLocaleString()}/mo | ${((marketMonthlyBaseline - monthlyTotal) * 12).toLocaleString()}/yr vs. $150/seat baseline
           </div>
         </div>
 
@@ -134,7 +134,7 @@ export default function DSHPartnerPage() {
             {[
               { label: "Monthly Investment", value: `$${monthlyTotal.toLocaleString()}`, sub: `${INCLUDED_SEATS} seats × $${PER_SEAT_PRICE}` },
               { label: "Annual Investment", value: `$${annualTotal.toLocaleString()}`, sub: "billed annually" },
-              { label: "Annual Savings vs. Market", value: `$${((marketMonthly - monthlyTotal) * 12).toLocaleString()}`, sub: "vs. BD Team plan", highlight: true },
+              { label: "Annual Savings vs. Market", value: `$${((marketMonthlyBaseline - monthlyTotal) * 12).toLocaleString()}`, sub: "using $150/seat baseline", highlight: true },
             ].map(({ label, value, sub, highlight }) => (
               <div key={label} style={{ background: highlight ? "rgba(201,168,76,0.12)" : "rgba(10,14,20,0.95)", padding: "24px 18px", textAlign: "center" }}>
                 <div style={{ fontSize: "0.65rem", fontWeight: 700, color: highlight ? GOLD : "rgba(216,232,244,0.4)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>{label}</div>
@@ -203,7 +203,7 @@ export default function DSHPartnerPage() {
       {/* FOOTER */}
       <footer style={{ borderTop: `1px solid ${BORDER}`, padding: "24px 2rem", textAlign: "center" }}>
         <p style={{ fontSize: "0.78rem", color: "rgba(216,232,244,0.22)" }}>
-          © 2026 NyxCollective LLC | <a href="mailto:cmc@conniemichelleconsulting.com" style={{ color: "inherit" }}>cmc@conniemichelleconsulting.com</a> |{" "}
+          © 2026 NyxCollective LLC | <a href="https://nycollectivellc.com" target="_blank" rel="noreferrer" style={{ color: "inherit" }}>nycollectivellc.com</a> |{" "}
           <Link href="/terms" style={{ color: "inherit" }}>Terms</Link> | <Link href="/privacy" style={{ color: "inherit" }}>Privacy</Link>
         </p>
         <p style={{ fontSize: "0.72rem", color: "rgba(216,232,244,0.15)", marginTop: 6 }}>
