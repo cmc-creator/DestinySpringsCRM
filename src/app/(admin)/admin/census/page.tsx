@@ -81,6 +81,59 @@ export default async function CensusPage() {
         <p style={{ color: TEXT_MUTED, fontSize: "0.875rem", marginTop: 4 }}>Daily bed availability snapshot for all units.</p>
       </div>
 
+      {/* ── Live SharePoint Documents ─────────────────────────────────────── */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginBottom: 32 }}>
+        {/* Bedboard */}
+        <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 14, overflow: "hidden" }}>
+          <div style={{ padding: "14px 20px", borderBottom: `1px solid ${BORDER}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div>
+              <p style={{ margin: 0, fontSize: "0.68rem", fontWeight: 700, color: "var(--nyx-accent-label)", textTransform: "uppercase", letterSpacing: "0.1em" }}>LIVE</p>
+              <h2 style={{ margin: 0, fontSize: "1rem", fontWeight: 800, color: TEXT }}>🛏 Bedboard</h2>
+            </div>
+            <a
+              href="https://destinyspringshpt.sharepoint.com/:x:/r/sites/Intake/_layouts/15/Doc2.aspx?action=edit&sourcedoc=%7B0dec3106-c845-4eb7-b01c-c64a86da0796%7D&web=1"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ fontSize: "0.75rem", color: CYAN, fontWeight: 700, textDecoration: "none", background: "rgba(0,212,255,0.08)", border: `1px solid ${BORDER}`, borderRadius: 7, padding: "5px 10px" }}
+            >
+              Open in SharePoint ↗
+            </a>
+          </div>
+          <iframe
+            src="https://destinyspringshpt.sharepoint.com/:x:/r/sites/Intake/_layouts/15/Doc2.aspx?action=embedview&sourcedoc=%7B0dec3106-c845-4eb7-b01c-c64a86da0796%7D&wdAllowInteractivity=False"
+            width="100%"
+            height="420"
+            style={{ border: "none", display: "block" }}
+            title="Bedboard"
+          />
+        </div>
+
+        {/* Discharge List */}
+        <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 14, overflow: "hidden" }}>
+          <div style={{ padding: "14px 20px", borderBottom: `1px solid ${BORDER}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div>
+              <p style={{ margin: 0, fontSize: "0.68rem", fontWeight: 700, color: "var(--nyx-accent-label)", textTransform: "uppercase", letterSpacing: "0.1em" }}>LIVE</p>
+              <h2 style={{ margin: 0, fontSize: "1rem", fontWeight: 800, color: TEXT }}>📋 Discharge List</h2>
+            </div>
+            <a
+              href="https://destinyspringshpt.sharepoint.com/:x:/r/sites/Discharge/_layouts/15/Doc.aspx?sourcedoc=%7B154a42d6-cc08-45b6-8af5-ebcb1029e635%7D&action=edit"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ fontSize: "0.75rem", color: CYAN, fontWeight: 700, textDecoration: "none", background: "rgba(0,212,255,0.08)", border: `1px solid ${BORDER}`, borderRadius: 7, padding: "5px 10px" }}
+            >
+              Open in SharePoint ↗
+            </a>
+          </div>
+          <iframe
+            src="https://destinyspringshpt.sharepoint.com/:x:/r/sites/Discharge/_layouts/15/Doc.aspx?sourcedoc=%7B154a42d6-cc08-45b6-8af5-ebcb1029e635%7D&action=embedview&wdAllowInteractivity=False"
+            width="100%"
+            height="420"
+            style={{ border: "none", display: "block" }}
+            title="Discharge List"
+          />
+        </div>
+      </div>
+
       {/* Today's summary cards */}
       {today && (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 16, marginBottom: 32 }}>
