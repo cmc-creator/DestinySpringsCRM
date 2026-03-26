@@ -2,10 +2,10 @@ import Link from "next/link";
 
 // ── DSH Partner Plan configuration ──────────────────────────────────────────
 // Adjust PER_SEAT_PRICE and INCLUDED_SEATS to match your agreed contract terms
-const PER_SEAT_PRICE = 50;        // $ / seat / month
-const INCLUDED_SEATS = 20;        // seats included in base contract
+const PER_SEAT_PRICE = 39;        // $ / seat / month
+const INCLUDED_SEATS = 4;         // seats included in base contract
 const CONTRACT_TERM = "Annual";   // display only
-const MARKET_RATE_PER_SEAT = 199; // reference retail seat price
+const MARKET_RATE_PER_SEAT = 79;  // reference retail seat price
 // ────────────────────────────────────────────────────────────────────────────
 
 const BG    = "var(--nyx-bg)";
@@ -23,7 +23,7 @@ const PLATFORM_FEATURES = [
   { cat: "Team & Compliance",      items: ["Unlimited user seats", "Role-based access (Admin / Rep / Account)", "Rep compliance document vault (HIPAA certs, licenses)", "Audit log (immutable, exportable)", "Document library for rep collateral"] },
   { cat: "Communications",         items: ["Internal messaging system", "In-app notification center", "Google Calendar bi-directional sync", "Email tracking integration", "Bulk outreach communications hub"] },
   { cat: "Integrations",           items: ["iCANotes EHR census sync", "MedWorxs clinical data sync", "Paycom HR/payroll integration", "Monday.com project management sync", "E-signature (DocuSign / SignNow)"] },
-  { cat: "Enterprise Support",     items: ["Dedicated account manager (Connie Michelle Consulting)", "Priority email + phone support", "Custom onboarding & training sessions", "White-label branding (custom domain available)", "SLA guarantee — 99.9% uptime"] },
+  { cat: "Enterprise Support",     items: ["Dedicated account manager (Connie Michelle Consulting)", "Priority email + phone support", "Custom onboarding & training sessions", "White-label branding (custom domain available)", "SLA guarantee: 99.9% uptime"] },
 ];
 
 const monthlyTotal = PER_SEAT_PRICE * INCLUDED_SEATS;
@@ -60,7 +60,7 @@ export default function DSHPartnerPage() {
           <span style={{ color: GOLD }}>Partner Plan</span>
         </h1>
         <p style={{ color: "rgba(216,232,244,0.6)", maxWidth: 540, margin: "0 auto 36px", fontSize: "1.05rem", lineHeight: 1.75 }}>
-          The complete NyxAegis platform — every feature, unlimited everything — at an exclusive per-seat rate reserved for our highest-tier partnership.
+          The complete NyxAegis platform, every feature and unlimited data, at a small-team partner rate designed for Destiny Springs.
         </p>
 
         {/* Pricing Callout */}
@@ -71,7 +71,7 @@ export default function DSHPartnerPage() {
               <span style={{ fontSize: "3.2rem", fontWeight: 900, color: TEXT, lineHeight: 1 }}>${PER_SEAT_PRICE}</span>
               <span style={{ color: "rgba(216,232,244,0.4)", fontSize: "0.9rem" }}>/seat/mo</span>
             </div>
-            <div style={{ fontSize: "0.78rem", color: "rgba(216,232,244,0.4)", marginTop: 4 }}>{INCLUDED_SEATS} seats · {CONTRACT_TERM}</div>
+            <div style={{ fontSize: "0.78rem", color: "rgba(216,232,244,0.4)", marginTop: 4 }}>{INCLUDED_SEATS} seats | {CONTRACT_TERM}</div>
           </div>
           <div style={{ padding: "28px 40px", textAlign: "center" }}>
             <div style={{ fontSize: "0.65rem", fontWeight: 800, color: "rgba(216,232,244,0.35)", letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: 8 }}>Market Rate</div>
@@ -86,7 +86,7 @@ export default function DSHPartnerPage() {
         {/* Savings Banner */}
         <div style={{ marginBottom: 36 }}>
           <div style={{ display: "inline-block", background: GOLD_DIM, border: `1px solid ${BORDER}`, borderRadius: 8, padding: "8px 20px", fontSize: "0.85rem", color: GOLD, fontWeight: 700 }}>
-            You save ${(marketMonthly - monthlyTotal).toLocaleString()}/mo · ${((marketMonthly - monthlyTotal) * 12).toLocaleString()}/yr vs. standard pricing
+            You save ${(marketMonthly - monthlyTotal).toLocaleString()}/mo | ${((marketMonthly - monthlyTotal) * 12).toLocaleString()}/yr vs. standard pricing
           </div>
         </div>
 
@@ -100,12 +100,12 @@ export default function DSHPartnerPage() {
         </div>
       </section>
 
-      {/* WHAT'S INCLUDED — feature grid */}
+      {/* WHAT'S INCLUDED: feature grid */}
       <section style={{ maxWidth: 1100, margin: "0 auto", padding: "72px 2rem" }}>
         <div style={{ textAlign: "center", marginBottom: 52 }}>
           <p style={{ color: GOLD, fontSize: "0.72rem", fontWeight: 800, letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: 10 }}>EVERYTHING INCLUDED</p>
           <h2 style={{ fontSize: "clamp(1.6rem, 4vw, 2.4rem)", fontWeight: 900, color: TEXT, letterSpacing: "-0.02em", marginBottom: 12 }}>The complete platform. No feature gating.</h2>
-          <p style={{ color: "rgba(216,232,244,0.5)", maxWidth: 480, margin: "0 auto", lineHeight: 1.7 }}>Your team has access to every feature — including capabilities that are enterprise-only for standard customers.</p>
+          <p style={{ color: "rgba(216,232,244,0.5)", maxWidth: 480, margin: "0 auto", lineHeight: 1.7 }}>Your team has access to every feature, including capabilities that are enterprise-only for standard customers.</p>
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 20 }}>
@@ -145,15 +145,34 @@ export default function DSHPartnerPage() {
           </div>
 
           <p style={{ color: "rgba(216,232,244,0.4)", fontSize: "0.82rem", lineHeight: 1.7 }}>
-            Additional seats available at ${PER_SEAT_PRICE}/seat/mo. Volume pricing for 30+ seats available — contact your account manager.
+            Additional seats available at ${PER_SEAT_PRICE}/seat/mo. Volume pricing for 30+ seats is available, contact your account manager.
           </p>
+        </div>
+      </section>
+
+      {/* HELP */}
+      <section style={{ borderTop: `1px solid ${BORDER}`, padding: "56px 2rem" }}>
+        <div style={{ maxWidth: 800, margin: "0 auto", textAlign: "center" }}>
+          <p style={{ color: GOLD, fontSize: "0.72rem", fontWeight: 800, letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: 10 }}>NEED HELP?</p>
+          <h2 style={{ fontSize: "clamp(1.35rem, 3.2vw, 1.9rem)", fontWeight: 900, color: TEXT, marginBottom: 12 }}>Quick onboarding support is built in.</h2>
+          <p style={{ color: "rgba(216,232,244,0.5)", maxWidth: 560, margin: "0 auto 28px", lineHeight: 1.7 }}>
+            We can walk your team through setup and daily workflows. If you want a guided start, contact us and we will schedule a live walkthrough.
+          </p>
+          <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
+            <a href="mailto:cmc@conniemichelleconsulting.com?subject=Destiny Springs Onboarding Help" style={{ background: GOLD, color: "#0a0e14", padding: "12px 24px", borderRadius: 9, fontWeight: 800, textDecoration: "none", fontSize: "0.9rem" }}>
+              Request Onboarding Help
+            </a>
+            <Link href="/login" style={{ background: "rgba(255,255,255,0.05)", border: `1px solid ${BORDER}`, color: TEXT, padding: "12px 24px", borderRadius: 9, fontWeight: 700, textDecoration: "none", fontSize: "0.9rem" }}>
+              Open Platform
+            </Link>
+          </div>
         </div>
       </section>
 
       {/* SUPPORT */}
       <section style={{ maxWidth: 800, margin: "0 auto", padding: "72px 2rem", textAlign: "center" }}>
         <p style={{ color: GOLD, fontSize: "0.72rem", fontWeight: 800, letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: 10 }}>DEDICATED SUPPORT</p>
-        <h2 style={{ fontSize: "clamp(1.4rem, 3.5vw, 2rem)", fontWeight: 900, color: TEXT, marginBottom: 16 }}>You have a dedicated point of contact — always.</h2>
+        <h2 style={{ fontSize: "clamp(1.4rem, 3.5vw, 2rem)", fontWeight: 900, color: TEXT, marginBottom: 16 }}>You have a dedicated point of contact, always.</h2>
         <p style={{ color: "rgba(216,232,244,0.5)", maxWidth: 520, margin: "0 auto 44px", lineHeight: 1.75 }}>
           As NyxAegis&apos;s highest-priority partner, Destiny Springs has a named account manager available for training, feature requests, integrations, and anything else you need.
         </p>
@@ -173,7 +192,7 @@ export default function DSHPartnerPage() {
           ))}
         </div>
 
-        <a href="mailto:cmc@conniemichelleconsulting.com?subject=Destiny Springs — Platform Support" style={{ display: "inline-block", background: GOLD, color: "#0a0e14", padding: "13px 28px", borderRadius: 9, fontWeight: 800, textDecoration: "none", fontSize: "0.9rem", marginRight: 12 }}>
+        <a href="mailto:cmc@conniemichelleconsulting.com?subject=Destiny Springs Platform Support" style={{ display: "inline-block", background: GOLD, color: "#0a0e14", padding: "13px 28px", borderRadius: 9, fontWeight: 800, textDecoration: "none", fontSize: "0.9rem", marginRight: 12 }}>
           Contact Account Manager
         </a>
         <Link href="/login" style={{ display: "inline-block", background: "rgba(255,255,255,0.05)", border: `1px solid ${BORDER}`, color: TEXT, padding: "13px 28px", borderRadius: 9, fontWeight: 700, textDecoration: "none", fontSize: "0.9rem" }}>
@@ -184,8 +203,8 @@ export default function DSHPartnerPage() {
       {/* FOOTER */}
       <footer style={{ borderTop: `1px solid ${BORDER}`, padding: "24px 2rem", textAlign: "center" }}>
         <p style={{ fontSize: "0.78rem", color: "rgba(216,232,244,0.22)" }}>
-          © 2026 NyxCollective LLC · <a href="mailto:cmc@conniemichelleconsulting.com" style={{ color: "inherit" }}>cmc@conniemichelleconsulting.com</a> ·{" "}
-          <Link href="/terms" style={{ color: "inherit" }}>Terms</Link> · <Link href="/privacy" style={{ color: "inherit" }}>Privacy</Link>
+          © 2026 NyxCollective LLC | <a href="mailto:cmc@conniemichelleconsulting.com" style={{ color: "inherit" }}>cmc@conniemichelleconsulting.com</a> |{" "}
+          <Link href="/terms" style={{ color: "inherit" }}>Terms</Link> | <Link href="/privacy" style={{ color: "inherit" }}>Privacy</Link>
         </p>
         <p style={{ fontSize: "0.72rem", color: "rgba(216,232,244,0.15)", marginTop: 6 }}>
           This page is specific to the Destiny Springs Healthcare Preferred Partner Program and is not a public offer.
