@@ -17,11 +17,17 @@ function col(row: Record<string, unknown>, ...keys: string[]): string {
 }
 
 function parseSheet(data: Uint8Array): Record<string, unknown>[] {
-  // base64 is most reliable on serverless/edge environments
-  const base64 = Buffer.from(data).toString("base64");
-  const wb = XLSX.read(base64, { type: "base64", cellText: false, cellNF: false, cellHTML: false });
-  const ws = wb.Sheets[wb.SheetNames[0]];
-  return (XLSX.utils.sheet_to_json(ws, { defval: "", raw: false }) as Record<string, unknown>[]);
+  // Try base64 first (most reliable on serverless), fall back to array
+  try {
+    const base64 = Buffer.from(data).toString("base64");
+    const wb = XLSX.read(base64, { type: "base64", cellText: false, cellNF: false, cellHTML: false, sheetRows: 5000 });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    return (XLSX.utils.sheet_to_json(ws, { defval: "", raw: false }) as Record<string, unknown>[]);
+  } catch {
+    const wb = XLSX.read(data, { type: "array", cellText: false, cellNF: false, cellHTML: false, sheetRows: 5000 });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    return (XLSX.utils.sheet_to_json(ws, { defval: "", raw: false }) as Record<string, unknown>[]);
+  }
 }
 
 // ─── individual importers ──────────────────────────────────────────────────────
@@ -29,10 +35,24 @@ function parseSheet(data: Uint8Array): Record<string, unknown>[] {
 async function importAccounts(rows: Record<string, unknown>[]) {
   let created = 0, skipped = 0;
   const errors: string[] = [];
+  const skipReasons: Record<string, number> = {};
 
   for (const row of rows) {
-    const name = col(row, "Account Name", "Name", "Organization", "Company", "Hospital Name", "Facility Name", "Account");
-    if (!name) { skipped++; continue; }
+    // Try known aliases, then fall back to the very first non-empty column
+    let name = col(row,
+      "Account Name", "Name", "Organization", "Company",
+      "Hospital Name", "Facility Name", "Account", "Title",
+      "Item", "Item Name", "Board Item"
+    );
+    if (!name) {
+      // Monday.com: first column is usually the item name regardless of label
+      const firstEntry = Object.entries(row).find(([, v]) => {
+        const s = String(v ?? "").trim();
+        return s.length > 1 && s !== "undefined" && s !== "null";
+      });
+      name = firstEntry ? String(firstEntry[1]).trim() : "";
+    }
+    if (!name) { skipped++; skipReasons["no name found"] = (skipReasons["no name found"] ?? 0) + 1; continue; }
 
     const type = col(row, "Account Type", "Type", "Facility Type");
     const city  = col(row, "Billing City", "City");
@@ -84,7 +104,7 @@ async function importAccounts(rows: Record<string, unknown>[]) {
     }
   }
 
-  return { created, skipped, errors };
+    return { created, skipped, errors, skipReasons };
 }
 
 async function importContacts(rows: Record<string, unknown>[]) {
@@ -116,10 +136,19 @@ async function importContacts(rows: Record<string, unknown>[]) {
       continue;
     }
 
-    // Find matching hospital
-    const hospital = await prisma.hospital.findFirst({
+    // Find matching hospital — try contains first, then word-by-word fuzzy match
+    let hospital = await prisma.hospital.findFirst({
       where: { hospitalName: { contains: accountName, mode: "insensitive" } },
     });
+    if (!hospital) {
+      // Try matching on the first significant word (handles truncated / abbreviated names)
+      const firstWord = accountName.split(/\s+/)[0];
+      if (firstWord.length >= 4) {
+        hospital = await prisma.hospital.findFirst({
+          where: { hospitalName: { contains: firstWord, mode: "insensitive" } },
+        });
+      }
+    }
     const hospitalId = hospital?.id;
 
     if (!hospitalId) {
@@ -159,11 +188,21 @@ async function importActivities(rows: Record<string, unknown>[]) {
   const reps = await prisma.rep.findMany({ include: { user: true } });
 
   for (const row of rows) {
-    const subject     = col(row, "Subject", "Activity", "Title", "Name", "Description",
-      "Item", "Task", "Task Name", "Item Name", "Board Item", "Activity Name", "Log", "Summary");
+    // Try known aliases; if nothing matches, fall back to the first non-empty column
+    // (Monday.com exports the item name as whatever the board column is called)
+    let subject = col(row, "Subject", "Activity", "Title", "Name", "Description",
+      "Item", "Task", "Task Name", "Item Name", "Board Item", "Activity Name", "Log", "Summary",
+      "Event", "Action", "Record", "Entry");
+    if (!subject) {
+      const firstEntry = Object.entries(row).find(([, v]) => {
+        const s = String(v ?? "").trim();
+        return s.length > 1 && s !== "undefined" && s !== "null";
+      });
+      subject = firstEntry ? String(firstEntry[1]).trim() : "";
+    }
     if (!subject) {
       skipped++;
-      skipReasons["no subject/title/name column found"] = (skipReasons["no subject/title/name column found"] ?? 0) + 1;
+      skipReasons["completely empty row"] = (skipReasons["completely empty row"] ?? 0) + 1;
       continue;
     }
 
