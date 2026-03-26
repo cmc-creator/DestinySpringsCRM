@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { Fraunces, Manrope } from "next/font/google";
@@ -10,6 +10,8 @@ const bodyFace = Manrope({ subsets: ["latin"], weight: ["500", "600", "700", "80
 
 export default function SignupPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const planParam = searchParams.get("plan") ?? "starter";
   const [role, setRole] = useState<"ACCOUNT" | "REP">("ACCOUNT");
   const [form, setForm] = useState({ name: "", email: "", password: "", hospitalName: "", repTitle: "" });
   const [loading, setLoading] = useState(false);
@@ -60,7 +62,7 @@ export default function SignupPage() {
       const res = await fetch("/api/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, role }),
+        body: JSON.stringify({ ...form, role, plan: planParam }),
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error ?? "Signup failed"); return; }
@@ -431,19 +433,19 @@ export default function SignupPage() {
       <div className="su-shell">
         <section className="su-left" aria-hidden="true">
           <div className="su-chip">Bespoke Whitelabel Deployment</div>
-          <h1 className={`${headingFace.className} su-title`}>Submit a new access request</h1>
+          <h1 className={`${headingFace.className} su-title`}>Create a new user account</h1>
           <p className="su-sub">
-            New team members can request secure portal access for Destiny Springs leadership, operations,
-            and business development workflows. Every request is routed through internal approval before activation.
+            New team members can create secure portal access for Destiny Springs leadership, operations,
+            and business development workflows.
           </p>
           <div className="su-points">
             <div className="su-point">
               <p className="su-point-title">Controlled onboarding</p>
-              <p className="su-point-sub">Each request is tied to role scope so access is correct from day one.</p>
+              <p className="su-point-sub">Each signup is tied to role scope so access is correct from day one.</p>
             </div>
             <div className="su-point">
               <p className="su-point-title">Role-specific routing</p>
-              <p className="su-point-sub">Internal and BD requests capture the right profile fields automatically.</p>
+              <p className="su-point-sub">Internal and BD signups capture the right profile fields automatically.</p>
             </div>
             <div className="su-point">
               <p className="su-point-title">Client-ready presentation</p>
@@ -458,8 +460,8 @@ export default function SignupPage() {
             <span className="su-brand-name">NyxAegis for Destiny Springs</span>
           </Link>
 
-          <h2 className={`${headingFace.className} su-heading`}>Request Access</h2>
-          <p className="su-heading-sub">Select your user type and submit details for approval.</p>
+          <h2 className={`${headingFace.className} su-heading`}>Sign Up</h2>
+          <p className="su-heading-sub">Select your user type and create your account.</p>
 
           <div className="su-toggle">
             <button
@@ -549,7 +551,7 @@ export default function SignupPage() {
             </div>
 
             <button type="submit" disabled={loading} className="su-submit">
-              {loading ? "Submitting request..." : "Submit Access Request"}
+              {loading ? "Creating account..." : "Create Account"}
             </button>
           </form>
 
@@ -557,8 +559,12 @@ export default function SignupPage() {
             Already approved? <Link href="/login">Sign In</Link>
           </p>
 
+          <p className="su-login" style={{ marginTop: 6 }}>
+            New here? <Link href="/user-guide">Open User Guide</Link>
+          </p>
+
           <p className="su-legal">
-            By submitting this request, you agree to our <Link href="/terms">Terms</Link> and <Link href="/privacy">Privacy Policy</Link>.
+            By creating an account, you agree to our <Link href="/terms">Terms</Link> and <Link href="/privacy">Privacy Policy</Link>.
           </p>
         </section>
       </div>

@@ -17,7 +17,7 @@ const MIN_PASSWORD_LENGTH = 8;
 
 export async function POST(req: NextRequest) {
   try {
-    const { name, email, password, role = "ACCOUNT", hospitalName, repTitle } = await req.json();
+    const { name, email, password, role = "ACCOUNT", hospitalName, repTitle, plan = "starter" } = await req.json();
 
     if (!email || !password || !name) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
@@ -49,12 +49,38 @@ export async function POST(req: NextRequest) {
 
     const hashedPw = await bcrypt.hash(password, 10);
 
+    // Derive a unique org slug from the email prefix (lowercase alphanumeric only)
+    const emailPrefix = email.split("@")[0].toLowerCase().replace(/[^a-z0-9]/g, "");
+    const baseSlug = emailPrefix || "org";
+    const existingSlugs = await prisma.organization.findMany({
+      where: { slug: { startsWith: baseSlug } },
+      select: { slug: true },
+    });
+    const slugSet = new Set(existingSlugs.map((o: { slug: string }) => o.slug));
+    let orgSlug = baseSlug;
+    let suffix = 1;
+    while (slugSet.has(orgSlug)) { orgSlug = `${baseSlug}${suffix++}`; }
+
+    const trialEndsAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
+    const allowedPlans = ["starter", "solo_rep", "bd_team", "health_system"];
+    const planParam: string = allowedPlans.includes(plan) ? plan : "starter";
+
     const user = await prisma.user.create({
       data: {
         name: name.trim(),
         email: email.toLowerCase().trim(),
         password: hashedPw,
         role: role === "REP" ? "REP" : "ACCOUNT",
+        organization: {
+          create: {
+            name: hospitalName?.trim() || name.trim(),
+            slug: orgSlug,
+            planTier: planParam,
+            subscriptionStatus: "trialing",
+            trialEndsAt,
+            seatLimit: planParam === "bd_team" ? 10 : 3,
+          },
+        },
         ...(role === "REP" ? {
           rep: { create: { title: repTitle ?? "Behavioral Health Liaison", status: "PENDING_REVIEW" } },
         } : {
@@ -63,7 +89,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // Fire-and-forget notification email to admin — don't let failure block the response
+    // Fire-and-forget notification email to admin - don't let failure block the response
     const resendKey = process.env.RESEND_API_KEY;
     if (resendKey) {
       const resend = new Resend(resendKey);
@@ -77,11 +103,11 @@ export async function POST(req: NextRequest) {
       resend.emails.send({
         from: `NyxAegis Alerts <${fromEmail}>`,
         to: ADMIN_NOTIFY_EMAIL,
-        subject: `New access request: ${name.trim()} (${roleLabel})`,
+        subject: `New signup: ${name.trim()} (${roleLabel})`,
         html: `
           <div style="font-family:sans-serif;max-width:560px;margin:0 auto;padding:24px;border:1px solid #e5e7eb;border-radius:10px;">
-            <h2 style="margin:0 0 16px;color:#1e293b;">New Access Request</h2>
-            <p style="color:#475569;margin:0 0 14px;">A new account request was submitted and is pending your review.</p>
+            <h2 style="margin:0 0 16px;color:#1e293b;">New Signup</h2>
+            <p style="color:#475569;margin:0 0 14px;">A new account was created and is ready for review in User Accounts.</p>
             <table style="width:100%;border-collapse:collapse;font-size:0.9rem;">
               <tr><td style="padding:7px 12px;font-weight:600;width:140px;">Name</td><td style="padding:7px 12px;">${name.trim()}</td></tr>
               <tr><td style="padding:7px 12px;background:#f8fafc;font-weight:600;">Email</td><td style="padding:7px 12px;background:#f8fafc;">${email.toLowerCase().trim()}</td></tr>

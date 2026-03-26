@@ -302,7 +302,7 @@ export default async function RootPage() {
             </p>
             <div className="home-ctas">
               <Link href="/login" className="home-primary">Enter CRM</Link>
-              <Link href="/signup" className="home-ghost">Request Access</Link>
+              <Link href="/signup" className="home-ghost">Sign Up</Link>
             </div>
 
             <div className="home-metrics">

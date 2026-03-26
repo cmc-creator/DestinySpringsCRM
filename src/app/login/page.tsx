@@ -36,6 +36,7 @@ export default function LoginPage() {
 function LoginForm() {
   const router       = useRouter();
   const searchParams = useSearchParams();
+  const isRegistered = searchParams.get("registered") === "1";
   const [email,    setEmail]    = useState("");
   const [password, setPassword] = useState("");
   const [loading,  setLoading]  = useState(false);
@@ -372,6 +373,15 @@ function LoginForm() {
           <h1 className={`${headingFace.className} lp-title`}>Welcome back</h1>
           <p className="lp-sub">Sign in to your account</p>
 
+          {isRegistered && (
+            <div className="lp-demo" style={{ marginTop: 0, marginBottom: 14 }}>
+              <p className="lp-demo-hdr" style={{ marginBottom: 6 }}>ACCOUNT CREATED</p>
+              <div style={{ fontSize: "0.84rem", color: "rgba(237,228,207,0.72)", textAlign: "center" }}>
+                Start here: <Link href="/user-guide" style={{ color: "var(--nyx-accent, #C9A84C)", fontWeight: 700 }}>Open User Guide</Link>
+              </div>
+            </div>
+          )}
+
           {error && <div className="lp-error">{error}</div>}
 
           <form onSubmit={handleSubmit}>
@@ -406,7 +416,11 @@ function LoginForm() {
 
           <div className="lp-signup">
             Don&apos;t have an account?{" "}
-            <Link href="/signup">Request Access</Link>
+            <Link href="/signup">Sign Up</Link>
+          </div>
+
+          <div className="lp-signup" style={{ marginTop: 8 }}>
+            Need onboarding help? <Link href="/user-guide">View User Guide</Link>
           </div>
 
           {isDev && (
