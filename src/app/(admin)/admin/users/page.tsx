@@ -28,6 +28,7 @@ export default function AdminUsersPage() {
   const [error, setError]         = useState("");
   const [showForm, setShowForm]   = useState(false);
   const [deleting, setDeleting]   = useState<string | null>(null);
+  const [approving, setApproving] = useState<string | null>(null);
   const [toast, setToast]         = useState("");
 
   // Form state
@@ -97,6 +98,35 @@ export default function AdminUsersPage() {
     }
   }
 
+  async function approveUser(id: string, name: string | null) {
+    setApproving(id);
+    try {
+      const res = await fetch(`/api/admin/users?id=${id}`, { method: "PATCH" });
+      const data = await res.json() as { ok?: boolean; error?: string };
+      if (!res.ok) throw new Error(data.error ?? "Approval failed");
+      showToast(`✓ Approved ${name ?? "user"}`);
+      await loadUsers();
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : "Approval failed");
+    } finally {
+      setApproving(null);
+    }
+  }
+
+  function getApprovalStatus(user: UserRow) {
+    if (user.role === "REP") return user.rep?.status ?? null;
+    if (user.role === "ACCOUNT") return user.hospital?.status ?? null;
+    return null;
+  }
+
+  function needsApproval(user: UserRow) {
+    return user.role === "REP"
+      ? user.rep?.status === "PENDING_REVIEW"
+      : user.role === "ACCOUNT"
+      ? user.hospital?.status === "PROSPECT"
+      : false;
+  }
+
   const inputStyle: React.CSSProperties = {
     width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(201,168,76,0.25)",
     borderRadius: 8, padding: "11px 13px", color: "#d8e8f4", fontSize: "0.9rem", outline: "none",
@@ -121,7 +151,7 @@ export default function AdminUsersPage() {
         <div>
           <h1 style={{ margin: 0, fontSize: "1.6rem", fontWeight: 800, color: "#ede4cf" }}>User Accounts</h1>
           <p style={{ margin: "4px 0 0", fontSize: "0.85rem", color: "rgba(237,228,207,0.5)" }}>
-            Create and manage login accounts for your team. Accounts activate immediately.
+            Create and manage login accounts for your team. Self-signups stay pending until you approve them.
           </p>
         </div>
         <button
@@ -216,9 +246,9 @@ export default function AdminUsersPage() {
               </span>
 
               {/* Sub-status */}
-              {u.rep?.status && (
+              {getApprovalStatus(u) && (
                 <span style={{ background: "rgba(255,255,255,0.06)", color: "rgba(237,228,207,0.5)", fontWeight: 600, fontSize: "0.68rem", padding: "4px 8px", borderRadius: 999, letterSpacing: "0.06em" }}>
-                  {u.rep.status.replace("_", " ")}
+                  {getApprovalStatus(u)?.replace("_", " ")}
                 </span>
               )}
 
@@ -226,6 +256,16 @@ export default function AdminUsersPage() {
               <span style={{ fontSize: "0.75rem", color: "rgba(237,228,207,0.35)", marginLeft: "auto", whiteSpace: "nowrap" }}>
                 {new Date(u.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
               </span>
+
+              {needsApproval(u) && (
+                <button
+                  onClick={() => approveUser(u.id, u.name)}
+                  disabled={approving === u.id}
+                  style={{ background: "rgba(34,197,94,0.12)", border: "1px solid rgba(34,197,94,0.24)", borderRadius: 8, color: "#86efac", fontWeight: 800, fontSize: "0.75rem", padding: "6px 12px", cursor: "pointer", flexShrink: 0 }}
+                >
+                  {approving === u.id ? "…" : "Approve"}
+                </button>
+              )}
 
               {/* Delete */}
               <button
@@ -241,7 +281,7 @@ export default function AdminUsersPage() {
       )}
 
       <p style={{ marginTop: 24, fontSize: "0.75rem", color: "rgba(237,228,207,0.3)", textAlign: "center" }}>
-        Users created here are immediately active and can sign in with the credentials you set.
+        Admin-created users are active immediately. Self-signups remain blocked until you approve them here.
         Share credentials securely and instruct users to change their password after first login.
       </p>
     </div>

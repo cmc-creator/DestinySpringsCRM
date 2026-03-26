@@ -119,3 +119,55 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: "Failed to delete user" }, { status: 500 });
   }
 }
+
+// PATCH /api/admin/users?id=xxx — approve a pending self-signup
+export async function PATCH(req: NextRequest) {
+  const session = await auth();
+  if (!session || session.user.role !== "ADMIN") {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const id = req.nextUrl.searchParams.get("id");
+  if (!id) return NextResponse.json({ error: "id is required" }, { status: 400 });
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        role: true,
+        rep: { select: { id: true, status: true } },
+        hospital: { select: { id: true, status: true } },
+      },
+    });
+
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    if (user.role === "REP") {
+      if (!user.rep) return NextResponse.json({ error: "Rep profile not found" }, { status: 404 });
+      const rep = await prisma.rep.update({
+        where: { id: user.rep.id },
+        data: { status: "ACTIVE" },
+        select: { id: true, status: true },
+      });
+      return NextResponse.json({ ok: true, userId: user.id, role: user.role, status: rep.status });
+    }
+
+    if (user.role === "ACCOUNT") {
+      if (!user.hospital) return NextResponse.json({ error: "Account profile not found" }, { status: 404 });
+      const hospital = await prisma.hospital.update({
+        where: { id: user.hospital.id },
+        data: { status: "ACTIVE" },
+        select: { id: true, status: true },
+      });
+      return NextResponse.json({ ok: true, userId: user.id, role: user.role, status: hospital.status });
+    }
+
+    return NextResponse.json({ error: "Only REP and ACCOUNT users require approval" }, { status: 400 });
+  } catch (err) {
+    console.error("[admin/users PATCH]", err);
+    return NextResponse.json({ error: "Failed to approve user" }, { status: 500 });
+  }
+}
