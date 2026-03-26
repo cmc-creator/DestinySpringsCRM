@@ -11,6 +11,8 @@ type ImportResult = {
   skipped: number;
   errors: string[];
   error?: string;
+  columns?: string[];
+  skipReasons?: Record<string, number>;
 };
 
 const IMPORT_TYPES: { value: ImportType; label: string; hint: string; badge: string }[] = [
@@ -179,6 +181,27 @@ export default function AdminImportPage() {
               <p style={{ margin: 0, fontSize: "0.82rem", color: "rgba(237,228,207,0.6)" }}>
                 {result.totalRows} rows processed · {result.created} created · {result.skipped} skipped (duplicates or missing required fields)
               </p>
+              {result.created === 0 && result.columns && result.columns.length > 0 && (
+                <details open style={{ marginTop: 12 }}>
+                  <summary style={{ fontSize: "0.8rem", color: "#fde68a", cursor: "pointer", fontWeight: 700 }}>Columns detected in your file — click to collapse</summary>
+                  <p style={{ margin: "8px 0 4px", fontSize: "0.75rem", color: "rgba(237,228,207,0.45)" }}>Make sure one of these matches the expected column names:</p>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 6 }}>
+                    {result.columns.map((c) => (
+                      <span key={c} style={{ background: "rgba(253,230,138,0.1)", border: "1px solid rgba(253,230,138,0.2)", borderRadius: 6, padding: "2px 8px", fontSize: "0.75rem", color: "#fde68a" }}>{c}</span>
+                    ))}
+                  </div>
+                </details>
+              )}
+              {result.created === 0 && result.skipReasons && Object.keys(result.skipReasons).length > 0 && (
+                <details open style={{ marginTop: 10 }}>
+                  <summary style={{ fontSize: "0.8rem", color: "#fca5a5", cursor: "pointer", fontWeight: 700 }}>Why rows were skipped</summary>
+                  <ul style={{ marginTop: 8, paddingLeft: 18, fontSize: "0.78rem", color: "rgba(239,68,68,0.7)", lineHeight: 1.8 }}>
+                    {Object.entries(result.skipReasons).map(([reason, count]) => (
+                      <li key={reason}><strong>{count}x</strong> — {reason}</li>
+                    ))}
+                  </ul>
+                </details>
+              )}
               {result.errors.length > 0 && (
                 <details style={{ marginTop: 12 }}>
                   <summary style={{ fontSize: "0.8rem", color: "#fca5a5", cursor: "pointer" }}>{result.errors.length} row error{result.errors.length !== 1 ? "s" : ""} — click to expand</summary>

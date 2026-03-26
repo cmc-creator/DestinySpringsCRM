@@ -88,31 +88,45 @@ async function importAccounts(rows: Record<string, unknown>[]) {
 async function importContacts(rows: Record<string, unknown>[]) {
   let created = 0, skipped = 0;
   const errors: string[] = [];
+  const skipReasons: Record<string, number> = {};
 
   for (const row of rows) {
     const first = col(row, "First Name", "First", "FirstName");
     const last  = col(row, "Last Name", "Last", "LastName");
     const name  = col(row, "Name", "Full Name", "Contact Name") || `${first} ${last}`.trim();
-    if (!name || name === " ") { skipped++; continue; }
+    if (!name || name === " ") { skipped++; skipReasons["no name"] = (skipReasons["no name"] ?? 0) + 1; continue; }
 
-    const accountName = col(row, "Account Name", "Organization", "Company", "Hospital", "Facility");
-    const title       = col(row, "Title", "Job Title", "Role");
-    const email       = col(row, "Email", "Work Email");
-    const phone       = col(row, "Phone", "Work Phone", "Mobile");
-    const department  = col(row, "Department", "Dept");
-    const notes       = col(row, "Description", "Notes");
+    const accountName = col(row,
+      "Account Name", "Organization", "Company", "Hospital", "Facility",
+      "Account", "Linked Account", "Accounts", "Board", "Board Item",
+      "Referral Source", "Facility Name", "Hospital Name", "Site", "Partner"
+    );
+    const title       = col(row, "Title", "Job Title", "Position", "Role");
+    const email       = col(row, "Email", "Work Email", "E-mail", "Email Address");
+    const phone       = col(row, "Phone", "Work Phone", "Mobile", "Cell", "Direct", "Phone Number");
+    const department  = col(row, "Department", "Dept", "Division");
+    const notes       = col(row, "Description", "Notes", "Comments", "Body");
     const typeStr     = col(row, "Contact Type", "Type", "Role");
+
+    if (!accountName) {
+      skipped++;
+      skipReasons["no account name column"] = (skipReasons["no account name column"] ?? 0) + 1;
+      continue;
+    }
 
     // Find matching hospital
     let hospitalId: string | undefined;
-    if (accountName) {
-      const hospital = await prisma.hospital.findFirst({
-        where: { hospitalName: { contains: accountName, mode: "insensitive" } },
-      });
-      hospitalId = hospital?.id;
-    }
+    const hospital = await prisma.hospital.findFirst({
+      where: { hospitalName: { contains: accountName, mode: "insensitive" } },
+    });
+    hospitalId = hospital?.id;
 
-    if (!hospitalId) { skipped++; continue; }
+    if (!hospitalId) {
+      skipped++;
+      const key = `no match for "${accountName.slice(0, 40)}"`;
+      skipReasons[key] = (skipReasons[key] ?? 0) + 1;
+      continue;
+    }
 
     try {
       await prisma.contact.create({
@@ -133,7 +147,7 @@ async function importContacts(rows: Record<string, unknown>[]) {
     }
   }
 
-  return { created, skipped, errors };
+  return { created, skipped, errors, skipReasons };
 }
 
 async function importActivities(rows: Record<string, unknown>[]) {
@@ -272,12 +286,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "No rows found in spreadsheet" }, { status: 400 });
     }
 
+    const columns = rows.length > 0 ? Object.keys(rows[0]) : [];
+
     let result;
     if (type === "accounts")    result = await importAccounts(rows);
     else if (type === "contacts") result = await importContacts(rows);
     else                         result = await importActivities(rows);
 
-    return NextResponse.json({ ok: true, type, totalRows: rows.length, ...result });
+    return NextResponse.json({ ok: true, type, totalRows: rows.length, columns, ...result });
   } catch (err) {
     console.error("[admin/import]", err);
     return NextResponse.json({ error: err instanceof Error ? err.message : "Import failed" }, { status: 500 });
