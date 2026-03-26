@@ -76,15 +76,12 @@ export default function ActivitiesPage() {
   const [form, setForm] = useState({ type: "CALL", title: "", notes: "" });
   const [saving, setSaving] = useState(false);
 
-  const [lastRefresh, setLastRefresh] = useState(Date.now());
-
   const load = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetch("/api/activities");
       const data = await res.json();
       setActivities(Array.isArray(data) ? data : []);
-      setLastRefresh(Date.now());
     } finally {
       setLoading(false);
     }

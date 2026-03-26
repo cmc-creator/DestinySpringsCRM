@@ -1,6 +1,23 @@
 "use client";
 import { useState, useRef } from "react";
 
+type SpeechRecognitionHandle = {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  onresult: ((event: Event) => void) | null;
+  onend: ((event: Event) => void) | null;
+  onerror: ((event: Event) => void) | null;
+  start(): void;
+  stop(): void;
+};
+
+type SpeechRecognitionCtor = new () => SpeechRecognitionHandle;
+
+type SpeechRecognitionResultEventLike = {
+  results: ArrayLike<ArrayLike<{ transcript: string }>>;
+};
+
 const ACTIVITY_TYPES = [
   { value: "CALL",           label: "📞 Call",            color: "#60a5fa" },
   { value: "MEETING",        label: "🤝 Meeting",         color: "#34d399" },
@@ -25,17 +42,21 @@ export default function QuickLogWidget({ repId, role }: { repId?: string; role: 
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [listening, setListening] = useState(false);
-  const speechRef = useRef<InstanceType<typeof window.SpeechRecognition> | null>(null);
+  const speechRef = useRef<SpeechRecognitionHandle | null>(null);
 
   function toggleSpeech() {
-    const SR = (window as typeof window & { SpeechRecognition?: typeof SpeechRecognition; webkitSpeechRecognition?: typeof SpeechRecognition }).SpeechRecognition
-            ?? (window as typeof window & { webkitSpeechRecognition?: typeof SpeechRecognition }).webkitSpeechRecognition;
+    const speechWindow = window as Window & {
+      SpeechRecognition?: SpeechRecognitionCtor;
+      webkitSpeechRecognition?: SpeechRecognitionCtor;
+    };
+    const SR = speechWindow.SpeechRecognition ?? speechWindow.webkitSpeechRecognition;
     if (!SR) { alert("Voice dictation is not supported in this browser. Try Chrome or Edge."); return; }
     if (listening) { speechRef.current?.stop(); setListening(false); return; }
     const rec = new SR();
     rec.continuous = true; rec.interimResults = false; rec.lang = "en-US";
-    rec.onresult = (e: SpeechRecognitionEvent) => {
-      const transcript = Array.from(e.results).map(r => r[0].transcript).join(" ");
+    rec.onresult = (e: Event) => {
+      const resultEvent = e as Event & SpeechRecognitionResultEventLike;
+      const transcript = Array.from(resultEvent.results).map(r => r[0].transcript).join(" ");
       setNotes(prev => (prev ? prev + " " : "") + transcript);
     };
     rec.onend = () => setListening(false);

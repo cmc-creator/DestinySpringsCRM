@@ -2,16 +2,18 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
   if (!session || session.user.role !== "ADMIN")
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
+  const { id } = await params;
 
   const data = await req.json();
   const { title, description, category, tags, fileUrl, externalUrl, mimeType, fileSizeKb, thumbnail, active } = data;
 
   const resource = await prisma.resource.update({
-    where: { id: params.id },
+    where: { id },
     data: {
       ...(title       !== undefined ? { title:       String(title).trim() }       : {}),
       ...(description !== undefined ? { description: description ? String(description).trim() : null } : {}),
@@ -29,11 +31,13 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   return NextResponse.json(resource);
 }
 
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
   if (!session || session.user.role !== "ADMIN")
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-  await prisma.resource.update({ where: { id: params.id }, data: { active: false } });
+  const { id } = await params;
+
+  await prisma.resource.update({ where: { id }, data: { active: false } });
   return NextResponse.json({ ok: true });
 }

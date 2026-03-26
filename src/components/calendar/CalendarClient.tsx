@@ -1,6 +1,23 @@
 ﻿"use client";
 import { useState, useCallback, useEffect, useRef } from "react";
 
+type SpeechRecognitionHandle = {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  onresult: ((event: Event) => void) | null;
+  onend: ((event: Event) => void) | null;
+  onerror: ((event: Event) => void) | null;
+  start(): void;
+  stop(): void;
+};
+
+type SpeechRecognitionCtor = new () => SpeechRecognitionHandle;
+
+type SpeechRecognitionResultEventLike = {
+  results: ArrayLike<ArrayLike<{ transcript: string }>>;
+};
+
 // ─── Types ──────────────────────────────────────────────────────────────────
 
 type AType =
@@ -197,7 +214,7 @@ function ActivityModal({ activity, defaultDate, hospitals, reps, onSave, onDelet
   const [departedAt,    setDepartedAt]= useState(activity?.departedAt ? activity.departedAt.slice(0,16) : "");
   const [geoStatus,     setGeoStatus]= useState<"idle"|"loading"|"done"|"error">("idle");
   const [listening,     setListening] = useState(false);
-  const speechRef = useRef<InstanceType<typeof window.SpeechRecognition> | null>(null);
+  const speechRef = useRef<SpeechRecognitionHandle | null>(null);
   const [hospitalId,    setHospId]   = useState(activity?.hospitalId ?? activity?.hospital?.id ?? "");
   const [repId,         setRepId]    = useState(activity?.repId ?? "");
   const [saving,        setSaving]   = useState(false);
@@ -223,8 +240,11 @@ function ActivityModal({ activity, defaultDate, hospitals, reps, onSave, onDelet
   }
 
   function toggleSpeech() {
-    const SR = (window as typeof window & { SpeechRecognition?: typeof SpeechRecognition; webkitSpeechRecognition?: typeof SpeechRecognition }).SpeechRecognition
-            ?? (window as typeof window & { webkitSpeechRecognition?: typeof SpeechRecognition }).webkitSpeechRecognition;
+    const speechWindow = window as Window & {
+      SpeechRecognition?: SpeechRecognitionCtor;
+      webkitSpeechRecognition?: SpeechRecognitionCtor;
+    };
+    const SR = speechWindow.SpeechRecognition ?? speechWindow.webkitSpeechRecognition;
     if (!SR) { alert("Voice dictation is not supported in this browser. Try Chrome or Edge."); return; }
     if (listening) {
       speechRef.current?.stop();
@@ -235,8 +255,9 @@ function ActivityModal({ activity, defaultDate, hospitals, reps, onSave, onDelet
     rec.continuous = true;
     rec.interimResults = false;
     rec.lang = "en-US";
-    rec.onresult = (e: SpeechRecognitionEvent) => {
-      const transcript = Array.from(e.results).map(r => r[0].transcript).join(" ");
+    rec.onresult = (e: Event) => {
+      const resultEvent = e as Event & SpeechRecognitionResultEventLike;
+      const transcript = Array.from(resultEvent.results).map(r => r[0].transcript).join(" ");
       setNotes(prev => (prev ? prev + " " : "") + transcript);
     };
     rec.onend = () => setListening(false);

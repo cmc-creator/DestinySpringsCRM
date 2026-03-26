@@ -21,11 +21,16 @@ const STATUS_BADGE: Record<string, { color: string; label: string }> = {
 
 export const dynamic = "force-dynamic";
 
-export default async function RepInquiryPage({ searchParams }: { searchParams: { view?: string } }) {
+export default async function RepInquiryPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ view?: string }>;
+}) {
   const session = await auth();
   if (!session) redirect("/login");
 
-  const view = searchParams.view === "new" ? "new" : "list";
+  const resolvedSearchParams = await searchParams;
+  const view = resolvedSearchParams.view === "new" ? "new" : "list";
 
   const [hospitals, referralSources, myAssessments] = await Promise.all([
     prisma.hospital.findMany({ select: { id: true, hospitalName: true }, orderBy: { hospitalName: "asc" } }),

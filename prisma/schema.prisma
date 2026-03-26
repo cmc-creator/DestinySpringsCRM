@@ -630,6 +630,12 @@ model Activity {
   referralSourceId String?
   referralSource   ReferralSource? @relation(fields: [referralSourceId], references: [id])
 
+  latitude   Float?
+  longitude  Float?
+  arrivedAt  DateTime?
+  departedAt DateTime?
+  durationMinutes Int?
+
   scheduledAt DateTime?
   completedAt DateTime?
 
@@ -1053,11 +1059,6 @@ model CensusSnapshot {
   dualDxAvailable  Int @default(0)
 
   note      String?
-  latitude   Float?
-  longitude  Float?
-  arrivedAt  DateTime?
-  departedAt DateTime?
-  durationMinutes Int?
   createdAt DateTime @default(now())
 
   @@map("census_snapshots")
