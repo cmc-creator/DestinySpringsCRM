@@ -97,7 +97,6 @@ const ADMIN_NAV: NavGroup[] = [
       { href: "/admin/opportunities",  label: "Admissions" },
       { href: "/admin/leads",          label: "Leads" },
       { href: "/admin/contracts",      label: "Contracts" },
-      { href: "/admin/invoices",       label: "Invoices" },
     ],
   },
   {
