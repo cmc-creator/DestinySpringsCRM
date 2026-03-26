@@ -3,13 +3,14 @@ import React, { useState, useRef } from "react";
 
 type ImportType = "accounts" | "contacts" | "activities";
 
-type PreviewSample = { action: "create" | "skip"; reason?: string; fields: Record<string, string> };
+type PreviewSample = { action: "create" | "update" | "skip"; reason?: string; fields: Record<string, string> };
 
 type ImportResult = {
   ok: boolean;
   type: ImportType;
   totalRows: number;
   created: number;
+  updated?: number;
   skipped: number;
   errors: string[];
   error?: string;
@@ -195,7 +196,9 @@ export default function AdminImportPage() {
                 Preview — {result.totalRows} rows scanned
               </p>
               <p style={{ margin: "0 0 14px", fontSize: "0.82rem", color: "rgba(237,228,207,0.55)" }}>
-                {result.created} row{result.created !== 1 ? "s" : ""} ready to create · {result.skipped} will be skipped
+                {result.created} row{result.created !== 1 ? "s" : ""} ready to create
+                {" · "}{result.updated ?? 0} row{(result.updated ?? 0) !== 1 ? "s" : ""} ready to update
+                {" · "}{result.skipped} will be skipped
                 {" "}— nothing has been written yet. Review below, then click <strong style={{ color: "#fde68a" }}>Confirm and Import</strong>.
               </p>
 
@@ -213,15 +216,16 @@ export default function AdminImportPage() {
                 </details>
               )}
 
-              {/* Sample creates */}
-              {result.preview && result.preview.filter((p) => p.action === "create").length > 0 && (
+              {/* Sample creates/updates */}
+              {result.preview && result.preview.filter((p) => p.action === "create" || p.action === "update").length > 0 && (
                 <details open style={{ marginBottom: 12 }}>
                   <summary style={{ fontSize: "0.8rem", color: "#86efac", cursor: "pointer", fontWeight: 700, marginBottom: 6 }}>
-                    Sample records that will be created ({result.preview.filter((p) => p.action === "create").length} shown)
+                    Sample records that will be created/updated ({result.preview.filter((p) => p.action === "create" || p.action === "update").length} shown)
                   </summary>
                   <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 6 }}>
-                    {result.preview.filter((p) => p.action === "create").map((p, i) => (
+                    {result.preview.filter((p) => p.action === "create" || p.action === "update").map((p, i) => (
                       <div key={i} style={{ background: "rgba(34,197,94,0.07)", border: "1px solid rgba(34,197,94,0.15)", borderRadius: 8, padding: "8px 12px", fontSize: "0.75rem", display: "flex", flexWrap: "wrap", gap: "4px 14px" }}>
+                        <span style={{ color: p.action === "update" ? "#93c5fd" : "#86efac", fontWeight: 700, marginRight: 8 }}>{p.action.toUpperCase()}</span>
                         {Object.entries(p.fields).map(([k, v]) => (
                           <span key={k} style={{ color: "rgba(237,228,207,0.7)" }}>
                             <span style={{ color: "rgba(134,239,172,0.7)", fontWeight: 600 }}>{k}:</span> {v}
@@ -257,10 +261,10 @@ export default function AdminImportPage() {
             /* ── IMPORT COMPLETE PANEL ── */
             <>
               <p style={{ margin: "0 0 8px", fontWeight: 800, color: "#86efac", fontSize: "1rem" }}>
-                Import complete — {result.created} record{result.created !== 1 ? "s" : ""} created
+                Import complete — {result.created} created · {result.updated ?? 0} updated
               </p>
               <p style={{ margin: 0, fontSize: "0.82rem", color: "rgba(237,228,207,0.6)" }}>
-                {result.totalRows} rows processed · {result.created} created · {result.skipped} skipped (duplicates or missing required fields)
+                {result.totalRows} rows processed · {result.created} created · {result.updated ?? 0} updated · {result.skipped} skipped (missing required fields or unmatched links)
               </p>
               {result.created === 0 && result.columns && result.columns.length > 0 && (
                 <details open style={{ marginTop: 12 }}>

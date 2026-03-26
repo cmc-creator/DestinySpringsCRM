@@ -11,7 +11,7 @@ type ParsedSheet = {
   columns: string[];
 };
 
-type PreviewSample = { action: "create" | "skip"; reason?: string; fields: Record<string, string> };
+type PreviewSample = { action: "create" | "update" | "skip"; reason?: string; fields: Record<string, string> };
 const MAX_PREVIEW = 10;
 
 // ─── column alias maps ─────────────────────────────────────────────────────────
@@ -238,7 +238,7 @@ async function parseSheet(file: File): Promise<ParsedSheet> {
 // ─── individual importers ──────────────────────────────────────────────────────
 
 async function importAccounts(rows: Record<string, unknown>[], dryRun = false) {
-  let created = 0, skipped = 0;
+  let created = 0, updated = 0, skipped = 0;
   const errors: string[] = [];
   const skipReasons: Record<string, number> = {};
   const preview: PreviewSample[] = [];
@@ -286,10 +286,38 @@ async function importAccounts(rows: Record<string, unknown>[], dryRun = false) {
       const existing = await prisma.hospital.findFirst({
         where: { hospitalName: { equals: name, mode: "insensitive" } },
       });
+
+      const updateData = {
+        ...(city ? { city } : {}),
+        ...(state ? { state } : {}),
+        ...(zip ? { zip } : {}),
+        ...(npi ? { npi } : {}),
+        ...(beds ? { bedCount: parseInt(beds) || undefined } : {}),
+        ...(notes ? { notes } : {}),
+        ...(contactName ? { primaryContactName: contactName } : {}),
+        ...(contactTitle ? { primaryContactTitle: contactTitle } : {}),
+        ...(contactEmail ? { primaryContactEmail: contactEmail } : {}),
+        ...((contactPhone || phone) ? { primaryContactPhone: contactPhone || phone } : {}),
+        ...(type ? { hospitalType: mapFacilityType(type) } : {}),
+      };
+
       if (existing) {
-        skipped++;
-        skipReasons["already exists"] = (skipReasons["already exists"] ?? 0) + 1;
-        if (preview.length < MAX_PREVIEW) preview.push({ action: "skip", reason: "already exists", fields: { "Name": name } });
+        if (!dryRun) {
+          await prisma.hospital.update({
+            where: { id: existing.id },
+            data: updateData,
+          });
+        }
+        updated++;
+        if (preview.length < MAX_PREVIEW) {
+          preview.push({
+            action: "update",
+            fields: Object.fromEntries([
+              ["Name", name], ["City", city], ["State", state], ["Phone", phone],
+              ["NPI", npi], ["Beds", beds], ["Primary Contact", contactName],
+            ].filter(([, v]) => v)),
+          });
+        }
         continue;
       }
 
@@ -331,7 +359,7 @@ async function importAccounts(rows: Record<string, unknown>[], dryRun = false) {
     }
   }
 
-  return { created, skipped, errors, skipReasons, preview };
+  return { created, updated, skipped, errors, skipReasons, preview };
 }
 
 async function importContacts(rows: Record<string, unknown>[], dryRun = false) {
