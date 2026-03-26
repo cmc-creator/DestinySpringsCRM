@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
@@ -14,8 +14,8 @@ const ACCENT_MID = "var(--nyx-accent-mid)";
 const ACCENT_STR = "var(--nyx-accent-str)";
 const ACCENT_LBL = "var(--nyx-accent-label)";
 
-// ─── Diamond bullet ───────────────────────────────────────────────────────────
-// A tiny faceted gem SVG — crown, girdle, pavillon, table highlight, culet.
+// ΓöÇΓöÇΓöÇ Diamond bullet ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+// A tiny faceted gem SVG ΓÇö crown, girdle, pavillon, table highlight, culet.
 // `tint` shifts the colour channel so each group looks like a different cut.
 function DiamondBullet({ active, tint = "accent" }: { active: boolean; tint?: string }) {
   const base    = active ? "var(--nyx-accent)"     : "var(--nyx-text-muted)";
@@ -78,7 +78,7 @@ function DiamondBullet({ active, tint = "accent" }: { active: boolean; tint?: st
   );
 }
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// ΓöÇΓöÇΓöÇ Types ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 type NavItem = { href: string; label: string; tint?: string };
 type NavGroup = { group: string; tint?: string; items: NavItem[] };
 
@@ -147,6 +147,7 @@ const ADMIN_NAV: NavGroup[] = [
       { href: "/admin/import",       label: "Import Data" },
       { href: "/admin/integrations", label: "Integrations" },
       { href: "/admin/settings",     label: "Settings" },
+      { href: "/enterprise/destiny-springs", label: "Partner Portal" },
     ],
   },
 ];
@@ -221,7 +222,7 @@ export function Sidebar({ role, userName, userEmail }: SidebarProps) {
   const nav = getNav(role);
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  // ── Notification & message badges ─────────────────────────────────────────
+  // ΓöÇΓöÇ Notification & message badges ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
   const [unreadCount, setUnreadCount] = useState(0);
   const [unreadMessages, setUnreadMessages] = useState(0);
   useEffect(() => {
@@ -235,7 +236,7 @@ export function Sidebar({ role, userName, userEmail }: SidebarProps) {
       .catch(() => {});
   }, [pathname]); // refresh on navigation
 
-  // ── Inline search ──────────────────────────────────────────────────────────
+  // ΓöÇΓöÇ Inline search ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<{
     hospitals: { id: string; hospitalName: string; city?: string | null; state?: string | null }[];
@@ -272,10 +273,10 @@ export function Sidebar({ role, userName, userEmail }: SidebarProps) {
   }, []);
 
   const searchItems = searchResults ? [
-    ...searchResults.hospitals.map(h => ({ icon: "🏥", label: h.hospitalName, sub: [h.city, h.state].filter(Boolean).join(", "), href: "/admin/hospitals", typeLabel: "Account" })),
-    ...searchResults.leads.map(l => ({ icon: "🎯", label: l.hospitalName, sub: l.contactName ?? "", href: "/admin/leads", typeLabel: "Lead" })),
-    ...searchResults.opportunities.map(o => ({ icon: "📊", label: o.title, sub: o.hospital.hospitalName, href: "/admin/opportunities", typeLabel: "Opportunity" })),
-    ...searchResults.reps.map(r => ({ icon: "👤", label: r.user.name ?? r.user.email ?? "", sub: r.territory ?? "", href: "/admin/reps", typeLabel: "Rep" })),
+    ...searchResults.hospitals.map(h => ({ icon: "≡ƒÅÑ", label: h.hospitalName, sub: [h.city, h.state].filter(Boolean).join(", "), href: "/admin/hospitals", typeLabel: "Account" })),
+    ...searchResults.leads.map(l => ({ icon: "≡ƒÄ»", label: l.hospitalName, sub: l.contactName ?? "", href: "/admin/leads", typeLabel: "Lead" })),
+    ...searchResults.opportunities.map(o => ({ icon: "≡ƒôè", label: o.title, sub: o.hospital.hospitalName, href: "/admin/opportunities", typeLabel: "Opportunity" })),
+    ...searchResults.reps.map(r => ({ icon: "≡ƒæñ", label: r.user.name ?? r.user.email ?? "", sub: r.territory ?? "", href: "/admin/reps", typeLabel: "Rep" })),
   ] : [];
 
   function goToResult(href: string) {
@@ -324,13 +325,13 @@ export function Sidebar({ role, userName, userEmail }: SidebarProps) {
             <div style={{ fontSize: "0.62rem", color: TEXT_MUTED, letterSpacing: "0.08em", marginTop: 2 }}>{role === "ADMIN" ? "ADMIN" : role === "REP" ? "BD REP" : "ACCOUNT"}</div>
           </div>
           </div>
-          {/* Close button — mobile only */}
+          {/* Close button ΓÇö mobile only */}
           <button
             className="nyx-hamburger"
             onClick={() => setMobileOpen(false)}
             style={{ display: "none", background: "transparent", border: "none", cursor: "pointer", padding: "10px 12px", minWidth: 44, minHeight: 44, color: TEXT_MUTED, fontSize: "1.2rem", lineHeight: 1, borderRadius: 6 }}
             aria-label="Close menu"
-          >✕</button>
+          >Γ£ò</button>
         </div>
       </div>
 
@@ -349,7 +350,7 @@ export function Sidebar({ role, userName, userEmail }: SidebarProps) {
               if (e.key === "Escape") { setSearchQuery(""); setSearchResults(null); (e.target as HTMLInputElement).blur(); }
             }}
             onBlur={() => setTimeout(() => setSearchResults(null), 160)}
-            placeholder="Search…  ⌘K"
+            placeholder="SearchΓÇª  ΓîÿK"
             style={{
               width: "100%", boxSizing: "border-box",
               background: "rgba(255,255,255,0.04)",
@@ -363,7 +364,7 @@ export function Sidebar({ role, userName, userEmail }: SidebarProps) {
             onFocus={e => (e.target.style.borderColor = CYAN)}
           />
           {searchLoading && (
-            <span style={{ position: "absolute", right: 9, top: "50%", transform: "translateY(-50%)", fontSize: "0.6rem", color: TEXT_MUTED }}>…</span>
+            <span style={{ position: "absolute", right: 9, top: "50%", transform: "translateY(-50%)", fontSize: "0.6rem", color: TEXT_MUTED }}>ΓÇª</span>
           )}
         </div>
         {/* Results dropdown */}
