@@ -117,11 +117,10 @@ async function importContacts(rows: Record<string, unknown>[]) {
     }
 
     // Find matching hospital
-    let hospitalId: string | undefined;
     const hospital = await prisma.hospital.findFirst({
       where: { hospitalName: { contains: accountName, mode: "insensitive" } },
     });
-    hospitalId = hospital?.id;
+    const hospitalId = hospital?.id;
 
     if (!hospitalId) {
       skipped++;
