@@ -4,38 +4,218 @@ import { prisma } from "@/lib/prisma";
 import * as XLSX from "xlsx";
 
 export const maxDuration = 60;
+const MAX_IMPORT_BYTES = 8 * 1024 * 1024;
+
+type ParsedSheet = {
+  rows: Record<string, unknown>[];
+  columns: string[];
+};
+
+type PreviewSample = { action: "create" | "skip"; reason?: string; fields: Record<string, string> };
+const MAX_PREVIEW = 10;
 
 // ─── column alias maps ─────────────────────────────────────────────────────────
 
+function normalizeKey(v: string): string {
+  return v.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+}
+
+function hasValue(v: unknown): boolean {
+  if (v === undefined || v === null) return false;
+  const s = String(v).trim();
+  return s !== "" && s !== "undefined" && s !== "null";
+}
+
 function col(row: Record<string, unknown>, ...keys: string[]): string {
+  const normalized = Object.entries(row).map(([k, v]) => ({ k, nk: normalizeKey(k), v }));
   for (const k of keys) {
-    if (row[k] !== undefined && row[k] !== null && String(row[k]).trim() !== "") {
-      return String(row[k]).trim();
+    const direct = row[k];
+    if (hasValue(direct)) return String(direct).trim();
+
+    const nk = normalizeKey(k);
+    const found = normalized.find((entry) => entry.nk === nk && hasValue(entry.v));
+    if (found) {
+      return String(found.v).trim();
     }
   }
   return "";
 }
 
-function parseSheet(data: Uint8Array): Record<string, unknown>[] {
-  // Try base64 first (most reliable on serverless), fall back to array
+function colByHeaderToken(row: Record<string, unknown>, ...tokens: string[]): string {
+  const normalizedTokens = tokens.map((t) => normalizeKey(t));
+  for (const [header, value] of Object.entries(row)) {
+    if (!hasValue(value)) continue;
+    const key = normalizeKey(header);
+    if (normalizedTokens.some((t) => key.includes(t))) {
+      return String(value).trim();
+    }
+  }
+  return "";
+}
+
+function firstMeaningfulValue(row: Record<string, unknown>): string {
+  const firstEntry = Object.entries(row).find(([, v]) => hasValue(v) && String(v).trim().length > 1);
+  return firstEntry ? String(firstEntry[1]).trim() : "";
+}
+
+function isPlaceholderHeader(v: unknown): boolean {
+  const s = String(v ?? "").trim();
+  if (!s) return true;
+  const upper = s.toUpperCase();
+  return upper.startsWith("__EMPTY") || /^COLUMN_\d+$/i.test(s) || /^COL_\d+$/i.test(s);
+}
+
+function detectHeaderRow(matrix: unknown[][]): number {
+  const scanLimit = Math.min(25, matrix.length);
+  const headerHints = [
+    "name", "account", "facility", "hospital", "organization", "company", "email", "phone",
+    "title", "department", "owner", "assigned", "type", "status", "date", "timeline", "notes",
+  ];
+
+  for (let i = 0; i < scanLimit; i++) {
+    const row = Array.isArray(matrix[i]) ? matrix[i] : [];
+    const cells = row.map((v) => normalizeKey(String(v ?? ""))).filter(Boolean);
+    if (cells.length < 2) continue;
+    const hintCount = cells.filter((c) => headerHints.some((h) => c.includes(h))).length;
+    if (hintCount >= 2) return i;
+  }
+
+  let bestIdx = 0;
+  let bestScore = -1;
+  for (let i = 0; i < Math.min(20, matrix.length); i++) {
+    const row = Array.isArray(matrix[i]) ? matrix[i] : [];
+    const cells = row.map((v) => String(v ?? "").trim()).filter(Boolean);
+    if (!cells.length) continue;
+
+    const normalized = cells.map((c) => normalizeKey(c));
+    const alphaCount = cells.filter((c) => /[A-Za-z]/.test(c)).length;
+    const longCount = cells.filter((c) => c.length > 60).length;
+    const hintCount = normalized.filter((c) => headerHints.some((h) => c.includes(h))).length;
+    const placeholderCount = cells.filter((c) => isPlaceholderHeader(c)).length;
+    const uniqueCount = new Set(normalized.filter(Boolean)).size;
+
+    // Header rows are usually: many short labels, diverse values, multiple known hint tokens,
+    // and very few placeholder labels like __EMPTY.
+    const score =
+      cells.length * 2 +
+      alphaCount +
+      hintCount * 6 +
+      uniqueCount -
+      longCount * 3 -
+      placeholderCount * 5;
+
+    if (score > bestScore) {
+      bestScore = score;
+      bestIdx = i;
+    }
+  }
+
+  // Guard against title/banner rows like: ["Accounts", "", "", ...]
+  const bestRow = Array.isArray(matrix[bestIdx]) ? matrix[bestIdx] : [];
+  const bestMeaningful = bestRow.filter((v) => hasValue(v) && !isPlaceholderHeader(v)).length;
+  if (bestMeaningful <= 1 && bestIdx + 1 < matrix.length) {
+    const nextRow = Array.isArray(matrix[bestIdx + 1]) ? matrix[bestIdx + 1] : [];
+    const nextMeaningful = nextRow.filter((v) => hasValue(v) && !isPlaceholderHeader(v)).length;
+    if (nextMeaningful >= 2) return bestIdx + 1;
+  }
+
+  return bestIdx;
+}
+
+function matrixToRows(matrix: unknown[][]): ParsedSheet {
+  if (!matrix.length) return { rows: [], columns: [] };
+
+  const headerIdx = detectHeaderRow(matrix);
+  const rawHeaders = Array.isArray(matrix[headerIdx]) ? matrix[headerIdx] : [];
+  const populatedHeaders = rawHeaders.filter((h) => hasValue(h));
+  const meaningfulHeaders = populatedHeaders.filter((h) => !isPlaceholderHeader(h));
+
+  if (populatedHeaders.length > 0 && meaningfulHeaders.length < 2) {
+    throw new Error(
+      "Could not detect valid column headers. The file appears to contain placeholder headers (for example __EMPTY). Please export again from Monday and ensure the actual header row is included."
+    );
+  }
+
+  const seen = new Map<string, number>();
+  const headers = rawHeaders.map((h, i) => {
+    const baseRaw = String(h ?? "").trim();
+    const base = !isPlaceholderHeader(baseRaw) ? baseRaw : `column_${i + 1}`;
+    const count = (seen.get(base) ?? 0) + 1;
+    seen.set(base, count);
+    return count > 1 ? `${base}_${count}` : base;
+  });
+
+  const rows: Record<string, unknown>[] = [];
+  for (let i = headerIdx + 1; i < matrix.length; i++) {
+    const row = Array.isArray(matrix[i]) ? matrix[i] : [];
+    if (!row.some((v) => hasValue(v))) continue;
+    const out: Record<string, unknown> = {};
+    headers.forEach((h, idx) => {
+      out[h] = row[idx] ?? "";
+    });
+    rows.push(out);
+  }
+
+  return { rows, columns: headers };
+}
+
+function bestSheetMatrix(workbook: XLSX.WorkBook): unknown[][] {
+  let best: unknown[][] = [];
+  let bestScore = -1;
+
+  for (const sheetName of workbook.SheetNames) {
+    const ws = workbook.Sheets[sheetName];
+    if (!ws) continue;
+    const matrix = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "", raw: false, blankrows: false }) as unknown[][];
+    if (!matrix.length) continue;
+
+    const nonEmptyRows = matrix.filter((row) => Array.isArray(row) && row.some((v) => hasValue(v))).length;
+    const maxCols = matrix.reduce((m, row) => Math.max(m, Array.isArray(row) ? row.length : 0), 0);
+    const headerIdx = detectHeaderRow(matrix);
+    const headerRow = Array.isArray(matrix[headerIdx]) ? matrix[headerIdx] : [];
+    const meaningfulHeaders = headerRow.filter((v) => hasValue(v) && !isPlaceholderHeader(v)).length;
+
+    const score = nonEmptyRows * 3 + meaningfulHeaders * 8 + maxCols;
+    if (score > bestScore) {
+      bestScore = score;
+      best = matrix;
+    }
+  }
+
+  return best;
+}
+
+async function parseSheet(file: File): Promise<ParsedSheet> {
+  if (file.size > MAX_IMPORT_BYTES) {
+    throw new Error(`File is too large (${Math.round(file.size / (1024 * 1024))} MB). Max is 8 MB.`);
+  }
+
+  const isCsv = file.name.toLowerCase().endsWith(".csv") || file.type.includes("csv") || file.type.includes("text");
+  const arrayBuffer = await file.arrayBuffer();
+  const data = new Uint8Array(arrayBuffer);
+
   try {
-    const base64 = Buffer.from(data).toString("base64");
-    const wb = XLSX.read(base64, { type: "base64", cellText: false, cellNF: false, cellHTML: false, sheetRows: 5000 });
-    const ws = wb.Sheets[wb.SheetNames[0]];
-    return (XLSX.utils.sheet_to_json(ws, { defval: "", raw: false }) as Record<string, unknown>[]);
+    const wb = XLSX.read(data, { type: "array", cellText: false, cellNF: false, cellHTML: false, sheetRows: 10000, dense: true, WTF: false });
+    const matrix = bestSheetMatrix(wb);
+    return matrixToRows(matrix);
   } catch {
-    const wb = XLSX.read(data, { type: "array", cellText: false, cellNF: false, cellHTML: false, sheetRows: 5000 });
-    const ws = wb.Sheets[wb.SheetNames[0]];
-    return (XLSX.utils.sheet_to_json(ws, { defval: "", raw: false }) as Record<string, unknown>[]);
+    if (!isCsv) {
+      throw new Error("Could not parse this spreadsheet. Please re-export from Monday as CSV or XLSX.");
+    }
+    const text = Buffer.from(data).toString("utf8");
+    const wb = XLSX.read(text, { type: "string", raw: false, dense: true, WTF: false });
+    const matrix = bestSheetMatrix(wb);
+    return matrixToRows(matrix);
   }
 }
 
 // ─── individual importers ──────────────────────────────────────────────────────
 
-async function importAccounts(rows: Record<string, unknown>[]) {
+async function importAccounts(rows: Record<string, unknown>[], dryRun = false) {
   let created = 0, skipped = 0;
   const errors: string[] = [];
   const skipReasons: Record<string, number> = {};
+  const preview: PreviewSample[] = [];
 
   for (const row of rows) {
     // Try known aliases, then fall back to the very first non-empty column
@@ -52,7 +232,12 @@ async function importAccounts(rows: Record<string, unknown>[]) {
       });
       name = firstEntry ? String(firstEntry[1]).trim() : "";
     }
-    if (!name) { skipped++; skipReasons["no name found"] = (skipReasons["no name found"] ?? 0) + 1; continue; }
+    if (!name) {
+      skipped++;
+      skipReasons["no name found"] = (skipReasons["no name found"] ?? 0) + 1;
+      if (preview.length < MAX_PREVIEW) preview.push({ action: "skip", reason: "no name found", fields: {} });
+      continue;
+    }
 
     const type = col(row, "Account Type", "Type", "Facility Type");
     const city  = col(row, "Billing City", "City");
@@ -71,58 +256,84 @@ async function importAccounts(rows: Record<string, unknown>[]) {
       const existing = await prisma.hospital.findFirst({
         where: { hospitalName: { equals: name, mode: "insensitive" } },
       });
-      if (existing) { skipped++; continue; }
+      if (existing) {
+        skipped++;
+        if (preview.length < MAX_PREVIEW) preview.push({ action: "skip", reason: "already exists", fields: { "Name": name } });
+        continue;
+      }
 
-      await prisma.hospital.create({
-        data: {
-          hospitalName: name,
-          city: city || undefined,
-          state: state || undefined,
-          zip: zip || undefined,
-          npi: npi || undefined,
-          bedCount: beds ? parseInt(beds) || undefined : undefined,
-          notes: notes || undefined,
-          primaryContactName: contactName || undefined,
-          primaryContactTitle: contactTitle || undefined,
-          primaryContactEmail: contactEmail || undefined,
-          primaryContactPhone: contactPhone || phone || undefined,
-          hospitalType: mapFacilityType(type),
-          status: "PROSPECT",
-          // Each account needs a unique placeholder user
-          user: {
-            create: {
-              email: `imported-${Date.now()}-${Math.random().toString(36).slice(2, 9)}@noreply.import`,
-              name: contactName || name,
-              role: "ACCOUNT",
+      if (!dryRun) {
+        await prisma.hospital.create({
+          data: {
+            hospitalName: name,
+            city: city || undefined,
+            state: state || undefined,
+            zip: zip || undefined,
+            npi: npi || undefined,
+            bedCount: beds ? parseInt(beds) || undefined : undefined,
+            notes: notes || undefined,
+            primaryContactName: contactName || undefined,
+            primaryContactTitle: contactTitle || undefined,
+            primaryContactEmail: contactEmail || undefined,
+            primaryContactPhone: contactPhone || phone || undefined,
+            hospitalType: mapFacilityType(type),
+            status: "PROSPECT",
+            user: {
+              create: {
+                email: `imported-${Date.now()}-${Math.random().toString(36).slice(2, 9)}@noreply.import`,
+                name: contactName || name,
+                role: "ACCOUNT",
+              },
             },
           },
-        },
-      });
+        });
+      }
       created++;
+      if (preview.length < MAX_PREVIEW) {
+        preview.push({ action: "create", fields: Object.fromEntries([
+          ["Name", name], ["City", city], ["State", state], ["Phone", phone],
+          ["NPI", npi], ["Beds", beds], ["Primary Contact", contactName],
+        ].filter(([, v]) => v)) });
+      }
     } catch (e) {
       errors.push(`${name}: ${e instanceof Error ? e.message : String(e)}`);
     }
   }
 
-    return { created, skipped, errors, skipReasons };
+  return { created, skipped, errors, skipReasons, preview };
 }
 
-async function importContacts(rows: Record<string, unknown>[]) {
+async function importContacts(rows: Record<string, unknown>[], dryRun = false) {
   let created = 0, skipped = 0;
   const errors: string[] = [];
   const skipReasons: Record<string, number> = {};
+  const preview: PreviewSample[] = [];
 
   for (const row of rows) {
+    const activitySignal = col(row, "Activity Type", "Timeline", "Due Date", "Completed Date", "Subitem", "Update") || colByHeaderToken(row, "timeline", "activity", "subitem", "due date");
+    const contactSignal = col(row, "Email", "Phone", "Contact Name", "First Name", "Last Name") || colByHeaderToken(row, "email", "phone", "contact", "person");
+    if (activitySignal && !contactSignal) {
+      skipped++;
+      skipReasons["looks like activity rows - import this file in Activities"] = (skipReasons["looks like activity rows - import this file in Activities"] ?? 0) + 1;
+      if (preview.length < MAX_PREVIEW) preview.push({ action: "skip", reason: "looks like activity row", fields: { "First signal": activitySignal } });
+      continue;
+    }
+
     const first = col(row, "First Name", "First", "FirstName");
     const last  = col(row, "Last Name", "Last", "LastName");
-    const name  = col(row, "Name", "Full Name", "Contact Name") || `${first} ${last}`.trim();
-    if (!name || name === " ") { skipped++; skipReasons["no name"] = (skipReasons["no name"] ?? 0) + 1; continue; }
+    const name  = col(row, "Name", "Full Name", "Contact Name", "Person", "People") || `${first} ${last}`.trim();
+    if (!name || name === " ") {
+      skipped++;
+      skipReasons["no name"] = (skipReasons["no name"] ?? 0) + 1;
+      if (preview.length < MAX_PREVIEW) preview.push({ action: "skip", reason: "no name", fields: {} });
+      continue;
+    }
 
     const accountName = col(row,
       "Account Name", "Organization", "Company", "Hospital", "Facility",
       "Account", "Linked Account", "Accounts", "Board", "Board Item",
       "Referral Source", "Facility Name", "Hospital Name", "Site", "Partner"
-    );
+    ) || colByHeaderToken(row, "account", "facility", "hospital", "organization", "company", "site", "partner", "board");
     const title       = col(row, "Title", "Job Title", "Position", "Role");
     const email       = col(row, "Email", "Work Email", "E-mail", "Email Address");
     const phone       = col(row, "Phone", "Work Phone", "Mobile", "Cell", "Direct", "Phone Number");
@@ -133,6 +344,7 @@ async function importContacts(rows: Record<string, unknown>[]) {
     if (!accountName) {
       skipped++;
       skipReasons["no account name column"] = (skipReasons["no account name column"] ?? 0) + 1;
+      if (preview.length < MAX_PREVIEW) preview.push({ action: "skip", reason: "no account name", fields: { Name: name } });
       continue;
     }
 
@@ -155,35 +367,45 @@ async function importContacts(rows: Record<string, unknown>[]) {
       skipped++;
       const key = `no match for "${accountName.slice(0, 40)}"`;
       skipReasons[key] = (skipReasons[key] ?? 0) + 1;
+      if (preview.length < MAX_PREVIEW) preview.push({ action: "skip", reason: `no facility matched "${accountName.slice(0, 30)}"`, fields: { Name: name } });
       continue;
     }
 
     try {
-      await prisma.contact.create({
-        data: {
-          hospitalId,
-          name,
-          title: title || undefined,
-          email: email || undefined,
-          phone: phone || undefined,
-          department: department || undefined,
-          notes: notes || undefined,
-          type: mapContactType(typeStr),
-        },
-      });
+      if (!dryRun) {
+        await prisma.contact.create({
+          data: {
+            hospitalId,
+            name,
+            title: title || undefined,
+            email: email || undefined,
+            phone: phone || undefined,
+            department: department || undefined,
+            notes: notes || undefined,
+            type: mapContactType(typeStr),
+          },
+        });
+      }
       created++;
+      if (preview.length < MAX_PREVIEW) {
+        preview.push({ action: "create", fields: Object.fromEntries([
+          ["Name", name], ["Title", title], ["Email", email], ["Phone", phone],
+          ["Account", accountName], ["Department", department],
+        ].filter(([, v]) => v)) });
+      }
     } catch (e) {
       errors.push(`${name}: ${e instanceof Error ? e.message : String(e)}`);
     }
   }
 
-  return { created, skipped, errors, skipReasons };
+  return { created, skipped, errors, skipReasons, preview };
 }
 
-async function importActivities(rows: Record<string, unknown>[]) {
+async function importActivities(rows: Record<string, unknown>[], dryRun = false) {
   let created = 0, skipped = 0;
   const errors: string[] = [];
   const skipReasons: Record<string, number> = {};
+  const preview: PreviewSample[] = [];
 
   const reps = await prisma.rep.findMany({ include: { user: true } });
 
@@ -194,15 +416,12 @@ async function importActivities(rows: Record<string, unknown>[]) {
       "Item", "Task", "Task Name", "Item Name", "Board Item", "Activity Name", "Log", "Summary",
       "Event", "Action", "Record", "Entry");
     if (!subject) {
-      const firstEntry = Object.entries(row).find(([, v]) => {
-        const s = String(v ?? "").trim();
-        return s.length > 1 && s !== "undefined" && s !== "null";
-      });
-      subject = firstEntry ? String(firstEntry[1]).trim() : "";
+      subject = firstMeaningfulValue(row);
     }
     if (!subject) {
       skipped++;
       skipReasons["completely empty row"] = (skipReasons["completely empty row"] ?? 0) + 1;
+      if (preview.length < MAX_PREVIEW) preview.push({ action: "skip", reason: "empty row", fields: {} });
       continue;
     }
 
@@ -239,23 +458,31 @@ async function importActivities(rows: Record<string, unknown>[]) {
     }
 
     try {
-      await prisma.activity.create({
-        data: {
-          type: mapActivityType(typeStr),
-          title: subject.slice(0, 255),
-          notes: notes || undefined,
-          hospitalId: hospitalId ?? undefined,
-          repId: repId ?? undefined,
-          completedAt: completedAt ?? new Date(),
-        },
-      });
+      if (!dryRun) {
+        await prisma.activity.create({
+          data: {
+            type: mapActivityType(typeStr),
+            title: subject.slice(0, 255),
+            notes: notes || undefined,
+            hospitalId: hospitalId ?? undefined,
+            repId: repId ?? undefined,
+            completedAt: completedAt ?? new Date(),
+          },
+        });
+      }
       created++;
+      if (preview.length < MAX_PREVIEW) {
+        preview.push({ action: "create", fields: Object.fromEntries([
+          ["Subject", subject.slice(0, 80)], ["Type", mapActivityType(typeStr)],
+          ["Date", dateStr], ["Account", accountName], ["Rep", repName],
+        ].filter(([, v]) => v)) });
+      }
     } catch (e) {
       errors.push(`${subject}: ${e instanceof Error ? e.message : String(e)}`);
     }
   }
 
-  return { created, skipped, errors, skipReasons };
+  return { created, skipped, errors, skipReasons, preview };
 }
 
 // ─── enum mappers ──────────────────────────────────────────────────────────────
@@ -321,28 +548,28 @@ export async function POST(req: NextRequest) {
     const formData = await req.formData();
     const file     = formData.get("file") as File | null;
     const type     = (formData.get("type") as string ?? "").toLowerCase(); // accounts | contacts | activities
+    const dryRun   = formData.get("dryRun") === "true";
 
     if (!file) return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
     if (!["accounts", "contacts", "activities"].includes(type)) {
       return NextResponse.json({ error: "type must be accounts, contacts, or activities" }, { status: 400 });
     }
 
-    const arrayBuffer = await file.arrayBuffer();
-    const data        = new Uint8Array(arrayBuffer);
-    const rows        = parseSheet(data);
+    const parsed = await parseSheet(file);
+    const rows = parsed.rows;
 
     if (rows.length === 0) {
       return NextResponse.json({ error: "No rows found in spreadsheet" }, { status: 400 });
     }
 
-    const columns = rows.length > 0 ? Object.keys(rows[0]) : [];
+    const columns = parsed.columns.length > 0 ? parsed.columns : (rows.length > 0 ? Object.keys(rows[0]) : []);
 
     let result;
-    if (type === "accounts")    result = await importAccounts(rows);
-    else if (type === "contacts") result = await importContacts(rows);
-    else                         result = await importActivities(rows);
+    if (type === "accounts")    result = await importAccounts(rows, dryRun);
+    else if (type === "contacts") result = await importContacts(rows, dryRun);
+    else                         result = await importActivities(rows, dryRun);
 
-    return NextResponse.json({ ok: true, type, totalRows: rows.length, columns, ...result });
+    return NextResponse.json({ ok: true, isDryRun: dryRun, type, totalRows: rows.length, columns, ...result });
   } catch (err) {
     console.error("[admin/import]", err);
     return NextResponse.json({ error: err instanceof Error ? err.message : "Import failed" }, { status: 500 });
