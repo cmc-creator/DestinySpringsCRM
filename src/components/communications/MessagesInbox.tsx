@@ -64,8 +64,8 @@ export default function MessagesInbox({ currentUserId }: { currentUserId: string
   // Fetch users for "New message" recipient picker
   useEffect(() => {
     fetch("/api/admin/users")
-      .then(r => r.ok ? r.json() : [])
-      .then(setUsers)
+      .then(r => r.ok ? r.json() : { users: [] })
+      .then(data => setUsers(Array.isArray(data) ? data : (data.users ?? [])))
       .catch(() => {});
   }, []);
 
