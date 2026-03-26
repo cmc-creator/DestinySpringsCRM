@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { Sidebar } from "@/components/layout/sidebar";
 import AIChatWidget from "@/components/ai/AIChatWidget";
 import QuickLogWidget from "@/components/activities/QuickLogWidget";
+import FirstLoginCelebration from "@/components/onboarding/FirstLoginCelebration";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -20,6 +21,7 @@ export default async function RepLayout({ children }: { children: React.ReactNod
       <main className="flex-1 overflow-auto" style={{ background: "var(--nyx-bg-scrim, var(--nyx-bg))" }}>
         <div className="px-4 pt-14 pb-4 md:p-8 page-enter">{children}</div>
       </main>
+      <FirstLoginCelebration role="REP" userName={session.user.name} userEmail={session.user.email} />
       <AIChatWidget />
       <QuickLogWidget role="REP" repId={rep?.id} />
     </div>
