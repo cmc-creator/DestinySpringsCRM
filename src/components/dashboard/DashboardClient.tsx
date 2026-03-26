@@ -95,7 +95,6 @@ function StatsSection({ stats, hiddenStats, customizing, onToggleStat }: {
   customizing: boolean;
   onToggleStat: (id: string) => void;
 }) {
-  const visible = customizing ? stats : stats.filter((s) => !hiddenStats.has(s.id));
   return (
     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 16, marginBottom: 32 }}>
       {stats.map((s) => {
@@ -285,14 +284,22 @@ export default function DashboardClient({
 
   const toggleSection = (id: SectionId) => {
     const next = new Set(hidden);
-    next.has(id) ? next.delete(id) : next.add(id);
+    if (next.has(id)) {
+      next.delete(id);
+    } else {
+      next.add(id);
+    }
     setHidden(next);
     persist(order, next, hiddenStats);
   };
 
   const toggleStat = (id: string) => {
     const next = new Set(hiddenStats);
-    next.has(id) ? next.delete(id) : next.add(id);
+    if (next.has(id)) {
+      next.delete(id);
+    } else {
+      next.add(id);
+    }
     setHiddenStats(next);
     persist(order, hidden, next);
   };
