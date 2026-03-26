@@ -76,7 +76,6 @@ export async function POST(req: NextRequest) {
             name: hospitalName?.trim() || name.trim(),
             slug: orgSlug,
             planTier: planParam,
-            subscriptionStatus: "trialing",
             trialEndsAt,
             seatLimit: planParam === "bd_team" ? 10 : 3,
           },
