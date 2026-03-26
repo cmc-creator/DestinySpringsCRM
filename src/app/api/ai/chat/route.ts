@@ -17,7 +17,9 @@ type ActionProposal = {
     | "delete_lead"
     | "create_opportunity"
     | "update_opportunity"
-    | "delete_opportunity";
+    | "delete_opportunity"
+    | "create_activity"
+    | "update_referral_source";
   targetId?: string;
   data?: Record<string, unknown>;
   rationale?: string;
@@ -91,6 +93,7 @@ Rules:
   create_referral_source, update_referral_source, delete_referral_source,
   create_lead, update_lead, delete_lead,
   create_opportunity, update_opportunity, delete_opportunity,
+  create_activity,
   none
 - For delete intents, include targetId whenever available.
 - Put field updates in data.
@@ -142,7 +145,7 @@ export async function POST(req: NextRequest) {
   try { session = await auth(); } catch { /* ignore */ }
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { messages, allowEdits } = await req.json() as { messages: ChatMessage[]; allowEdits?: boolean };
+  const { messages, allowEdits, pageContext } = await req.json() as { messages: ChatMessage[]; allowEdits?: boolean; pageContext?: string };
 
   if (!Array.isArray(messages) || messages.length === 0) {
     return NextResponse.json({ error: "No messages provided" }, { status: 400 });
@@ -156,6 +159,11 @@ export async function POST(req: NextRequest) {
     });
   }
 
+  // Build system prompt — inject current page context for pro-active, relevant responses
+  const systemPromptWithContext = pageContext
+    ? `${SYSTEM_PROMPT}\n\n## Current Navigation Context\nThe user is currently viewing page: \`${pageContext}\`. Use this to tailor your response and proactively surface relevant insights for that view (e.g., if they are on /admin/leads, focus on lead pipeline and prospecting strategies).`
+    : SYSTEM_PROMPT;
+
   // Map OpenAI-style roles to Gemini roles (assistant -> model)
   const geminiContents = messages.map((m) => ({
     role: m.role === "assistant" ? "model" : "user",
@@ -168,7 +176,7 @@ export async function POST(req: NextRequest) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+        systemInstruction: { parts: [{ text: systemPromptWithContext }] },
         contents: geminiContents,
         generationConfig: { maxOutputTokens: 1024, temperature: 0.7 },
       }),

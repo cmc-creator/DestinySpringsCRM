@@ -1,5 +1,6 @@
 ﻿"use client";
 import { useState, useEffect, useCallback, useRef } from "react";
+import AIInsightsPanel from "@/components/ai/AIInsightsPanel";
 
 // ── Types ───────────────────────────────────────────────
 type LeadStatus = "NEW"|"CONTACTED"|"QUALIFIED"|"PROPOSAL_SENT"|"NEGOTIATING"|"WON"|"LOST"|"UNQUALIFIED";
@@ -417,6 +418,11 @@ export default function LeadsClient({ reps }: { reps: Rep[] }) {
 
   return (
     <div style={{ paddingBottom: selected.size > 0 ? 80 : 0 }}>
+      {/* AI Insights */}
+      <div style={{ marginBottom: 20 }}>
+        <AIInsightsPanel role="admin" />
+      </div>
+
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20, flexWrap: "wrap", gap: 12 }}>
         <div>

@@ -301,7 +301,7 @@ export default function RepsClient() {
             {reps.filter(r => r.status === "ACTIVE").length > 0 && <span style={{ color: "#34d399", marginLeft: 8 }}>● {reps.filter(r => r.status === "ACTIVE").length} active</span>}
           </p>
         </div>
-        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
           {/* View toggle */}
           <div style={{ display: "flex", background: "rgba(0,0,0,0.3)", borderRadius: 7, padding: 2, border: `1px solid ${C.border}` }}>
             {(["cards","table"] as ViewMode[]).map(m => (

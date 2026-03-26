@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import Image from "next/image";
+import { usePathname } from "next/navigation";
 
 type Message = {
   id: string;
@@ -22,7 +23,9 @@ type ActionProposal = {
     | "delete_lead"
     | "create_opportunity"
     | "update_opportunity"
-    | "delete_opportunity";
+    | "delete_opportunity"
+    | "create_activity"
+    | "update_referral_source";
   targetId?: string;
   data?: Record<string, unknown>;
   rationale?: string;
@@ -93,6 +96,9 @@ export default function AIChatWidget() {
   const [proposal, setProposal] = useState<ActionProposal | null>(null);
   const [listening, setListening] = useState(false);
   const [speechSupported, setSpeechSupported] = useState(false);
+  const [ttsEnabled, setTtsEnabled] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const pathname = usePathname();
   const bottomRef               = useRef<HTMLDivElement>(null);
   const inputRef                = useRef<HTMLTextAreaElement>(null);
   const speechRef               = useRef<SpeechRecognitionLike | null>(null);
@@ -109,6 +115,13 @@ export default function AIChatWidget() {
   useEffect(() => {
     const Ctor = window.SpeechRecognition ?? window.webkitSpeechRecognition;
     setSpeechSupported(!!Ctor);
+  }, []);
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
   }, []);
 
   // External trigger: aegis:prompt pre-fills + auto-sends, aegis:open just opens
@@ -146,7 +159,7 @@ export default function AIChatWidget() {
       const res = await fetch("/api/ai/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: history, allowEdits }),
+        body: JSON.stringify({ messages: history, allowEdits, pageContext: pathname }),
       });
 
       const data = await res.json() as { role?: string; content?: string; error?: string; actionProposal?: ActionProposal | null };
@@ -157,6 +170,22 @@ export default function AIChatWidget() {
       };
       setMessages((prev) => [...prev, reply]);
       setProposal(data.actionProposal ?? null);
+      // TTS: speak AI response if enabled
+      if (ttsEnabled && typeof window !== "undefined" && window.speechSynthesis) {
+        const plain = (data.content ?? "")
+          .replace(/<[^>]*>/g, "")
+          .replace(/\*\*/g, "")
+          .replace(/\*/g, "")
+          .replace(/#{1,6}\s/g, "")
+          .trim();
+        if (plain) {
+          const utt = new SpeechSynthesisUtterance(plain);
+          utt.lang = "en-US";
+          utt.rate = 1.05;
+          window.speechSynthesis.cancel();
+          window.speechSynthesis.speak(utt);
+        }
+      }
     } catch {
       setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: "assistant", content: "Network error. Please try again." }]);
     } finally {
@@ -178,7 +207,11 @@ export default function AIChatWidget() {
       const ev = event as unknown as { results?: { 0?: { transcript?: string } }[] };
       const transcript = ev.results?.[0]?.[0]?.transcript?.trim() ?? "";
       if (!transcript) return;
-      setInput((prev) => (prev ? `${prev} ${transcript}` : transcript));
+      // Build new value and pre-set pendingPromptRef to trigger auto-send
+      const currentVal = inputRef.current?.value ?? "";
+      const newVal = currentVal ? `${currentVal} ${transcript}` : transcript;
+      setInput(newVal);
+      pendingPromptRef.current = newVal;
       setTimeout(() => inputRef.current?.focus(), 40);
     };
 
@@ -317,7 +350,10 @@ export default function AIChatWidget() {
       {/* Floating action button */}
       <button
         className="aegis-fab"
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => {
+          if (window.speechSynthesis) window.speechSynthesis.cancel();
+          setOpen((v) => !v);
+        }}
         title="Ask Aegis AI"
         style={{
           position: "fixed", bottom: 24, right: 24, zIndex: 9999,
@@ -342,12 +378,17 @@ export default function AIChatWidget() {
         <div
           className="aegis-panel"
           style={{
-            position: "fixed", bottom: 92, right: 24, zIndex: 9998,
-            width: "min(420px, calc(100vw - 48px))",
-            height: "min(580px, calc(100vh - 120px))",
+            position: "fixed",
+            bottom: isMobile ? 0 : 92,
+            right: isMobile ? 0 : 24,
+            left: isMobile ? 0 : "auto",
+            top: isMobile ? 0 : "auto",
+            zIndex: 9998,
+            width: isMobile ? "100%" : "min(420px, calc(100vw - 48px))",
+            height: isMobile ? "100dvh" : "min(580px, calc(100vh - 120px))",
             background: CARD,
-            border: `1px solid ${GOLD_MID}`,
-            borderRadius: 16,
+            border: isMobile ? "none" : `1px solid ${GOLD_MID}`,
+            borderRadius: isMobile ? 0 : 16,
             display: "flex", flexDirection: "column",
             boxShadow: `0 8px 40px rgba(0,0,0,0.55), 0 0 0 1px rgba(201,168,76,0.08)`,
             overflow: "hidden",
@@ -369,6 +410,32 @@ export default function AIChatWidget() {
             </div>
             <div style={{ display: "flex", gap: 6 }}>
               <button
+                onClick={() => {
+                  setTtsEnabled(v => {
+                    if (v && typeof window !== "undefined" && window.speechSynthesis) window.speechSynthesis.cancel();
+                    return !v;
+                  });
+                }}
+                title={ttsEnabled ? "Disable voice responses" : "Enable voice responses"}
+                style={{ background: "none", border: "none", cursor: "pointer", padding: 4, color: ttsEnabled ? GOLD : MUTED, borderRadius: 6, display: "flex", alignItems: "center" }}
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  {ttsEnabled ? (
+                    <>
+                      <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                      <path d="M15.54 8.46a4 4 0 0 1 0 6.09"/>
+                      <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+                    </>
+                  ) : (
+                    <>
+                      <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                      <line x1="23" y1="9" x2="17" y2="15"/>
+                      <line x1="17" y1="9" x2="23" y2="15"/>
+                    </>
+                  )}
+                </svg>
+              </button>
+              <button
                 onClick={clearChat}
                 title="Clear conversation"
                 style={{ background: "none", border: "none", cursor: "pointer", padding: 4, color: MUTED, borderRadius: 6, display: "flex", alignItems: "center" }}
@@ -378,7 +445,10 @@ export default function AIChatWidget() {
                 </svg>
               </button>
               <button
-                onClick={() => setOpen(false)}
+                onClick={() => {
+                  if (typeof window !== "undefined" && window.speechSynthesis) window.speechSynthesis.cancel();
+                  setOpen(false);
+                }}
                 style={{ background: "none", border: "none", cursor: "pointer", padding: 4, color: MUTED, borderRadius: 6, display: "flex", alignItems: "center" }}
               >
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">

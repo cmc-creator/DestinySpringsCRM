@@ -12,20 +12,20 @@ const MUTED    = "var(--nyx-text-muted)";
 
 const SUGGESTIONS: Record<string, { label: string; prompt: string }[]> = {
   admin: [
-    { label: "Overdue visits",           prompt: "Which referral sources haven't been visited in 30+ days?" },
-    { label: "At-risk opportunities",    prompt: "Summarize open opportunities that may be going cold and what I should do about them." },
-    { label: "Top reps this week",       prompt: "Who are my top performing team members this week and what's driving their results?" },
-    { label: "Leadership summary",       prompt: "Draft a concise team performance update I can share with leadership this week." },
-    { label: "Territory gaps",           prompt: "Are there any obvious gaps in my territory coverage I should address?" },
-    { label: "Pipeline forecast",        prompt: "Based on current pipeline stage distribution, what's a realistic close forecast for this month?" },
+    { label: "Cold referral sources",    prompt: "Which referral sources haven't sent a referral in 30+ days and need outreach? Give me a prioritized list and suggested action for each." },
+    { label: "Stalled admissions",       prompt: "Which admissions are stalled in Clinical Review or Insurance Auth right now? What's the fastest way to move them forward?" },
+    { label: "Top referrers this month", prompt: "Who are my top referral sources sending the most admissions this month and what's making them successful?" },
+    { label: "Rep activity gaps",        prompt: "Which of my reps have the lowest visit and call activity this week? What should I do about it?" },
+    { label: "Territory coverage gaps",  prompt: "Are there geographic areas or facility types in our territory with no active referral relationships? How should we address them?" },
+    { label: "Leadership summary",       prompt: "Draft a concise weekly performance update I can share with leadership — referral volume, pipeline stage distribution, and key wins." },
   ],
   rep: [
-    { label: "Today's priorities",       prompt: "What should I prioritize in my territory today to maximize referral relationships?" },
-    { label: "Draft a follow-up",        prompt: "Help me draft a follow-up message for a referral source I visited recently." },
-    { label: "Cold accounts",            prompt: "Which of my accounts haven't heard from me in the past two weeks?" },
-    { label: "Write a visit note",       prompt: "Help me write a professional visit note for a meeting I just completed." },
-    { label: "Prep for a meeting",       prompt: "What key things should I know before meeting with a new referral source for the first time?" },
-    { label: "Relationship tips",        prompt: "What are the best practices for building a strong long-term referral relationship?" },
+    { label: "Who to visit today",       prompt: "Based on my referral source relationships, which facilities should I prioritize visiting today and why?" },
+    { label: "Draft a follow-up",        prompt: "Help me draft a short, professional follow-up message to a referral source I visited this week." },
+    { label: "Sources gone quiet",       prompt: "Which of my referral sources haven't sent a referral in the past 30 days? What's the best outreach strategy for each type?" },
+    { label: "Write a visit note",       prompt: "Help me write a professional facility visit note I can log after meeting with a referral source today." },
+    { label: "Prep for a cold call",     prompt: "What should I know and say when cold-calling a hospital ED social worker to introduce Destiny Springs for the first time?" },
+    { label: "Relationship best practices", prompt: "What are the most effective strategies for building lasting referral relationships with ED social workers and crisis counselors?" },
   ],
   account: [
     { label: "Engagement status",        prompt: "Can you summarize the current engagement status and what stage we're at?" },
@@ -57,37 +57,60 @@ function SuggestedNextActions({ role }: { role: string }) {
 
   useEffect(() => {
     if (role === "account") return;
-    // Build personalized suggestions from stale leads + overdue follow-ups
     const base: NextAction[] = [];
-    fetch("/api/leads?limit=20")
+    const now = Date.now();
+
+    // Pull referral sources gone quiet (no referral in 30+ days)
+    const sourcesPromise = fetch("/api/referral-sources?limit=40")
       .then(r => r.ok ? r.json() : [])
-      .then((leads: { hospitalName: string; status: string; updatedAt?: string; createdAt: string; nextFollowUp?: string | null; assignedRep?: { user: { name: string | null } } | null }[]) => {
-        const now = Date.now();
-        leads.forEach(l => {
-          if (l.status === "WON" || l.status === "LOST" || l.status === "UNQUALIFIED") return;
-          const days = Math.floor((now - new Date(l.updatedAt ?? l.createdAt).getTime()) / 86_400_000);
-          if (days >= 14) {
+      .then((sources: { id: string; name: string; type?: string | null; updatedAt?: string; createdAt: string; active?: boolean }[]) => {
+        sources.forEach(s => {
+          if (s.active === false) return;
+          const days = Math.floor((now - new Date(s.updatedAt ?? s.createdAt).getTime()) / 86_400_000);
+          if (days >= 30) {
             base.push({
-              label: `Re-engage ${l.hospitalName}`,
-              desc: `${days} days since last update — status: ${l.status.replace(/_/g, " ")}`,
-              prompt: `I haven't touched the lead "${l.hospitalName}" in ${days} days. It's currently in ${l.status.replace(/_/g, " ")} status. What's the best next step to move it forward?`,
-              urgency: days >= 30 ? "high" : "medium",
+              label: `Re-engage ${s.name}`,
+              desc: `${days} days since last activity — ${(s.type ?? "referral source").replace(/_/g, " ").toLowerCase()}`,
+              prompt: `The referral source "${s.name}" (${(s.type ?? "facility").replace(/_/g, " ")}) hasn't been contacted in ${days} days. What's the best outreach strategy to re-engage them and get referrals flowing again?`,
+              urgency: days >= 60 ? "high" : "medium",
             });
           }
-          if (l.nextFollowUp && new Date(l.nextFollowUp) <= new Date()) {
+        });
+      })
+      .catch(() => {});
+
+    // Pull stalled admissions (Clinical Review or Insurance Auth > 7 days no update)
+    const oppsPromise = fetch("/api/opportunities?limit=40")
+      .then(r => r.ok ? r.json() : [])
+      .then((opps: { id: string; title: string; stage: string; updatedAt?: string; createdAt: string; nextFollowUp?: string | null; hospital?: { hospitalName: string } | null }[]) => {
+        opps.forEach(o => {
+          const stallingStages = ["CLINICAL_REVIEW", "INSURANCE_AUTH"];
+          if (!stallingStages.includes(o.stage)) return;
+          const days = Math.floor((now - new Date(o.updatedAt ?? o.createdAt).getTime()) / 86_400_000);
+          if (days >= 3) {
             base.push({
-              label: `Overdue follow-up: ${l.hospitalName}`,
-              desc: `Follow-up was due ${new Date(l.nextFollowUp).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`,
-              prompt: `My follow-up with "${l.hospitalName}" is overdue. Help me draft a re-engagement message.`,
+              label: `Unblock: ${o.title}`,
+              desc: `${days} days in ${o.stage.replace(/_/g, " ")} — ${o.hospital?.hospitalName ?? ""}`,
+              prompt: `The admission "${o.title}" has been stuck in ${o.stage.replace(/_/g, " ")} for ${days} days. What are the most likely blockers and what actions should I take right now to move this forward?`,
+              urgency: days >= 7 ? "high" : "medium",
+            });
+          }
+          if (o.nextFollowUp && new Date(o.nextFollowUp) <= new Date()) {
+            base.push({
+              label: `Overdue follow-up: ${o.title}`,
+              desc: `Follow-up was due ${new Date(o.nextFollowUp).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`,
+              prompt: `My follow-up on the admission "${o.title}" is overdue. Help me draft a quick check-in message to move this forward.`,
               urgency: "high",
             });
           }
         });
-        // Sort by urgency, limit to 4
-        base.sort((a, b) => (a.urgency === "high" ? -1 : b.urgency === "high" ? 1 : 0));
-        setActions(base.slice(0, 4));
       })
       .catch(() => {});
+
+    Promise.all([sourcesPromise, oppsPromise]).then(() => {
+      base.sort((a, b) => (a.urgency === "high" ? -1 : b.urgency === "high" ? 1 : 0));
+      setActions(base.slice(0, 5));
+    });
   }, [role]);
 
   const ask = (prompt: string) => window.dispatchEvent(new CustomEvent("aegis:prompt", { detail: prompt }));

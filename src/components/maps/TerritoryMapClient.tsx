@@ -174,7 +174,7 @@ export default function TerritoryMapClient({ hospitals, repTerritories }: Props)
     <>
       {/* Leaflet CSS */}
       <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-      <div ref={containerRef} style={{ width: "100%", height: 500, borderRadius: 10, overflow: "hidden" }} />
+      <div ref={containerRef} style={{ width: "100%", height: "clamp(300px, 50vh, 620px)", borderRadius: 10, overflow: "hidden" }} />
     </>
   );
 }

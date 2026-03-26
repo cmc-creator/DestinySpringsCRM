@@ -112,7 +112,7 @@ export function ReferralFeedPanel({
 
   return (
     <div style={{
-      position: "fixed", top: 0, right: 0, bottom: 0, width: 400,
+      position: "fixed", top: 0, right: 0, bottom: 0, width: "min(400px, 100vw)",
       background: "var(--nyx-bg)", borderLeft: "1px solid var(--nyx-accent-str)",
       zIndex: 200, display: "flex", flexDirection: "column",
       boxShadow: "-8px 0 32px rgba(0,0,0,0.45)",

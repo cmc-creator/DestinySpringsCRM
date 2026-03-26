@@ -1,6 +1,7 @@
 ﻿"use client";
 import { useState, useEffect, useCallback } from "react";
 import { ActivityFeedPanel } from "@/components/activities/ActivityFeedPanel";
+import AIInsightsPanel from "@/components/ai/AIInsightsPanel";
 
 type Stage = "INQUIRY"|"CLINICAL_REVIEW"|"INSURANCE_AUTH"|"ADMITTED"|"ACTIVE"|"DISCHARGED"|"DECLINED"|"ON_HOLD";
 type SvcLine = "ADULT_INPATIENT_PSYCH"|"ADOLESCENT_PSYCH"|"GERIATRIC_PSYCH"|"DUAL_DIAGNOSIS"|"DETOX_STABILIZATION"|"CRISIS_STABILIZATION"|"PARTIAL_HOSPITALIZATION"|"INTENSIVE_OUTPATIENT"|"OUTPATIENT_THERAPY"|"MED_MGMT"|"COURT_ORDERED_TREATMENT"|"OTHER";
@@ -179,6 +180,11 @@ export default function OpportunitiesClient({ hospitals, reps }: { hospitals: Ho
 
   return (
     <div>
+      {/* AI Insights */}
+      <div style={{ marginBottom: 20 }}>
+        <AIInsightsPanel role="admin" />
+      </div>
+
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20, flexWrap: "wrap", gap: 12 }}>
         <div>
           <p style={{ color: "var(--nyx-accent-label)", fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 4 }}>PIPELINE</p>
@@ -207,6 +213,7 @@ export default function OpportunitiesClient({ hospitals, reps }: { hospitals: Ho
       {loading && <div style={{ color: C.muted, padding: 40, textAlign: "center" }}>Loading…</div>}
 
       {!loading && view === "kanban" && (
+        <div style={{ position: "relative" }}>
         <div style={{ display: "flex", gap: 12, overflowX: "auto", paddingBottom: 16 }}>
           {STAGES.map(stage => {
             const items = opps.filter(o => o.stage === stage);
@@ -246,6 +253,8 @@ export default function OpportunitiesClient({ hospitals, reps }: { hospitals: Ho
               </div>
             );
           })}
+        </div>
+          <p className="nyx-kanban-swipe-hint">← swipe to see more columns →</p>
         </div>
       )}
 

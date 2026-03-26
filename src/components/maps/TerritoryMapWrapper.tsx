@@ -7,7 +7,7 @@ const TerritoryMapClient = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div style={{ height: 500, display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(216,232,244,0.35)", fontSize: "0.875rem", letterSpacing: "0.05em" }}>
+      <div style={{ height: "clamp(300px, 50vh, 620px)", display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(216,232,244,0.35)", fontSize: "0.875rem", letterSpacing: "0.05em" }}>
         Loading map…
       </div>
     ),

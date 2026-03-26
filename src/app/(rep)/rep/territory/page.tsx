@@ -1,6 +1,7 @@
 ﻿import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
+import TerritoryMapWrapper from "@/components/maps/TerritoryMapWrapper";
 
 const CYAN = "var(--nyx-accent)";
 const CARD = "var(--nyx-card)";
@@ -17,6 +18,37 @@ export default async function RepTerritoryPage() {
     include: { territories: { orderBy: { state: "asc" } }, user: { select: { name: true } } },
   });
   if (!rep) redirect("/login");
+
+  // Gather rep's active states for map filtering
+  const repStates = [
+    ...(rep.licensedStates ?? []),
+    ...rep.territories.map((t: { state: string }) => t.state),
+  ].filter(Boolean);
+  const uniqueStates = [...new Set(repStates)];
+
+  // Fetch hospitals in rep territory states
+  const mapHospitals = uniqueStates.length > 0
+    ? await prisma.hospital.findMany({
+        where: { state: { in: uniqueStates } },
+        select: { id: true, hospitalName: true, city: true, state: true, status: true },
+      }).then(hs => hs.map(h => ({
+          id: h.id,
+          hospitalName: h.hospitalName,
+          city: h.city,
+          state: h.state,
+          status: h.status,
+          assignedRepName: rep.user.name ?? null,
+          referralMapLabel: null,
+          referralMapColor: null,
+        })))
+    : [];
+
+  const repTerritoryData = [{
+    id: rep.id,
+    name: rep.user.name ?? "Me",
+    color: "var(--nyx-accent)",
+    states: uniqueStates,
+  }];
 
   return (
     <div>
@@ -45,6 +77,14 @@ export default async function RepTerritoryPage() {
               <span key={state} style={{ background: "var(--nyx-accent-dim)", border: "1px solid var(--nyx-accent-str)", borderRadius: 6, padding: "4px 12px", fontSize: "0.8rem", fontWeight: 700, color: CYAN }}>{state}</span>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* Territory Map */}
+      {uniqueStates.length > 0 && (
+        <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: "20px", marginBottom: 24 }}>
+          <p style={{ fontSize: "0.7rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 14 }}>TERRITORY MAP</p>
+          <TerritoryMapWrapper hospitals={mapHospitals} repTerritories={repTerritoryData} />
         </div>
       )}
 

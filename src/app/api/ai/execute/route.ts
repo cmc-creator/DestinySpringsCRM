@@ -16,7 +16,8 @@ type ActionIntent =
   | "delete_lead"
   | "create_opportunity"
   | "update_opportunity"
-  | "delete_opportunity";
+  | "delete_opportunity"
+  | "create_activity";
 
 type ExecutePayload = {
   intent: ActionIntent;
@@ -322,6 +323,30 @@ export async function POST(req: NextRequest) {
         await prisma.opportunity.delete({ where: { id: body.targetId } });
         await logAudit({ userId: session.user.id, userEmail: session.user.email, userName: session.user.name, action: "DELETE", resource: "Opportunity", resourceId: body.targetId, diff: { before } });
         return NextResponse.json({ ok: true, summary: `Deleted opportunity ${body.targetId}` });
+      }
+
+      case "create_activity": {
+        const data = only<Record<string, unknown>>(body.data, ["type", "subject", "notes", "leadId", "hospitalId", "referralSourceId", "opportunityId", "contactName", "contactEmail", "duration", "outcome", "nextFollowUp"]);
+        if (!data.type) return NextResponse.json({ error: "type is required" }, { status: 400 });
+        const created = await prisma.activity.create({
+          data: {
+            type: String(data.type).toUpperCase() as never,
+            subject: (data.subject as string | undefined) ?? null,
+            notes: (data.notes as string | undefined) ?? null,
+            leadId: (data.leadId as string | undefined) ?? null,
+            hospitalId: (data.hospitalId as string | undefined) ?? null,
+            referralSourceId: (data.referralSourceId as string | undefined) ?? null,
+            opportunityId: (data.opportunityId as string | undefined) ?? null,
+            contactName: (data.contactName as string | undefined) ?? null,
+            contactEmail: (data.contactEmail as string | undefined) ?? null,
+            duration: data.duration ? Number(data.duration) : null,
+            outcome: (data.outcome as string | undefined) ?? null,
+            nextFollowUp: data.nextFollowUp ? new Date(String(data.nextFollowUp)) : null,
+            createdByUserId: session.user.id,
+          },
+        });
+        await logAudit({ userId: session.user.id, userEmail: session.user.email, userName: session.user.name, action: "CREATE", resource: "Activity", resourceId: created.id, diff: { after: created } });
+        return NextResponse.json({ ok: true, result: created, summary: `Logged activity: ${created.type}${created.subject ? ` — ${created.subject}` : ""}` });
       }
 
       default:

@@ -141,12 +141,12 @@ function HospitalModal({ hospital, onClose, onSave }: {
               <label style={{ fontSize: "0.72rem", color: C.muted, display: "block", marginBottom: 4 }}>CITY</label>
               <input style={inp} value={form.city ?? ""} onChange={e => set("city", e.target.value)} placeholder="Nashville" />
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-              <div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+              <div style={{ flex: "1 1 100px" }}>
                 <label style={{ fontSize: "0.72rem", color: C.muted, display: "block", marginBottom: 4 }}>STATE</label>
                 <input style={inp} value={form.state ?? ""} onChange={e => set("state", e.target.value)} placeholder="TN" maxLength={2} />
               </div>
-              <div>
+              <div style={{ flex: "1 1 100px" }}>
                 <label style={{ fontSize: "0.72rem", color: C.muted, display: "block", marginBottom: 4 }}>ZIP</label>
                 <input style={inp} value={form.zip ?? ""} onChange={e => set("zip", e.target.value)} placeholder="37201" />
               </div>
