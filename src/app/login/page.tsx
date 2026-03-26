@@ -438,6 +438,10 @@ function LoginForm() {
             Need onboarding help? <Link href="/user-guide">View User Guide</Link>
           </div>
 
+          <div className="lp-signup" style={{ marginTop: 8 }}>
+            Support: <a href="mailto:info@nyxcollectivellc.com?subject=Destiny%20Springs%20Support" style={{ color: "var(--nyx-accent, #C9A84C)", textDecoration: "none", fontWeight: 700 }}>info@nyxcollectivellc.com</a>
+          </div>
+
           {isDev && (
             <div className="lp-demo">
               <p className="lp-demo-hdr">DEMO CREDENTIALS (Dev Only)</p>

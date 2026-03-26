@@ -94,7 +94,7 @@ export default function DSHPartnerPage() {
           <Link href="/login" style={{ background: GOLD, color: "#0a0e14", padding: "14px 32px", borderRadius: 10, fontWeight: 800, textDecoration: "none", fontSize: "0.95rem" }}>
             Access Your Platform
           </Link>
-          <a href="mailto:cmc@conniemichelleconsulting.com" style={{ background: "rgba(201,168,76,0.08)", border: `1px solid ${BORDER}`, color: TEXT, padding: "14px 32px", borderRadius: 10, fontWeight: 700, textDecoration: "none", fontSize: "0.95rem" }}>
+          <a href="mailto:info@nyxcollectivellc.com" style={{ background: "rgba(201,168,76,0.08)", border: `1px solid ${BORDER}`, color: TEXT, padding: "14px 32px", borderRadius: 10, fontWeight: 700, textDecoration: "none", fontSize: "0.95rem" }}>
             Contact Your Account Manager
           </a>
         </div>
@@ -159,7 +159,7 @@ export default function DSHPartnerPage() {
             We can walk your team through setup and daily workflows. If you want a guided start, contact us and we will schedule a live walkthrough.
           </p>
           <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
-            <a href="mailto:cmc@conniemichelleconsulting.com?subject=Destiny Springs Onboarding Help" style={{ background: GOLD, color: "#0a0e14", padding: "12px 24px", borderRadius: 9, fontWeight: 800, textDecoration: "none", fontSize: "0.9rem" }}>
+            <a href="mailto:info@nyxcollectivellc.com?subject=Destiny Springs Onboarding Help" style={{ background: GOLD, color: "#0a0e14", padding: "12px 24px", borderRadius: 9, fontWeight: 800, textDecoration: "none", fontSize: "0.9rem" }}>
               Request Onboarding Help
             </a>
             <Link href="/login" style={{ background: "rgba(255,255,255,0.05)", border: `1px solid ${BORDER}`, color: TEXT, padding: "12px 24px", borderRadius: 9, fontWeight: 700, textDecoration: "none", fontSize: "0.9rem" }}>
@@ -192,7 +192,7 @@ export default function DSHPartnerPage() {
           ))}
         </div>
 
-        <a href="mailto:cmc@conniemichelleconsulting.com?subject=Destiny Springs Platform Support" style={{ display: "inline-block", background: GOLD, color: "#0a0e14", padding: "13px 28px", borderRadius: 9, fontWeight: 800, textDecoration: "none", fontSize: "0.9rem", marginRight: 12 }}>
+        <a href="mailto:info@nyxcollectivellc.com?subject=Destiny Springs Platform Support" style={{ display: "inline-block", background: GOLD, color: "#0a0e14", padding: "13px 28px", borderRadius: 9, fontWeight: 800, textDecoration: "none", fontSize: "0.9rem", marginRight: 12 }}>
           Contact Account Manager
         </a>
         <Link href="/login" style={{ display: "inline-block", background: "rgba(255,255,255,0.05)", border: `1px solid ${BORDER}`, color: TEXT, padding: "13px 28px", borderRadius: 9, fontWeight: 700, textDecoration: "none", fontSize: "0.9rem" }}>

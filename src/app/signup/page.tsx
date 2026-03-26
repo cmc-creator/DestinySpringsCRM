@@ -563,6 +563,10 @@ function SignupPageContent() {
             New here? <Link href="/user-guide">Open User Guide</Link>
           </p>
 
+          <p className="su-login" style={{ marginTop: 6 }}>
+            Support: <a href="mailto:info@nyxcollectivellc.com?subject=Destiny%20Springs%20Signup%20Support" style={{ color: "var(--nyx-accent, #c9a84c)", textDecoration: "none", fontWeight: 700 }}>info@nyxcollectivellc.com</a>
+          </p>
+
           <p className="su-legal">
             By creating an account, you agree to our <Link href="/terms">Terms</Link> and <Link href="/privacy">Privacy Policy</Link>.
           </p>

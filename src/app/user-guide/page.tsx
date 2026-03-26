@@ -41,7 +41,7 @@ export default function UserGuidePage() {
           <Link href="/login" style={{ textDecoration: "none", background: "var(--nyx-accent)", color: "var(--nyx-bg)", borderRadius: 8, padding: "10px 16px", fontWeight: 800 }}>
             Go to Login
           </Link>
-          <a href="https://nycollectivellc.com" target="_blank" rel="noreferrer" style={{ textDecoration: "none", border: "1px solid var(--nyx-accent-dim)", color: "var(--nyx-text)", borderRadius: 8, padding: "10px 16px", fontWeight: 700 }}>
+          <a href="mailto:info@nyxcollectivellc.com?subject=Destiny%20Springs%20Support" style={{ textDecoration: "none", border: "1px solid var(--nyx-accent-dim)", color: "var(--nyx-text)", borderRadius: 8, padding: "10px 16px", fontWeight: 700 }}>
             Contact Support
           </a>
         </div>

@@ -6,7 +6,7 @@ import { checkRateLimit, getRequestIdentity } from "@/lib/rate-limit";
 
 export const maxDuration = 30;
 
-const ADMIN_NOTIFY_EMAIL = "cmc@conniemichelleconsulting.com";
+const ADMIN_NOTIFY_EMAIL = "info@nyxcollectivellc.com";
 
 // Basic email format validation — prevents obviously malformed inputs
 function isValidEmail(email: string) {
