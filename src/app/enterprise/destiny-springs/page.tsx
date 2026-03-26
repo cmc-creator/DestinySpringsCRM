@@ -8,7 +8,6 @@ const CONTRACT_TERM = "Annual";   // display only
 const MARKET_RATE_PER_SEAT = 199; // reference retail seat price
 // ────────────────────────────────────────────────────────────────────────────
 
-const CYAN  = "var(--nyx-accent)";
 const BG    = "var(--nyx-bg)";
 const TEXT  = "var(--nyx-text)";
 const GOLD  = "#c9a84c";
@@ -156,7 +155,7 @@ export default function DSHPartnerPage() {
         <p style={{ color: GOLD, fontSize: "0.72rem", fontWeight: 800, letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: 10 }}>DEDICATED SUPPORT</p>
         <h2 style={{ fontSize: "clamp(1.4rem, 3.5vw, 2rem)", fontWeight: 900, color: TEXT, marginBottom: 16 }}>You have a dedicated point of contact — always.</h2>
         <p style={{ color: "rgba(216,232,244,0.5)", maxWidth: 520, margin: "0 auto 44px", lineHeight: 1.75 }}>
-          As NyxAegis's highest-priority partner, Destiny Springs has a named account manager available for training, feature requests, integrations, and anything else you need.
+          As NyxAegis&apos;s highest-priority partner, Destiny Springs has a named account manager available for training, feature requests, integrations, and anything else you need.
         </p>
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16, marginBottom: 44 }}>
