@@ -58,6 +58,32 @@ function firstMeaningfulValue(row: Record<string, unknown>): string {
   return firstEntry ? String(firstEntry[1]).trim() : "";
 }
 
+function parseCityStateZip(location: string): { city?: string; state?: string; zip?: string } {
+  const raw = String(location || "").trim();
+  if (!raw) return {};
+
+  // Common shapes: "Phoenix, AZ", "Phoenix, Arizona 85016", "Phoenix AZ 85016"
+  const withComma = raw.match(/^(.+?),\s*([A-Za-z]{2}|[A-Za-z ]+?)(?:\s+(\d{5}(?:-\d{4})?))?$/);
+  if (withComma) {
+    return {
+      city: withComma[1]?.trim() || undefined,
+      state: withComma[2]?.trim() || undefined,
+      zip: withComma[3]?.trim() || undefined,
+    };
+  }
+
+  const plain = raw.match(/^(.+?)\s+([A-Za-z]{2})\s+(\d{5}(?:-\d{4})?)$/);
+  if (plain) {
+    return {
+      city: plain[1]?.trim() || undefined,
+      state: plain[2]?.trim() || undefined,
+      zip: plain[3]?.trim() || undefined,
+    };
+  }
+
+  return { city: raw };
+}
+
 function isPlaceholderHeader(v: unknown): boolean {
   const s = String(v ?? "").trim();
   if (!s) return true;
@@ -223,10 +249,12 @@ async function importAccounts(rows: Record<string, unknown>[], dryRun = false) {
       "Account Name", "Name", "Organization", "Company",
       "Hospital Name", "Facility Name", "Account", "Title",
       "Item", "Item Name", "Board Item"
-    );
+    ) || colByHeaderToken(row, "account", "facility", "hospital", "organization", "company", "name");
     if (!name) {
       // Monday.com: first column is usually the item name regardless of label
-      const firstEntry = Object.entries(row).find(([, v]) => {
+      const firstEntry = Object.entries(row).find(([k, v]) => {
+        const nk = normalizeKey(k);
+        if (nk.includes("subitem") || nk.includes("timeline") || nk.includes("priority")) return false;
         const s = String(v ?? "").trim();
         return s.length > 1 && s !== "undefined" && s !== "null";
       });
@@ -239,17 +267,19 @@ async function importAccounts(rows: Record<string, unknown>[], dryRun = false) {
       continue;
     }
 
-    const type = col(row, "Account Type", "Type", "Facility Type");
-    const city  = col(row, "Billing City", "City");
-    const state = col(row, "Billing State", "State", "Billing State/Province");
-    const zip   = col(row, "Billing Zip", "Zip", "Billing Postal Code", "Postal Code");
+    const type = col(row, "Account Type", "Type", "Facility Type", "Type of Facility") || colByHeaderToken(row, "facility type");
+    const location = col(row, "Location", "Address", "Billing Address", "City, State");
+    const parsedLocation = parseCityStateZip(location);
+    const city  = col(row, "Billing City", "City") || parsedLocation.city || "";
+    const state = col(row, "Billing State", "State", "Billing State/Province") || parsedLocation.state || "";
+    const zip   = col(row, "Billing Zip", "Zip", "Billing Postal Code", "Postal Code") || parsedLocation.zip || "";
     const phone = col(row, "Phone", "Main Phone", "Billing Phone");
     const npi   = col(row, "NPI", "NPI Number");
     const beds  = col(row, "Bed Count", "Beds", "Number of Beds", "NumberOfEmployees");
     const notes = col(row, "Description", "Notes", "Comments");
-    const contactName  = col(row, "Primary Contact", "Contact Name", "Main Contact");
-    const contactTitle = col(row, "Contact Title", "Primary Contact Title");
-    const contactEmail = col(row, "Contact Email", "Primary Email");
+    const contactName  = col(row, "Primary Contact", "Contact Name", "Main Contact", "Contacts") || colByHeaderToken(row, "contact", "owner", "person");
+    const contactTitle = col(row, "Contact Title", "Primary Contact Title", "Title");
+    const contactEmail = col(row, "Contact Email", "Primary Email", "Email", "E-mail");
     const contactPhone = col(row, "Contact Phone", "Primary Phone");
 
     try {
@@ -258,6 +288,7 @@ async function importAccounts(rows: Record<string, unknown>[], dryRun = false) {
       });
       if (existing) {
         skipped++;
+        skipReasons["already exists"] = (skipReasons["already exists"] ?? 0) + 1;
         if (preview.length < MAX_PREVIEW) preview.push({ action: "skip", reason: "already exists", fields: { "Name": name } });
         continue;
       }
