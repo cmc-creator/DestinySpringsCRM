@@ -16,7 +16,7 @@ const steps = [
   {
     step: "2",
     title: "Enable open-tracking webhooks",
-    desc: "In your Resend dashboard, go to Webhooks and add your NyxAegis webhook endpoint: https://yourdomain.com/api/webhooks/email. Select the email.opened and email.clicked event types.",
+    desc: "In your Resend dashboard, go to Webhooks and add your webhook endpoint: https://yourdomain.com/api/communications/track. Select the email.opened and email.clicked event types.",
   },
   {
     step: "3",
