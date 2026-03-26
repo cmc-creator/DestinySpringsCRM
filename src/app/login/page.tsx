@@ -54,7 +54,8 @@ function LoginForm() {
     try {
       const result = await signIn("credentials", { email, password, redirect: false });
       if (result?.error) {
-        setError("Authentication failed. Please check your credentials.");
+        // Show exact error code to help diagnose (CredentialsSignin = wrong pw, Configuration = setup issue)
+        setError(`Sign-in failed (${result.error}). Please check your credentials or contact your admin.`);
         return;
       }
       const session = await getSession();
