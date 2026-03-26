@@ -17,9 +17,11 @@ function col(row: Record<string, unknown>, ...keys: string[]): string {
 }
 
 function parseSheet(data: Uint8Array): Record<string, unknown>[] {
-  const wb = XLSX.read(data, { type: "array" });
+  // base64 is most reliable on serverless/edge environments
+  const base64 = Buffer.from(data).toString("base64");
+  const wb = XLSX.read(base64, { type: "base64", cellText: false, cellNF: false, cellHTML: false });
   const ws = wb.Sheets[wb.SheetNames[0]];
-  return (XLSX.utils.sheet_to_json(ws, { defval: "" }) as Record<string, unknown>[]);
+  return (XLSX.utils.sheet_to_json(ws, { defval: "", raw: false }) as Record<string, unknown>[]);
 }
 
 // ─── individual importers ──────────────────────────────────────────────────────
@@ -153,18 +155,27 @@ async function importContacts(rows: Record<string, unknown>[]) {
 async function importActivities(rows: Record<string, unknown>[]) {
   let created = 0, skipped = 0;
   const errors: string[] = [];
+  const skipReasons: Record<string, number> = {};
 
   const reps = await prisma.rep.findMany({ include: { user: true } });
 
   for (const row of rows) {
-    const subject     = col(row, "Subject", "Activity", "Title", "Name", "Description");
-    if (!subject) { skipped++; continue; }
+    const subject     = col(row, "Subject", "Activity", "Title", "Name", "Description",
+      "Item", "Task", "Task Name", "Item Name", "Board Item", "Activity Name", "Log", "Summary");
+    if (!subject) {
+      skipped++;
+      skipReasons["no subject/title/name column found"] = (skipReasons["no subject/title/name column found"] ?? 0) + 1;
+      continue;
+    }
 
-    const typeStr     = col(row, "Type", "Activity Type", "Call Type");
-    const dateStr     = col(row, "Date", "Due Date", "Completed Date", "ActivityDate", "Close Date");
-    const accountName = col(row, "Account Name", "Organization", "Hospital", "Facility");
-    const repName     = col(row, "Owner", "Assigned To", "Rep", "Rep Name", "Created By");
-    const notes       = col(row, "Description", "Comments", "Notes", "Body");
+    const typeStr     = col(row, "Type", "Activity Type", "Call Type", "Subitem", "Status", "Category");
+    const dateStr     = col(row, "Date", "Due Date", "Completed Date", "ActivityDate", "Close Date",
+      "Created", "Last Updated", "Timeline", "Date Created");
+    const accountName = col(row, "Account Name", "Organization", "Hospital", "Facility",
+      "Account", "Company", "Partner", "Referral Source", "Linked Account");
+    const repName     = col(row, "Owner", "Assigned To", "Rep", "Rep Name", "Created By",
+      "Assignee", "Person", "Team Member");
+    const notes       = col(row, "Description", "Comments", "Notes", "Body", "Details", "Update");
 
     // Match hospital
     let hospitalId: string | undefined;
@@ -206,7 +217,7 @@ async function importActivities(rows: Record<string, unknown>[]) {
     }
   }
 
-  return { created, skipped, errors };
+  return { created, skipped, errors, skipReasons };
 }
 
 // ─── enum mappers ──────────────────────────────────────────────────────────────
