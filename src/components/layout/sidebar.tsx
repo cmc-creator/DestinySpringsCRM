@@ -96,6 +96,7 @@ const ADMIN_NAV: NavGroup[] = [
     items: [
       { href: "/admin/opportunities",  label: "Admissions" },
       { href: "/admin/leads",          label: "Leads" },
+      { href: "/admin/activities",     label: "Activities" },
       { href: "/admin/contracts",      label: "Contracts" },
     ],
   },
