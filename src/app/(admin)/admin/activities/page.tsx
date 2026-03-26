@@ -75,6 +75,7 @@ export default function ActivitiesPage() {
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState({ type: "CALL", title: "", notes: "" });
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState<Set<string>>(new Set());
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -105,6 +106,17 @@ export default function ActivitiesPage() {
       a.notes?.toLowerCase().includes(q);
     return matchesType && matchesSearch;
   });
+
+  async function handleDelete(id: string) {
+    if (!confirm("Delete this activity?")) return;
+    setDeleting((prev) => new Set(prev).add(id));
+    try {
+      await fetch("/api/activities/" + id, { method: "DELETE" });
+      setActivities((prev) => prev.filter((a) => a.id !== id));
+    } finally {
+      setDeleting((prev) => { const s = new Set(prev); s.delete(id); return s; });
+    }
+  }
 
   async function handleLog(e: React.FormEvent) {
     e.preventDefault();
@@ -218,13 +230,14 @@ export default function ActivitiesPage() {
 
       {/* Table */}
       <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, overflow: "hidden" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "40px 1fr 160px 140px 140px 110px", padding: "10px 16px", borderBottom: `1px solid ${C.border}`, fontSize: "0.72rem", fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "40px 1fr 160px 140px 140px 110px 36px", padding: "10px 16px", borderBottom: `1px solid ${C.border}`, fontSize: "0.72rem", fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: "0.06em" }}>
           <span />
           <span>Activity</span>
           <span>Account</span>
           <span>Rep</span>
           <span>Logged By</span>
           <span>Date</span>
+          <span />
         </div>
 
         {loading ? (
@@ -239,7 +252,7 @@ export default function ActivitiesPage() {
               key={a.id}
               style={{
                 display: "grid",
-                gridTemplateColumns: "40px 1fr 160px 140px 140px 110px",
+                gridTemplateColumns: "40px 1fr 160px 140px 140px 110px 36px",
                 padding: "12px 16px",
                 borderBottom: i < filtered.length - 1 ? `1px solid ${C.border}` : "none",
                 alignItems: "start",
@@ -265,6 +278,7 @@ export default function ActivitiesPage() {
               <span style={{ fontSize: "0.75rem", color: C.muted, paddingTop: 2 }}>
                 {relTime(a.completedAt ?? a.createdAt)}
               </span>
+              <button onClick={() => handleDelete(a.id)} disabled={deleting.has(a.id)} title="Delete" style={{ background: "none", border: "none", color: "rgba(255,80,80,0.5)", cursor: deleting.has(a.id) ? "not-allowed" : "pointer", fontSize: "1rem", padding: 2 }}>{deleting.has(a.id) ? "..." : "\u00d7"}</button>
             </div>
           ))
         )}

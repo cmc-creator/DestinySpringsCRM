@@ -460,6 +460,16 @@ async function importContacts(rows: Record<string, unknown>[], dryRun = false) {
   return { created, skipped, errors, skipReasons, preview };
 }
 
+/** Filter out Monday.com board description text and stray column-header rows */
+function isJunkActivitySubject(s: string): boolean {
+  const lower = s.toLowerCase().trim();
+  // Monday board boilerplate descriptions
+  if (lower.includes("activities board shows all") || lower.includes("emails & activities in the page")) return true;
+  // Bare column headers that slip through
+  if (/^(name|account activities|account|type|date|notes|subject|description|status|activity)$/i.test(s.trim())) return true;
+  return false;
+}
+
 async function importActivities(rows: Record<string, unknown>[], dryRun = false) {
   let created = 0, skipped = 0;
   const errors: string[] = [];
@@ -484,14 +494,37 @@ async function importActivities(rows: Record<string, unknown>[], dryRun = false)
       continue;
     }
 
-    const typeStr     = col(row, "Type", "Activity Type", "Call Type", "Subitem", "Status", "Category");
-    const dateStr     = col(row, "Date", "Due Date", "Completed Date", "ActivityDate", "Close Date",
+    // Skip Monday board description text and stray column-header rows
+    if (isJunkActivitySubject(subject)) {
+      skipped++;
+      skipReasons["metadata/header row"] = (skipReasons["metadata/header row"] ?? 0) + 1;
+      if (preview.length < MAX_PREVIEW) preview.push({ action: "skip", reason: "metadata/header row", fields: { Subject: subject.slice(0, 80) } });
+      continue;
+    }
+
+    const typeStr = col(row, "Type", "Activity Type", "Call Type", "Subitem", "Status", "Category");
+    const dateStr = col(row, "Date", "Due Date", "Completed Date", "ActivityDate", "Close Date",
       "Created", "Last Updated", "Timeline", "Date Created");
-    const accountName = col(row, "Account Name", "Organization", "Hospital", "Facility",
+    let accountName = col(row, "Account Name", "Organization", "Hospital", "Facility",
       "Account", "Company", "Partner", "Referral Source", "Linked Account");
-    const repName     = col(row, "Owner", "Assigned To", "Rep", "Rep Name", "Created By",
+    const repName   = col(row, "Owner", "Assigned To", "Rep", "Rep Name", "Created By",
       "Assignee", "Person", "Team Member");
-    const notes       = col(row, "Description", "Comments", "Notes", "Body", "Details", "Update");
+    const notes     = col(row, "Description", "Comments", "Notes", "Body", "Details", "Update");
+
+    // Monday often has "AccountName - ActivityTitle" in a single Name column.
+    // If no explicit account column was found, try to split the subject on " - ".
+    let resolvedTitle = subject;
+    if (!accountName) {
+      const dashIdx = subject.indexOf(" - ");
+      if (dashIdx > 2 && dashIdx < 80) {
+        const potentialAccount = subject.slice(0, dashIdx).trim();
+        const potentialTitle   = subject.slice(dashIdx + 3).trim();
+        if (potentialTitle) {
+          accountName   = potentialAccount;
+          resolvedTitle = potentialTitle;
+        }
+      }
+    }
 
     // Match hospital
     let hospitalId: string | undefined;
@@ -499,7 +532,17 @@ async function importActivities(rows: Record<string, unknown>[], dryRun = false)
       const hosp = await prisma.hospital.findFirst({
         where: { hospitalName: { contains: accountName, mode: "insensitive" } },
       });
-      hospitalId = hosp?.id;
+      // Try the other direction too: account name contains the stored hospital name
+      if (!hosp) {
+        const hospAlt = await prisma.hospital.findFirst({
+          where: { hospitalName: { contains: accountName.split(" ")[0], mode: "insensitive" } },
+        });
+        if (hospAlt && accountName.toLowerCase().startsWith(hospAlt.hospitalName.slice(0, 6).toLowerCase())) {
+          hospitalId = hospAlt.id;
+        }
+      } else {
+        hospitalId = hosp.id;
+      }
     }
 
     // Match rep by name
@@ -516,12 +559,26 @@ async function importActivities(rows: Record<string, unknown>[], dryRun = false)
       if (!isNaN(d.getTime())) completedAt = d;
     }
 
+    // Dedup: skip if same title + hospital already exists
+    const existingActivity = await prisma.activity.findFirst({
+      where: {
+        title: { equals: resolvedTitle.slice(0, 255), mode: "insensitive" },
+        ...(hospitalId ? { hospitalId } : {}),
+      },
+    });
+    if (existingActivity) {
+      skipped++;
+      skipReasons["already exists"] = (skipReasons["already exists"] ?? 0) + 1;
+      if (preview.length < MAX_PREVIEW) preview.push({ action: "skip", reason: "already exists", fields: { Subject: resolvedTitle.slice(0, 80) } });
+      continue;
+    }
+
     try {
       if (!dryRun) {
         await prisma.activity.create({
           data: {
             type: mapActivityType(typeStr),
-            title: subject.slice(0, 255),
+            title: resolvedTitle.slice(0, 255),
             notes: notes || undefined,
             hospitalId: hospitalId ?? undefined,
             repId: repId ?? undefined,
@@ -532,7 +589,7 @@ async function importActivities(rows: Record<string, unknown>[], dryRun = false)
       created++;
       if (preview.length < MAX_PREVIEW) {
         preview.push({ action: "create", fields: Object.fromEntries([
-          ["Subject", subject.slice(0, 80)], ["Type", mapActivityType(typeStr)],
+          ["Subject", resolvedTitle.slice(0, 80)], ["Type", mapActivityType(typeStr)],
           ["Date", dateStr], ["Account", accountName], ["Rep", repName],
         ].filter(([, v]) => v)) });
       }
