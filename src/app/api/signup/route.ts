@@ -61,7 +61,6 @@ export async function POST(req: NextRequest) {
     let suffix = 1;
     while (slugSet.has(orgSlug)) { orgSlug = `${baseSlug}${suffix++}`; }
 
-    const trialEndsAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
     const allowedPlans = ["starter", "solo_rep", "bd_team", "health_system"];
     const planParam: string = allowedPlans.includes(plan) ? plan : "starter";
 
@@ -76,8 +75,6 @@ export async function POST(req: NextRequest) {
             name: hospitalName?.trim() || name.trim(),
             slug: orgSlug,
             planTier: planParam,
-            trialEndsAt,
-            seatLimit: planParam === "bd_team" ? 10 : 3,
           },
         },
         ...(role === "REP" ? {
