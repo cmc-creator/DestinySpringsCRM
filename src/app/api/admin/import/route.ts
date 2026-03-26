@@ -16,8 +16,8 @@ function col(row: Record<string, unknown>, ...keys: string[]): string {
   return "";
 }
 
-function parseSheet(buffer: Buffer): Record<string, unknown>[] {
-  const wb = XLSX.read(buffer, { type: "buffer" });
+function parseSheet(data: Uint8Array): Record<string, unknown>[] {
+  const wb = XLSX.read(data, { type: "array" });
   const ws = wb.Sheets[wb.SheetNames[0]];
   return (XLSX.utils.sheet_to_json(ws, { defval: "" }) as Record<string, unknown>[]);
 }
@@ -265,8 +265,8 @@ export async function POST(req: NextRequest) {
     }
 
     const arrayBuffer = await file.arrayBuffer();
-    const buffer      = Buffer.from(arrayBuffer);
-    const rows        = parseSheet(buffer);
+    const data        = new Uint8Array(arrayBuffer);
+    const rows        = parseSheet(data);
 
     if (rows.length === 0) {
       return NextResponse.json({ error: "No rows found in spreadsheet" }, { status: 400 });
