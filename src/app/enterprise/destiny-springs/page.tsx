@@ -2,10 +2,10 @@ import Link from "next/link";
 
 // ── DSH Partner Plan configuration ──────────────────────────────────────────
 // Adjust PER_SEAT_PRICE and INCLUDED_SEATS to match your agreed contract terms
-const PER_SEAT_PRICE = 39;        // $ / seat / month
+const PER_SEAT_PRICE = 50;        // $ / seat / month
 const INCLUDED_SEATS = 4;         // seats included in base contract
 const CONTRACT_TERM = "Annual";   // display only
-const MARKET_RATE_PER_SEAT = 79;  // reference retail seat price
+const MARKET_RATE_PER_SEAT = 150; // reference retail seat price
 // ────────────────────────────────────────────────────────────────────────────
 
 const BG    = "var(--nyx-bg)";
