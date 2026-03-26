@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
     name, type, specialty, practiceName, npi,
     contactName, email, phone,
     address, city, state, zip,
-    assignedRepId, monthlyGoal, notes,
+    assignedRepId, monthlyGoal, notes, mapLabel, mapColor, tier, influenceRole, influenceLevel, competitorIntel,
   } = body;
 
   if (!name) return NextResponse.json({ error: "name is required" }, { status: 400 });
@@ -52,6 +52,12 @@ export async function POST(req: NextRequest) {
       specialty,
       practiceName,
       npi,
+      mapLabel: mapLabel || null,
+      mapColor: mapColor || null,
+      tier: tier || "TIER_2",
+      influenceRole: influenceRole || null,
+      influenceLevel: influenceLevel || null,
+      competitorIntel: competitorIntel || null,
       contactName,
       email,
       phone,

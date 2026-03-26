@@ -18,6 +18,7 @@ export async function PATCH(
   const {
     type, title, notes,
     scheduledAt, completedAt,
+    latitude, longitude, arrivedAt, departedAt, durationMinutes,
     hospitalId, repId, leadId, opportunityId,
   } = data;
 
@@ -27,6 +28,11 @@ export async function PATCH(
       ...(type         !== undefined && { type }),
       ...(title        !== undefined && { title }),
       ...(notes        !== undefined && { notes }),
+      ...(latitude     !== undefined && { latitude: latitude != null ? Number(latitude) : null }),
+      ...(longitude    !== undefined && { longitude: longitude != null ? Number(longitude) : null }),
+      ...(arrivedAt    !== undefined && { arrivedAt: arrivedAt ? new Date(arrivedAt) : null }),
+      ...(departedAt   !== undefined && { departedAt: departedAt ? new Date(departedAt) : null }),
+      ...(durationMinutes !== undefined && { durationMinutes: durationMinutes != null ? Number(durationMinutes) : null }),
       ...(scheduledAt  !== undefined && { scheduledAt: scheduledAt ? new Date(scheduledAt) : null }),
       ...(completedAt  !== undefined && { completedAt: completedAt ? new Date(completedAt) : null }),
       ...(hospitalId   !== undefined && { hospitalId }),

@@ -19,7 +19,7 @@ const STATE_CENTERS: Record<string, [number, number]> = {
 type HospStatus = "PROSPECT" | "ACTIVE" | "INACTIVE" | string;
 interface MapHospital {
   id: string; hospitalName: string; city?: string | null; state?: string | null;
-  status: HospStatus; assignedRepName?: string | null;
+  status: HospStatus; assignedRepName?: string | null; referralMapLabel?: string | null; referralMapColor?: string | null;
 }
 interface MapRep {
   id: string; name: string; color: string; states: string[];
@@ -95,6 +95,8 @@ export default function TerritoryMapClient({ hospitals, repTerritories }: Props)
       const stateAssignments = new Map<string, string>();
       repTerritories.forEach(rep => rep.states.forEach(s => stateAssignments.set(s, rep.name)));
 
+      const referralLegend = new Map<string, string>();
+
       // Hospital markers
       const stateCounts = new Map<string, number>();
       hospitals.forEach((h, idx) => {
@@ -107,7 +109,9 @@ export default function TerritoryMapClient({ hospitals, repTerritories }: Props)
 
         const lat = center[0] + jitter(idx * 3, 0.6);
         const lng = center[1] + jitter(idx * 3 + 1, 0.8);
-        const color = STATUS_CLR[h.status] ?? "#64748b";
+        const color = h.referralMapColor ?? STATUS_CLR[h.status] ?? "#64748b";
+        const tag = h.referralMapLabel ?? h.status;
+        referralLegend.set(tag, color);
 
         const icon = L.divIcon({
           className: "",
@@ -130,7 +134,7 @@ export default function TerritoryMapClient({ hospitals, repTerritories }: Props)
               <div style="font-size:0.78rem;color:#666">${h.city ?? ""}${h.city && h.state ? ", " : ""}${h.state ?? ""}</div>
               <div style="margin-top:6px;display:flex;align-items:center;gap:6px">
                 <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${color}"></span>
-                <span style="font-size:0.78rem;font-weight:700;text-transform:uppercase">${h.status}</span>
+                <span style="font-size:0.78rem;font-weight:700">${tag}</span>
               </div>
               ${h.assignedRepName ? `<div style="font-size:0.75rem;color:#888;margin-top:2px">Rep: ${h.assignedRepName}</div>` : ""}
             </div>
@@ -143,8 +147,8 @@ export default function TerritoryMapClient({ hospitals, repTerritories }: Props)
           const div = L.DomUtil.create("div");
           div.style.cssText = "background:rgba(10,18,35,0.9);padding:12px 16px;border-radius:8px;border:1px solid var(--nyx-accent-mid);font-size:0.75rem;color:#d8e8f4;min-width:150px";
           div.innerHTML = `
-            <div style="font-weight:700;font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--nyx-accent-label);margin-bottom:8px">Account Status</div>
-            ${[["ACTIVE","var(--nyx-accent)"],["PROSPECT","#fbbf24"],["INACTIVE","#64748b"]].map(([s,c]) =>
+            <div style="font-weight:700;font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--nyx-accent-label);margin-bottom:8px">Referral Map Colors</div>
+            ${(referralLegend.size ? [...referralLegend.entries()] : [["ACTIVE","var(--nyx-accent)"],["PROSPECT","#fbbf24"],["INACTIVE","#64748b"]]).map(([s,c]) =>
               `<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
                 <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${c}"></span>${s}
               </div>`

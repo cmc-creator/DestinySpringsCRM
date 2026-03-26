@@ -89,6 +89,7 @@ const ADMIN_NAV: NavGroup[] = [
       { href: "/admin/dashboard",      label: "Dashboard" },
       { href: "/admin/notifications",  label: "Notifications" },
       { href: "/admin/calendar",       label: "Calendar" },
+      { href: "/admin/messages",       label: "Messages" },
     ],
   },
   {
@@ -133,6 +134,13 @@ const ADMIN_NAV: NavGroup[] = [
     ],
   },
   {
+    group: "Intake", tint: "purple",
+    items: [
+      { href: "/admin/inquiry",    label: "Pre-Assessment Inbox" },
+      { href: "/admin/resources",  label: "Resource Library" },
+    ],
+  },
+  {
     group: "Settings", tint: "red",
     items: [
       { href: "/admin/users",        label: "User Accounts" },
@@ -148,6 +156,13 @@ const REP_NAV: NavGroup[] = [
     group: "Overview", tint: "accent",
     items: [
       { href: "/rep/dashboard",     label: "Dashboard" },
+      { href: "/rep/notifications", label: "Notifications" },
+      { href: "/rep/messages",      label: "Messages" },
+    ],
+  },
+  {
+    group: "Pipeline", tint: "blue",
+    items: [
       { href: "/rep/opportunities", label: "My Admissions" },
       { href: "/rep/territory",     label: "My Territory" },
     ],
@@ -159,7 +174,14 @@ const REP_NAV: NavGroup[] = [
     ],
   },
   {
-    group: "Files", tint: "blue",
+    group: "Intake", tint: "purple",
+    items: [
+      { href: "/rep/inquiry",   label: "Pre-Assessment" },
+      { href: "/rep/resources", label: "Resource Library" },
+    ],
+  },
+  {
+    group: "Files", tint: "cyan",
     items: [
       { href: "/rep/documents", label: "Documents" },
     ],
@@ -198,6 +220,20 @@ export function Sidebar({ role, userName, userEmail }: SidebarProps) {
   const router = useRouter();
   const nav = getNav(role);
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  // ── Notification & message badges ─────────────────────────────────────────
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [unreadMessages, setUnreadMessages] = useState(0);
+  useEffect(() => {
+    fetch("/api/notifications")
+      .then(r => r.ok ? r.json() : [])
+      .then((list: { read: boolean }[]) => setUnreadCount(list.filter(n => !n.read).length))
+      .catch(() => {});
+    fetch("/api/messages")
+      .then(r => r.ok ? r.json() : [])
+      .then((list: { readAt: string | null }[]) => setUnreadMessages(list.filter(m => !m.readAt).length))
+      .catch(() => {});
+  }, [pathname]); // refresh on navigation
 
   // ── Inline search ──────────────────────────────────────────────────────────
   const [searchQuery, setSearchQuery] = useState("");
@@ -409,7 +445,17 @@ export function Sidebar({ role, userName, userEmail }: SidebarProps) {
                   }}
                 >
                   <DiamondBullet active={active} tint={group.tint} />
-                  {item.label}
+                  <span style={{ flex: 1 }}>{item.label}</span>
+                  {item.href.endsWith("/notifications") && unreadCount > 0 && (
+                    <span style={{ background: CYAN, color: "#000", fontSize: "0.6rem", fontWeight: 900, borderRadius: 9, padding: "1px 5px", lineHeight: "14px", minWidth: 16, textAlign: "center" }}>
+                      {unreadCount > 99 ? "99+" : unreadCount}
+                    </span>
+                  )}
+                  {item.href.endsWith("/messages") && unreadMessages > 0 && (
+                    <span style={{ background: "#f59e0b", color: "#000", fontSize: "0.6rem", fontWeight: 900, borderRadius: 9, padding: "1px 5px", lineHeight: "14px", minWidth: 16, textAlign: "center" }}>
+                      {unreadMessages > 99 ? "99+" : unreadMessages}
+                    </span>
+                  )}
                 </Link>
               );
             })}

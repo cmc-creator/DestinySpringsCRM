@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useRef } from "react";
 
 const ACTIVITY_TYPES = [
   { value: "CALL",           label: "📞 Call",            color: "#60a5fa" },
@@ -24,6 +24,26 @@ export default function QuickLogWidget({ repId, role }: { repId?: string; role: 
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [listening, setListening] = useState(false);
+  const speechRef = useRef<InstanceType<typeof window.SpeechRecognition> | null>(null);
+
+  function toggleSpeech() {
+    const SR = (window as typeof window & { SpeechRecognition?: typeof SpeechRecognition; webkitSpeechRecognition?: typeof SpeechRecognition }).SpeechRecognition
+            ?? (window as typeof window & { webkitSpeechRecognition?: typeof SpeechRecognition }).webkitSpeechRecognition;
+    if (!SR) { alert("Voice dictation is not supported in this browser. Try Chrome or Edge."); return; }
+    if (listening) { speechRef.current?.stop(); setListening(false); return; }
+    const rec = new SR();
+    rec.continuous = true; rec.interimResults = false; rec.lang = "en-US";
+    rec.onresult = (e: SpeechRecognitionEvent) => {
+      const transcript = Array.from(e.results).map(r => r[0].transcript).join(" ");
+      setNotes(prev => (prev ? prev + " " : "") + transcript);
+    };
+    rec.onend = () => setListening(false);
+    rec.onerror = () => setListening(false);
+    speechRef.current = rec;
+    rec.start();
+    setListening(true);
+  }
 
   if (role === "ACCOUNT") return null;
 
@@ -128,13 +148,21 @@ export default function QuickLogWidget({ repId, role }: { repId?: string; role: 
                     style={{ width: "100%", background: "rgba(0,0,0,0.3)", border: "1px solid var(--nyx-accent-dim)", borderRadius: 8, padding: "9px 12px", color: "var(--nyx-text)", fontSize: "0.875rem", outline: "none", boxSizing: "border-box" }}
                   />
                 </div>
-                <div>
-                  <label style={{ fontSize: "0.68rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.1em", textTransform: "uppercase", display: "block", marginBottom: 6 }}>Notes (optional)</label>
+              <div>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+                    <label style={{ fontSize: "0.68rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.1em", textTransform: "uppercase" }}>Notes (optional)</label>
+                    <button onClick={toggleSpeech} type="button" title={listening ? "Stop dictation" : "Dictate notes"}
+                      style={{ background: listening ? "rgba(239,68,68,0.15)" : "rgba(0,0,0,0.3)", border: `1px solid ${listening ? "rgba(239,68,68,0.4)" : "var(--nyx-accent-dim)"}`,
+                               borderRadius: 6, padding: "2px 8px", cursor: "pointer", color: listening ? "#f87171" : "var(--nyx-text-muted)", fontSize: "0.68rem", fontWeight: 700 }}>
+                      {listening ? "🔴 Stop" : "🎙️ Dictate"}
+                    </button>
+                  </div>
                   <textarea
                     value={notes}
                     onChange={e => setNotes(e.target.value)}
                     rows={3}
-                    style={{ width: "100%", background: "rgba(0,0,0,0.3)", border: "1px solid var(--nyx-accent-dim)", borderRadius: 8, padding: "9px 12px", color: "var(--nyx-text)", fontSize: "0.875rem", outline: "none", resize: "none", boxSizing: "border-box" }}
+                    placeholder={listening ? "Listening…" : "Optional notes…"}
+                    style={{ width: "100%", background: "rgba(0,0,0,0.3)", border: `1px solid ${listening ? "rgba(239,68,68,0.4)" : "var(--nyx-accent-dim)"}`, borderRadius: 8, padding: "9px 12px", color: "var(--nyx-text)", fontSize: "0.875rem", outline: "none", resize: "none", boxSizing: "border-box" }}
                   />
                 </div>
                 <div style={{ display: "flex", gap: 10 }}>

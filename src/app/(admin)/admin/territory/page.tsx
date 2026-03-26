@@ -12,7 +12,7 @@ const TEXT = "var(--nyx-text)";
 const TEXT_MUTED = "var(--nyx-text-muted)";
 
 export default async function TerritoryPage() {
-  const [reps, hospitals] = await Promise.all([
+  const [reps, hospitals, referralSources] = await Promise.all([
     prisma.rep.findMany({
       where: { status: "ACTIVE" },
       include: {
@@ -24,6 +24,11 @@ export default async function TerritoryPage() {
     prisma.hospital.findMany({
       select: { id: true, hospitalName: true, city: true, state: true, status: true, assignedRepId: true },
       orderBy: { hospitalName: "asc" },
+    }),
+    prisma.referralSource.findMany({
+      where: { state: { not: null } },
+      select: { id: true, name: true, city: true, state: true, assignedRepId: true, active: true, mapLabel: true, mapColor: true },
+      orderBy: { name: "asc" },
     }),
   ]);
 
@@ -37,14 +42,28 @@ export default async function TerritoryPage() {
     ])],
   }));
 
-  const mapHospitals = hospitals.map(h => ({
-    id: h.id,
-    hospitalName: h.hospitalName,
-    city: h.city,
-    state: h.state,
-    status: h.status,
-    assignedRepName: h.assignedRepId ? (reps.find(r => r.id === h.assignedRepId)?.user.name ?? null) : null,
-  }));
+  const mapHospitals = [
+    ...hospitals.map(h => ({
+      id: h.id,
+      hospitalName: h.hospitalName,
+      city: h.city,
+      state: h.state,
+      status: h.status,
+      assignedRepName: h.assignedRepId ? (reps.find(r => r.id === h.assignedRepId)?.user.name ?? null) : null,
+      referralMapLabel: null,
+      referralMapColor: null,
+    })),
+    ...referralSources.map(source => ({
+      id: source.id,
+      hospitalName: source.name,
+      city: source.city,
+      state: source.state,
+      status: source.active ? "ACTIVE" : "INACTIVE",
+      assignedRepName: source.assignedRepId ? (reps.find(r => r.id === source.assignedRepId)?.user.name ?? null) : null,
+      referralMapLabel: source.mapLabel,
+      referralMapColor: source.mapColor,
+    })),
+  ];
 
   return (
     <div>

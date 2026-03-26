@@ -28,6 +28,23 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const data = await req.json();
+  if (data.stage === "DECLINED" && !String(data.lostReason ?? "").trim()) {
+    return NextResponse.json({ error: "lostReason is required when an opportunity is declined" }, { status: 400 });
+  }
   const opp = await prisma.opportunity.create({ data });
+
+  if (opp.assignedRepId && opp.stage === "ADMITTED") {
+    await prisma.notification.create({
+      data: {
+        userId: opp.assignedRepId,
+        title: "Referral Admitted",
+        body: `${data.title ?? "Opportunity"} was marked admitted.`,
+        type: "ADMISSION",
+        link: "/rep/opportunities",
+        read: false,
+      },
+    }).catch(() => {});
+  }
+
   return NextResponse.json(opp, { status: 201 });
 }

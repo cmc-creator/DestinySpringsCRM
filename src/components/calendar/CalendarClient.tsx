@@ -1,5 +1,5 @@
 ﻿"use client";
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -13,6 +13,11 @@ type Activity = {
   type: AType;
   title: string;
   notes?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  arrivedAt?: string | null;
+  departedAt?: string | null;
+  durationMinutes?: number | null;
   scheduledAt?: string | null;
   completedAt?: string | null;
   hospitalId?: string | null;
@@ -186,10 +191,60 @@ function ActivityModal({ activity, defaultDate, hospitals, reps, onSave, onDelet
   const [syncCal,      setSyncCal]  = useState(false);
   const [syncStatus,   setSyncStatus] = useState<"idle"|"syncing"|"done"|"error">("idle");
   const [done,          setDone]     = useState(!!activity?.completedAt);
+  const [latitude,      setLatitude] = useState(activity?.latitude != null ? String(activity.latitude) : "");
+  const [longitude,     setLongitude]= useState(activity?.longitude != null ? String(activity.longitude) : "");
+  const [arrivedAt,     setArrivedAt]= useState(activity?.arrivedAt ? activity.arrivedAt.slice(0,16) : "");
+  const [departedAt,    setDepartedAt]= useState(activity?.departedAt ? activity.departedAt.slice(0,16) : "");
+  const [geoStatus,     setGeoStatus]= useState<"idle"|"loading"|"done"|"error">("idle");
+  const [listening,     setListening] = useState(false);
+  const speechRef = useRef<InstanceType<typeof window.SpeechRecognition> | null>(null);
   const [hospitalId,    setHospId]   = useState(activity?.hospitalId ?? activity?.hospital?.id ?? "");
   const [repId,         setRepId]    = useState(activity?.repId ?? "");
   const [saving,        setSaving]   = useState(false);
   const [confirming,    setConfirming] = useState(false);
+
+  function nowLocal() {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}T${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
+  }
+
+  function captureGeo() {
+    if (!navigator.geolocation) { setGeoStatus("error"); return; }
+    setGeoStatus("loading");
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        setLatitude(String(pos.coords.latitude.toFixed(6)));
+        setLongitude(String(pos.coords.longitude.toFixed(6)));
+        setGeoStatus("done");
+      },
+      () => setGeoStatus("error"),
+      { enableHighAccuracy: true, timeout: 10000 },
+    );
+  }
+
+  function toggleSpeech() {
+    const SR = (window as typeof window & { SpeechRecognition?: typeof SpeechRecognition; webkitSpeechRecognition?: typeof SpeechRecognition }).SpeechRecognition
+            ?? (window as typeof window & { webkitSpeechRecognition?: typeof SpeechRecognition }).webkitSpeechRecognition;
+    if (!SR) { alert("Voice dictation is not supported in this browser. Try Chrome or Edge."); return; }
+    if (listening) {
+      speechRef.current?.stop();
+      setListening(false);
+      return;
+    }
+    const rec = new SR();
+    rec.continuous = true;
+    rec.interimResults = false;
+    rec.lang = "en-US";
+    rec.onresult = (e: SpeechRecognitionEvent) => {
+      const transcript = Array.from(e.results).map(r => r[0].transcript).join(" ");
+      setNotes(prev => (prev ? prev + " " : "") + transcript);
+    };
+    rec.onend = () => setListening(false);
+    rec.onerror = () => { setListening(false); };
+    speechRef.current = rec;
+    rec.start();
+    setListening(true);
+  }
 
   function buildScheduledAt() {
     if (!schedDate) return null;
@@ -209,6 +264,11 @@ function ActivityModal({ activity, defaultDate, hospitals, reps, onSave, onDelet
       type,
       title: title.trim(),
       notes: notes.trim() || null,
+      latitude: latitude ? Number(latitude) : null,
+      longitude: longitude ? Number(longitude) : null,
+      arrivedAt: arrivedAt ? new Date(arrivedAt).toISOString() : null,
+      departedAt: departedAt ? new Date(departedAt).toISOString() : null,
+      durationMinutes: arrivedAt && departedAt ? Math.max(0, Math.round((new Date(departedAt).getTime() - new Date(arrivedAt).getTime()) / 60000)) : null,
       scheduledAt,
       completedAt: done ? (activity?.completedAt ?? new Date().toISOString()) : null,
       hospitalId: hospitalId || null,
@@ -324,10 +384,87 @@ function ActivityModal({ activity, defaultDate, hospitals, reps, onSave, onDelet
 
           {/* Notes */}
           <div>
-            <label style={lbl}>Notes</label>
+            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:5 }}>
+              <label style={{ ...lbl, marginBottom:0 }}>Notes</label>
+              <button
+                type="button"
+                onClick={toggleSpeech}
+                title={listening ? "Stop dictation" : "Dictate notes (Chrome/Edge)"}
+                style={{
+                  background: listening ? "rgba(239,68,68,0.15)" : "rgba(0,0,0,0.3)",
+                  border: `1px solid ${listening ? "rgba(239,68,68,0.4)" : C.border}`,
+                  borderRadius:6, padding:"3px 9px", cursor:"pointer",
+                  color: listening ? "#f87171" : C.muted, fontSize:"0.72rem", fontWeight:700,
+                  display:"flex", alignItems:"center", gap:5,
+                }}
+              >
+                <span style={{ fontSize:"0.9rem" }}>{listening ? "🔴" : "🎙️"}</span>
+                {listening ? "Stop" : "Dictate"}
+              </button>
+            </div>
             <textarea value={notes} onChange={e => setNotes(e.target.value)}
-              rows={3} placeholder="Optional notes..."
-              style={{ ...inp, resize:"vertical" as const, fontFamily:"inherit" }} />
+              rows={3} placeholder="Optional notes… or tap 🎙️ to dictate"
+              style={{ ...inp, resize:"vertical" as const, fontFamily:"inherit",
+                       border: listening ? "1px solid rgba(239,68,68,0.5)" : `1px solid ${C.border}` }} />
+          </div>
+
+          <div style={{ borderTop:`1px solid ${C.border}`, paddingTop:12 }}>
+            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:8 }}>
+              <div style={{ fontSize:"0.62rem", fontWeight:700, color:C.muted, letterSpacing:"0.1em", textTransform:"uppercase" }}>Field Check-In</div>
+              <button
+                type="button"
+                onClick={captureGeo}
+                title="Auto-fill GPS coordinates from your device"
+                style={{
+                  background: geoStatus === "done" ? "rgba(52,211,153,0.12)" : geoStatus === "loading" ? "rgba(251,191,36,0.12)" : geoStatus === "error" ? "rgba(239,68,68,0.12)" : "rgba(0,0,0,0.3)",
+                  border: `1px solid ${ geoStatus === "done" ? "rgba(52,211,153,0.3)" : geoStatus === "error" ? "rgba(239,68,68,0.3)" : C.border }`,
+                  borderRadius:6, padding:"3px 10px", cursor:"pointer",
+                  color: geoStatus === "done" ? "#34d399" : geoStatus === "error" ? "#f87171" : C.muted,
+                  fontSize:"0.72rem", fontWeight:700, display:"flex", alignItems:"center", gap:5,
+                }}
+              >
+                <span>📍</span>
+                {geoStatus === "loading" ? "Locating…" : geoStatus === "done" ? "Got Location" : geoStatus === "error" ? "GPS Error" : "Use My Location"}
+              </button>
+            </div>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:12 }}>
+              <div>
+                <label style={lbl}>Latitude</label>
+                <input type="number" step="any" value={latitude} onChange={e => setLatitude(e.target.value)} placeholder="36.1627" style={inp} />
+              </div>
+              <div>
+                <label style={lbl}>Longitude</label>
+                <input type="number" step="any" value={longitude} onChange={e => setLongitude(e.target.value)} placeholder="-86.7816" style={inp} />
+              </div>
+            </div>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:10 }}>
+              <div>
+                <label style={lbl}>Arrived</label>
+                <input type="datetime-local" value={arrivedAt} onChange={e => setArrivedAt(e.target.value)} style={inp} />
+              </div>
+              <div>
+                <label style={lbl}>Departed</label>
+                <input type="datetime-local" value={departedAt} onChange={e => setDepartedAt(e.target.value)} style={inp} />
+              </div>
+            </div>
+            <div style={{ display:"flex", gap:8 }}>
+              <button
+                type="button"
+                onClick={() => setArrivedAt(nowLocal())}
+                style={{ flex:1, background:"rgba(52,211,153,0.08)", border:"1px solid rgba(52,211,153,0.25)",
+                         borderRadius:7, padding:"7px 0", color:"#34d399", fontSize:"0.75rem", fontWeight:700, cursor:"pointer" }}
+              >
+                ✅ Arrived Now
+              </button>
+              <button
+                type="button"
+                onClick={() => setDepartedAt(nowLocal())}
+                style={{ flex:1, background:"rgba(248,113,113,0.08)", border:"1px solid rgba(248,113,113,0.25)",
+                         borderRadius:7, padding:"7px 0", color:"#f87171", fontSize:"0.75rem", fontWeight:700, cursor:"pointer" }}
+              >
+                🚪 Departed Now
+              </button>
+            </div>
           </div>
 
           {/* Completed */}

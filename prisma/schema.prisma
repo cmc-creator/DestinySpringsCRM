@@ -869,6 +869,12 @@ model ReferralSource {
   specialty    String?
   practiceName String?
   npi          String?
+  mapLabel     String?
+  mapColor     String?
+  tier         String?            @default("TIER_2")
+  influenceRole String?
+  influenceLevel String?
+  competitorIntel String?
 
   contactName  String?
   email        String?
@@ -1047,7 +1053,101 @@ model CensusSnapshot {
   dualDxAvailable  Int @default(0)
 
   note      String?
+  latitude   Float?
+  longitude  Float?
+  arrivedAt  DateTime?
+  departedAt DateTime?
+  durationMinutes Int?
   createdAt DateTime @default(now())
 
   @@map("census_snapshots")
 }
+
+// ─────────────────────────────────────────
+// DIGITAL RESOURCE LIBRARY
+// ─────────────────────────────────────────
+
+enum ResourceCategory {
+  BROCHURE
+  CLINICAL_PROTOCOL
+  INSURANCE_GUIDE
+  VISITATION_POLICY
+  BED_AVAILABILITY
+  REFERRAL_FORM
+  TRAINING_MATERIAL
+  MARKETING_ASSET
+  OTHER
+}
+
+model Resource {
+  id          String           @id @default(cuid())
+  title       String
+  description String?
+  category    ResourceCategory @default(OTHER)
+  tags        String[]
+  fileUrl     String?          // URL to hosted file (e.g. S3, Vercel Blob)
+  externalUrl String?          // Link to external resource
+  mimeType    String?          // e.g. "application/pdf"
+  fileSizeKb  Int?
+  thumbnail   String?
+  active      Boolean          @default(true)
+  uploadedById String?         // userId of admin who uploaded
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("resources")
+}
+
+// ─────────────────────────────────────────
+// PRE-ASSESSMENT / INQUIRY SUBMISSIONS
+// ─────────────────────────────────────────
+
+enum AssessmentStatus {
+  SUBMITTED
+  UNDER_REVIEW
+  CONVERTED     // Converted to Opportunity
+  DECLINED
+  ON_HOLD
+}
+
+model PreAssessment {
+  id            String           @id @default(cuid())
+  submittedById String           // userId of rep who submitted
+  hospitalId    String?          // linked sending facility
+  opportunityId String?          // set when converted
+
+  // Patient info (de-identified until admitted)
+  patientInitials   String?
+  patientAge        Int?
+  patientGender     String?
+  presentingConcern String?      @db.Text
+  currentMedications String?     @db.Text
+  suicidalIdeation  Boolean      @default(false)
+  substanceUse      Boolean      @default(false)
+  priorTreatment    Boolean      @default(false)
+  priorTreatmentDetails String?  @db.Text
+
+  // Insurance
+  primaryInsurance  String?
+  memberId          String?
+  groupNumber       String?
+  payorId           String?
+
+  // Referral context
+  referralSourceId  String?
+  referringProvider String?
+  urgencyLevel      String?      @default("ROUTINE") // ROUTINE | URGENT | EMERGENT
+
+  // Review
+  status        AssessmentStatus @default(SUBMITTED)
+  reviewNotes   String?
+  reviewedById  String?
+  reviewedAt    DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("pre_assessments")
+}
+

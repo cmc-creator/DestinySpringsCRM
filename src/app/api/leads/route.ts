@@ -4,14 +4,28 @@ import { prisma } from "@/lib/prisma";
 
 export const maxDuration = 30;
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const session = await auth();
-  if (!session || session.user.role !== "ADMIN") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { searchParams } = new URL(req.url);
+  const limit = searchParams.get("limit") ? parseInt(searchParams.get("limit")!, 10) : undefined;
+
+  let whereFilter: { assignedRepId?: string } = {};
+  if (session.user.role === "REP") {
+    const rep = await prisma.rep.findUnique({ where: { userId: session.user.id }, select: { id: true } });
+    if (!rep) return NextResponse.json([]);
+    whereFilter = { assignedRepId: rep.id };
+  } else if (session.user.role !== "ADMIN") {
+    // ACCOUNT users get an empty list — not an error (needed for AI insights panel)
+    return NextResponse.json([]);
   }
+
   const leads = await prisma.lead.findMany({
+    where: whereFilter,
     include: { assignedRep: { include: { user: { select: { name: true } } } } },
     orderBy: { createdAt: "desc" },
+    ...(limit ? { take: limit } : {}),
   });
   return NextResponse.json(leads);
 }

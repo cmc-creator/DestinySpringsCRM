@@ -5,7 +5,9 @@ const ACT_ICON: Record<string, string> = {
   CALL: "📞", EMAIL: "✉️", NOTE: "📝", MEETING: "🤝", TASK: "☑️",
   PROPOSAL_SENT: "📄", CONTRACT_SENT: "📋", DEMO_COMPLETED: "🖥️",
   SITE_VISIT: "📍", CONFERENCE: "🎤", LUNCH: "🍽️", FOLLOW_UP: "🔔",
-  REFERRAL_RECEIVED: "🔁",
+  REFERRAL_RECEIVED: "🔁", IN_SERVICE: "🏫", FACILITY_TOUR: "🏥",
+  CE_PRESENTATION: "🎓", CRISIS_CONSULT: "🚨", LUNCH_AND_LEARN: "🍱",
+  COMMUNITY_EVENT: "🌐", DISCHARGE_PLANNING: "📋",
 };
 
 const ACT_LABEL: Record<string, string> = {
@@ -13,6 +15,10 @@ const ACT_LABEL: Record<string, string> = {
   TASK: "Task", PROPOSAL_SENT: "Proposal Sent", CONTRACT_SENT: "Contract Sent",
   DEMO_COMPLETED: "Demo", SITE_VISIT: "Site Visit", CONFERENCE: "Conference",
   FOLLOW_UP: "Follow-up", REFERRAL_RECEIVED: "Referral Received",
+  IN_SERVICE: "In-Service Training", FACILITY_TOUR: "Facility Tour",
+  CE_PRESENTATION: "CE Presentation", CRISIS_CONSULT: "Crisis Consult",
+  LUNCH_AND_LEARN: "Lunch & Learn", COMMUNITY_EVENT: "Community Event",
+  DISCHARGE_PLANNING: "Discharge Planning",
 };
 
 const ACT_TYPES = Object.keys(ACT_LABEL);
@@ -108,14 +114,21 @@ export default function ActivitiesPage() {
     if (!form.title.trim()) return;
     setSaving(true);
     try {
-      await fetch("/api/activities", {
+      const res = await fetch("/api/activities", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ type: form.type, title: form.title, notes: form.notes || undefined, completedAt: new Date() }),
       });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        alert(`Failed to log activity: ${err?.error ?? res.statusText}`);
+        return;
+      }
       setForm({ type: "CALL", title: "", notes: "" });
       setShowModal(false);
       await load();
+    } catch (err) {
+      alert(`Network error: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       setSaving(false);
     }

@@ -21,10 +21,20 @@ const SOURCE_TYPES = ["PHYSICIAN","SPECIALIST","SNF","REHAB_FACILITY","CARE_FACI
 type Source = {
   id: string; name: string; type: string; specialty?: string; practiceName?: string;
   npi?: string; contactName?: string; phone?: string; city?: string; state?: string;
-  monthlyGoal?: number; active: boolean;
+  monthlyGoal?: number; active: boolean; mapLabel?: string | null; mapColor?: string | null;
+  tier?: string | null; influenceRole?: string | null; influenceLevel?: string | null; competitorIntel?: string | null;
   assignedRep?: { user: { name?: string } };
   _count: { referrals: number };
 };
+
+const COLOR_PRESETS = [
+  { color: "#ef4444", label: "Dead Referral" },
+  { color: "#22c55e", label: "Active Referral" },
+  { color: "#f59e0b", label: "Warm Prospect" },
+  { color: "#3b82f6", label: "Key Connection" },
+  { color: "#a855f7", label: "Strategic Partner" },
+  { color: "#64748b", label: "Inactive" },
+];
 
 const LABEL: Record<string, string> = {
   PHYSICIAN:"Physician", SPECIALIST:"Specialist", SNF:"SNF",
@@ -61,7 +71,7 @@ type IntegrationConfig = {
   imports: { createdAt: string; imported: number; errors: number; method: string }[];
 };
 
-const empty = { name:"", type:"PRIMARY_CARE_PHYSICIAN", specialty:"", practiceName:"", npi:"", contactName:"", email:"", phone:"", city:"", state:"", monthlyGoal:"", notes:"" };
+const empty = { name:"", type:"PRIMARY_CARE_PHYSICIAN", specialty:"", practiceName:"", npi:"", mapLabel:"", mapColor:"#22c55e", tier:"TIER_2", influenceRole:"", influenceLevel:"", competitorIntel:"", contactName:"", email:"", phone:"", city:"", state:"", monthlyGoal:"", notes:"" };
 
 export default function ReferralSourcesPage() {
   const [sources, setSources] = useState<Source[]>([]);
@@ -289,6 +299,15 @@ export default function ReferralSourcesPage() {
                         <span style={{ width:6, height:6, borderRadius:"50%", background: s.active ? C.emerald : "rgba(216,232,244,0.2)", display:"inline-block" }} />
                         {s.active ? "ACTIVE" : "INACTIVE"}
                       </span>
+                      {s.tier && (
+                        <div style={{ marginTop:6, fontSize:"0.66rem", fontWeight:700, color:C.cyan }}>{s.tier.replace("_", " ")}</div>
+                      )}
+                      {(s.mapLabel || s.mapColor) && (
+                        <div style={{ display:"flex", alignItems:"center", gap:6, marginTop:8 }}>
+                          <span style={{ width:10, height:10, borderRadius:"50%", background:s.mapColor ?? "#64748b", boxShadow:`0 0 8px ${(s.mapColor ?? "#64748b")}55`, display:"inline-block" }} />
+                          <span style={{ fontSize:"0.68rem", color:C.muted, fontWeight:600 }}>{s.mapLabel ?? "Map Tag"}</span>
+                        </div>
+                      )}
                     </td>
                     <td style={{ padding:"12px 14px" }}>
                       <button
@@ -428,6 +447,7 @@ export default function ReferralSourcesPage() {
               { label:"Practice / Facility Name", key:"practiceName", placeholder:"Riverside Family Practice" },
               { label:"Specialty", key:"specialty", placeholder:"Cardiology" },
               { label:"NPI", key:"npi", placeholder:"1234567890" },
+              { label:"Map Label", key:"mapLabel", placeholder:"Active Referral" },
               { label:"Contact Name", key:"contactName", placeholder:"Office Manager" },
               { label:"Email", key:"email", placeholder:"office@clinic.com" },
               { label:"Phone", key:"phone", placeholder:"555-000-0000" },
@@ -456,6 +476,84 @@ export default function ReferralSourcesPage() {
               >
                 {SOURCE_TYPES.map((t) => <option key={t} value={t} style={{ background:"var(--nyx-card)", color:C.text }}>{LABEL[t]}</option>)}
               </select>
+            </div>
+
+            <div style={{ marginBottom:14 }}>
+              <label style={{ display:"block", fontSize:"0.72rem", fontWeight:700, color:C.muted, marginBottom:5, letterSpacing:"0.06em" }}>Tier</label>
+              <select
+                value={form.tier}
+                onChange={(e) => setForm((f) => ({ ...f, tier: e.target.value }))}
+                style={{ width:"100%", background:"var(--nyx-card)", border:`1px solid ${C.border}`, borderRadius:8, padding:"9px 12px", color:C.text, fontSize:"0.875rem", outline:"none", colorScheme:"dark" }}
+              >
+                <option value="TIER_1">Tier 1 - High Volume</option>
+                <option value="TIER_2">Tier 2 - Growth Potential</option>
+                <option value="TIER_3">Tier 3 - Maintenance</option>
+              </select>
+            </div>
+
+            <div style={{ marginBottom:14 }}>
+              <label style={{ display:"block", fontSize:"0.72rem", fontWeight:700, color:C.muted, marginBottom:5, letterSpacing:"0.06em" }}>Influence Role</label>
+              <input
+                value={form.influenceRole}
+                onChange={(e) => setForm((f) => ({ ...f, influenceRole: e.target.value }))}
+                placeholder="Decision Maker, Gatekeeper, Case Manager"
+                style={{ width:"100%", background:"rgba(255,255,255,0.06)", border:`1px solid ${C.border}`, borderRadius:8, padding:"9px 12px", color:C.text, fontSize:"0.875rem", outline:"none", boxSizing:"border-box" }}
+              />
+            </div>
+
+            <div style={{ marginBottom:20 }}>
+              <label style={{ display:"block", fontSize:"0.72rem", fontWeight:700, color:C.muted, marginBottom:5, letterSpacing:"0.06em" }}>Influence Level</label>
+              <input
+                value={form.influenceLevel}
+                onChange={(e) => setForm((f) => ({ ...f, influenceLevel: e.target.value }))}
+                placeholder="High, Medium, Low"
+                style={{ width:"100%", background:"rgba(255,255,255,0.06)", border:`1px solid ${C.border}`, borderRadius:8, padding:"9px 12px", color:C.text, fontSize:"0.875rem", outline:"none", boxSizing:"border-box" }}
+              />
+            </div>
+
+            <div style={{ marginBottom:20 }}>
+              <label style={{ display:"block", fontSize:"0.72rem", fontWeight:700, color:C.muted, marginBottom:5, letterSpacing:"0.06em" }}>Competitive Intelligence</label>
+              <textarea
+                value={form.competitorIntel}
+                onChange={(e) => setForm((f) => ({ ...f, competitorIntel: e.target.value }))}
+                placeholder="Using Acme Behavioral because of faster intake turnaround and broader insurance acceptance..."
+                style={{ width:"100%", minHeight:80, resize:"vertical", background:"rgba(255,255,255,0.06)", border:`1px solid ${C.border}`, borderRadius:8, padding:"9px 12px", color:C.text, fontSize:"0.875rem", outline:"none", boxSizing:"border-box" }}
+              />
+            </div>
+
+            <div style={{ marginBottom:20 }}>
+              <label style={{ display:"block", fontSize:"0.72rem", fontWeight:700, color:C.muted, marginBottom:5, letterSpacing:"0.06em" }}>Map Color</label>
+              <div style={{ display:"flex", gap:10, alignItems:"center" }}>
+                <input
+                  type="color"
+                  value={form.mapColor}
+                  onChange={(e) => setForm((f) => ({ ...f, mapColor: e.target.value }))}
+                  style={{ width:44, height:40, background:"transparent", border:`1px solid ${C.border}`, borderRadius:8, padding:4, cursor:"pointer" }}
+                />
+                <input
+                  value={form.mapColor}
+                  onChange={(e) => setForm((f) => ({ ...f, mapColor: e.target.value }))}
+                  placeholder="#22c55e"
+                  style={{ flex:1, background:"rgba(255,255,255,0.06)", border:`1px solid ${C.border}`, borderRadius:8, padding:"9px 12px", color:C.text, fontSize:"0.875rem", outline:"none", boxSizing:"border-box" }}
+                />
+              </div>
+            </div>
+
+            <div style={{ marginBottom:20 }}>
+              <label style={{ display:"block", fontSize:"0.72rem", fontWeight:700, color:C.muted, marginBottom:8, letterSpacing:"0.06em" }}>Quick Color Meanings</label>
+              <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
+                {COLOR_PRESETS.map((preset) => (
+                  <button
+                    key={preset.label}
+                    type="button"
+                    onClick={() => setForm((f) => ({ ...f, mapColor: preset.color, mapLabel: preset.label }))}
+                    style={{ display:"inline-flex", alignItems:"center", gap:8, background:"rgba(255,255,255,0.04)", border:`1px solid ${C.border}`, borderRadius:999, padding:"7px 12px", color:C.text, cursor:"pointer", fontSize:"0.74rem", fontWeight:600 }}
+                  >
+                    <span style={{ width:10, height:10, borderRadius:"50%", background:preset.color, display:"inline-block", boxShadow:`0 0 8px ${preset.color}55` }} />
+                    {preset.label}
+                  </button>
+                ))}
+              </div>
             </div>
             </div>{/* end scrollable body */}
 

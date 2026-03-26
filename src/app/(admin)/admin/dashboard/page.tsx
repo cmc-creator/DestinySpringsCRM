@@ -113,6 +113,12 @@ export default async function AdminDashboard() {
   let mapReps: { id: string; licensedStates: string[] | null; user: { name: string | null; email: string }; territories: { state: string }[] }[] = [];
   let mapHospitalsRaw: { id: string; hospitalName: string; city: string | null; state: string | null; status: string; assignedRepId: string | null }[] = [];
   let expiringDocs: { id: string; type: string; title: string; notes: string | null; repId: string; createdAt: Date; updatedAt: Date; expiresAt: Date | null; fileUrl: string | null; verified: boolean; rep: { user: { name: string | null } } }[] = [];
+  let executiveMetrics: {
+    payerMix: { label: string; count: number }[];
+    sourceConversion: { name: string; ratio: number; leads: number; admissions: number }[];
+    repEfficiency: { name: string; admissions: number; activitiesPerAdmission: number | null }[];
+    leadForecast: number;
+  } = { payerMix: [], sourceConversion: [], repEfficiency: [], leadForecast: 0 };
 
   try {
     [
@@ -141,6 +147,70 @@ export default async function AdminDashboard() {
   }
 
   try {
+    const [payors, referralSources, repsWithMetrics, activeLeads] = await Promise.all([
+      prisma.payor.findMany({
+        where: { active: true },
+        include: { opportunities: { where: { stage: { notIn: ["DISCHARGED", "DECLINED"] } }, select: { id: true } } },
+      }),
+      prisma.referralSource.findMany({
+        include: { _count: { select: { referrals: true } } },
+      }),
+      prisma.rep.findMany({
+        where: { status: "ACTIVE" },
+        include: {
+          user: { select: { name: true, email: true } },
+          _count: { select: { activities: true, opportunities: true } },
+          opportunities: { where: { stage: "ADMITTED" }, select: { id: true } },
+        },
+      }),
+      prisma.lead.findMany({
+        where: { status: { in: ["NEW", "CONTACTED", "QUALIFIED", "PROPOSAL_SENT", "NEGOTIATING"] } },
+        select: { estimatedValue: true },
+      }),
+    ]);
+
+    const payerMix = payors
+      .map((payor) => ({ label: payor.type.replace(/_/g, " "), count: payor.opportunities.length }))
+      .filter((row) => row.count > 0)
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+
+    const sourceConversion = referralSources
+      .map((source) => {
+        const leads = source.monthlyGoal ?? 0;
+        const admissions = source._count.referrals;
+        return {
+          name: source.name,
+          leads,
+          admissions,
+          ratio: leads > 0 ? Math.round((admissions / leads) * 100) : 0,
+        };
+      })
+      .filter((row) => row.leads > 0 || row.admissions > 0)
+      .sort((a, b) => b.ratio - a.ratio)
+      .slice(0, 5);
+
+    const repEfficiency = repsWithMetrics
+      .map((rep) => ({
+        name: rep.user.name ?? rep.user.email ?? "Unknown",
+        admissions: rep.opportunities.length,
+        activitiesPerAdmission: rep.opportunities.length > 0 ? Number((rep._count.activities / rep.opportunities.length).toFixed(1)) : null,
+      }))
+      .sort((a, b) => {
+        if (a.activitiesPerAdmission == null) return 1;
+        if (b.activitiesPerAdmission == null) return -1;
+        return a.activitiesPerAdmission - b.activitiesPerAdmission;
+      })
+      .slice(0, 5);
+
+    const leadForecast = Math.round(activeLeads.reduce((sum, lead) => sum + Number(lead.estimatedValue ?? 0), 0) * 0.35);
+
+    executiveMetrics = { payerMix, sourceConversion, repEfficiency, leadForecast };
+  } catch {
+    // non-fatal
+  }
+
+  try {
     const in30 = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
     expiringDocs = await prisma.complianceDoc.findMany({
       where: { expiresAt: { lte: in30 } },
@@ -166,14 +236,34 @@ export default async function AdminDashboard() {
     ])],
   }));
 
-  const mapHospitals = mapHospitalsRaw.map(h => ({
-    id: h.id,
-    hospitalName: h.hospitalName,
-    city: h.city,
-    state: h.state,
-    status: h.status,
-    assignedRepName: h.assignedRepId ? (mapReps.find(r => r.id === h.assignedRepId)?.user.name ?? null) : null,
-  }));
+  const mapReferralSources = await prisma.referralSource.findMany({
+    where: { state: { not: null } },
+    select: { id: true, name: true, city: true, state: true, assignedRepId: true, active: true, mapLabel: true, mapColor: true },
+    orderBy: { name: "asc" },
+  });
+
+  const mapHospitals = [
+    ...mapHospitalsRaw.map(h => ({
+      id: h.id,
+      hospitalName: h.hospitalName,
+      city: h.city,
+      state: h.state,
+      status: h.status,
+      assignedRepName: h.assignedRepId ? (mapReps.find(r => r.id === h.assignedRepId)?.user.name ?? null) : null,
+      referralMapLabel: null,
+      referralMapColor: null,
+    })),
+    ...mapReferralSources.map(source => ({
+      id: source.id,
+      hospitalName: source.name,
+      city: source.city,
+      state: source.state,
+      status: source.active ? "ACTIVE" : "INACTIVE",
+      assignedRepName: source.assignedRepId ? (mapReps.find(r => r.id === source.assignedRepId)?.user.name ?? null) : null,
+      referralMapLabel: source.mapLabel,
+      referralMapColor: source.mapColor,
+    })),
+  ];
 
   const stats = [
     { label: "Active Reps",         value: repCount,        icon: "reps",          href: "/admin/reps" },
@@ -259,6 +349,46 @@ export default async function AdminDashboard() {
       {/* AI Insights */}
       <div style={{ marginBottom: 32 }}>
         <AIInsightsPanel role="admin" />
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 16, marginBottom: 32 }}>
+        <div className="gold-card" style={{ borderRadius: 12, padding: "18px 16px" }}>
+          <div style={{ fontSize: "0.68rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 10 }}>Payer Mix</div>
+          {executiveMetrics.payerMix.length === 0 ? <div style={{ fontSize: "0.8rem", color: TEXT_MUTED }}>No linked payor mix yet.</div> : executiveMetrics.payerMix.map((row) => (
+            <div key={row.label} style={{ display: "flex", justifyContent: "space-between", fontSize: "0.78rem", color: TEXT, marginBottom: 6 }}>
+              <span>{row.label}</span><span style={{ color: CYAN, fontWeight: 700 }}>{row.count}</span>
+            </div>
+          ))}
+        </div>
+
+        <div className="gold-card" style={{ borderRadius: 12, padding: "18px 16px" }}>
+          <div style={{ fontSize: "0.68rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 10 }}>Source Conversion</div>
+          {executiveMetrics.sourceConversion.length === 0 ? <div style={{ fontSize: "0.8rem", color: TEXT_MUTED }}>No source conversion data yet.</div> : executiveMetrics.sourceConversion.map((row) => (
+            <div key={row.name} style={{ marginBottom: 8 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.76rem", color: TEXT }}>
+                <span style={{ maxWidth: 140, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{row.name}</span>
+                <span style={{ color: "#34d399", fontWeight: 700 }}>{row.ratio}%</span>
+              </div>
+              <div style={{ fontSize: "0.66rem", color: TEXT_MUTED }}>{row.admissions} admissions / {row.leads} target</div>
+            </div>
+          ))}
+        </div>
+
+        <div className="gold-card" style={{ borderRadius: 12, padding: "18px 16px" }}>
+          <div style={{ fontSize: "0.68rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 10 }}>Activities Per Admission</div>
+          {executiveMetrics.repEfficiency.length === 0 ? <div style={{ fontSize: "0.8rem", color: TEXT_MUTED }}>No rep efficiency data yet.</div> : executiveMetrics.repEfficiency.map((row) => (
+            <div key={row.name} style={{ display: "flex", justifyContent: "space-between", fontSize: "0.76rem", color: TEXT, marginBottom: 6 }}>
+              <span style={{ maxWidth: 140, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{row.name}</span>
+              <span style={{ color: row.activitiesPerAdmission == null ? TEXT_MUTED : "#fbbf24", fontWeight: 700 }}>{row.activitiesPerAdmission == null ? "-" : row.activitiesPerAdmission}</span>
+            </div>
+          ))}
+        </div>
+
+        <div className="gold-card" style={{ borderRadius: 12, padding: "18px 16px" }}>
+          <div style={{ fontSize: "0.68rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 10 }}>Lead Forecast</div>
+          <div style={{ fontSize: "1.6rem", fontWeight: 900, color: CYAN, marginBottom: 6 }}>{formatCurrency(executiveMetrics.leadForecast)}</div>
+          <div style={{ fontSize: "0.72rem", color: TEXT_MUTED }}>Estimated revenue from active leads at a 35% realization rate.</div>
+        </div>
       </div>
 
       {/* Territory Overview */}

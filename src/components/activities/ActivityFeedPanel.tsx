@@ -79,13 +79,20 @@ export function ActivityFeedPanel({
     if (!logTitle.trim()) return;
     setSaving(true);
     try {
-      await fetch("/api/activities", {
+      const res = await fetch("/api/activities", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ type: logType, title: logTitle, notes: logNotes || null, [entityParam]: entityId }),
       });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        alert(`Failed to log activity: ${err?.error ?? res.statusText}`);
+        return;
+      }
       setLogTitle(""); setLogNotes("");
       await loadActivities();
+    } catch (err) {
+      alert(`Network error: ${err instanceof Error ? err.message : String(err)}`);
     } finally { setSaving(false); }
   }
 

@@ -48,15 +48,49 @@ export async function GET(req: NextRequest) {
   return NextResponse.json(activities);
 }
 
+const VALID_ACTIVITY_TYPES = new Set([
+  "CALL","EMAIL","NOTE","MEETING","LUNCH","TASK",
+  "PROPOSAL_SENT","CONTRACT_SENT","DEMO_COMPLETED","SITE_VISIT",
+  "CONFERENCE","FOLLOW_UP","IN_SERVICE","FACILITY_TOUR",
+  "CE_PRESENTATION","CRISIS_CONSULT","LUNCH_AND_LEARN",
+  "COMMUNITY_EVENT","REFERRAL_RECEIVED","DISCHARGE_PLANNING",
+]);
+
 export async function POST(req: NextRequest) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const data = await req.json();
-  const activity = await prisma.activity.create({
-    data: {
-      ...data,
-      createdByUserId: session.user.id,
-    },
-  });
-  return NextResponse.json(activity, { status: 201 });
+  try {
+    const body = await req.json();
+    if (!body.type || !VALID_ACTIVITY_TYPES.has(body.type)) {
+      return NextResponse.json({ error: "Invalid or missing activity type" }, { status: 400 });
+    }
+    if (!body.title?.trim()) {
+      return NextResponse.json({ error: "title is required" }, { status: 400 });
+    }
+    const activity = await prisma.activity.create({
+      data: {
+        type: body.type,
+        title: body.title.trim(),
+        notes: body.notes ?? null,
+        latitude: body.latitude ?? null,
+        longitude: body.longitude ?? null,
+        arrivedAt: body.arrivedAt ? new Date(body.arrivedAt) : null,
+        departedAt: body.departedAt ? new Date(body.departedAt) : null,
+        durationMinutes: body.durationMinutes ?? null,
+        repId: body.repId ?? null,
+        leadId: body.leadId ?? null,
+        hospitalId: body.hospitalId ?? null,
+        opportunityId: body.opportunityId ?? null,
+        contactId: body.contactId ?? null,
+        referralSourceId: body.referralSourceId ?? null,
+        scheduledAt: body.scheduledAt ? new Date(body.scheduledAt) : null,
+        completedAt: body.completedAt ? new Date(body.completedAt) : null,
+        createdByUserId: session.user.id,
+      },
+    });
+    return NextResponse.json(activity, { status: 201 });
+  } catch (e) {
+    console.error("Activity create error:", e);
+    return NextResponse.json({ error: "Failed to create activity" }, { status: 500 });
+  }
 }
