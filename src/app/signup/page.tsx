@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -8,7 +8,7 @@ import { Fraunces, Manrope } from "next/font/google";
 const headingFace = Fraunces({ subsets: ["latin"], weight: ["600", "700", "800"] });
 const bodyFace = Manrope({ subsets: ["latin"], weight: ["500", "600", "700", "800"] });
 
-export default function SignupPage() {
+function SignupPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const planParam = searchParams.get("plan") ?? "starter";
@@ -577,5 +577,13 @@ export default function SignupPage() {
         </a>
       </footer>
     </div>
+  );
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense fallback={null}>
+      <SignupPageContent />
+    </Suspense>
   );
 }
