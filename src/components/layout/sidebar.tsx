@@ -95,27 +95,29 @@ const ADMIN_NAV: NavGroup[] = [
     group: "Admission Pipeline", tint: "blue",
     items: [
       { href: "/admin/opportunities",  label: "Admissions" },
-      { href: "/admin/leads",          label: "Inquiries" },
+      { href: "/admin/leads",          label: "Leads" },
+      { href: "/admin/contracts",      label: "Contracts" },
+      { href: "/admin/invoices",       label: "Invoices" },
     ],
   },
   {
-    group: "Referral Tracking", tint: "cyan",
+    group: "Referrals", tint: "cyan",
     items: [
+      { href: "/admin/referrals",        label: "Referrals" },
       { href: "/admin/referral-sources", label: "Referral Sources" },
-      { href: "/admin/referrals",        label: "Referrals Received" },
     ],
   },
   {
-    group: "Sending Facilities", tint: "green",
+    group: "Accounts", tint: "green",
     items: [
-      { href: "/admin/hospitals",  label: "Facilities" },
+      { href: "/admin/hospitals",  label: "Accounts" },
       { href: "/admin/territory",  label: "Territory Map" },
     ],
   },
   {
-    group: "Liaison Team", tint: "orange",
+    group: "Reps", tint: "orange",
     items: [
-      { href: "/admin/reps",           label: "Liaisons" },
+      { href: "/admin/reps",           label: "Reps" },
       { href: "/admin/communications", label: "Communications" },
       { href: "/admin/compliance",     label: "Compliance" },
     ],
