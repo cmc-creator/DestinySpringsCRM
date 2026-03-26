@@ -39,9 +39,10 @@ export async function GET(req: NextRequest) {
       : { scheduledAt: { sort: "asc", nulls: "last" } },
     take: 500,
     include: {
-      hospital: { select: { id: true, hospitalName: true } },
-      lead:     { select: { hospitalName: true } },
-      rep:      { include: { user: { select: { name: true } } } },
+      hospital:      { select: { id: true, hospitalName: true } },
+      lead:          { select: { hospitalName: true } },
+      rep:           { include: { user: { select: { name: true } } } },
+      createdByUser: { select: { id: true, name: true, email: true } },
     },
   });
   return NextResponse.json(activities);
@@ -51,6 +52,11 @@ export async function POST(req: NextRequest) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const data = await req.json();
-  const activity = await prisma.activity.create({ data });
+  const activity = await prisma.activity.create({
+    data: {
+      ...data,
+      createdByUserId: session.user.id,
+    },
+  });
   return NextResponse.json(activity, { status: 201 });
 }

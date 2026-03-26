@@ -27,6 +27,7 @@ interface Activity {
   hospital?: { id: string; hospitalName: string } | null;
   lead?: { hospitalName: string } | null;
   rep?: { user: { name: string | null } } | null;
+  createdByUser?: { id: string; name: string | null; email: string } | null;
 }
 
 function relTime(d: string) {
@@ -190,11 +191,12 @@ export default function ActivitiesPage() {
 
       {/* Table */}
       <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, overflow: "hidden" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "40px 1fr 160px 160px 110px", padding: "10px 16px", borderBottom: `1px solid ${C.border}`, fontSize: "0.72rem", fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "40px 1fr 160px 140px 140px 110px", padding: "10px 16px", borderBottom: `1px solid ${C.border}`, fontSize: "0.72rem", fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: "0.06em" }}>
           <span />
           <span>Activity</span>
           <span>Account</span>
           <span>Rep</span>
+          <span>Logged By</span>
           <span>Date</span>
         </div>
 
@@ -210,7 +212,7 @@ export default function ActivitiesPage() {
               key={a.id}
               style={{
                 display: "grid",
-                gridTemplateColumns: "40px 1fr 160px 160px 110px",
+                gridTemplateColumns: "40px 1fr 160px 140px 140px 110px",
                 padding: "12px 16px",
                 borderBottom: i < filtered.length - 1 ? `1px solid ${C.border}` : "none",
                 alignItems: "start",
@@ -229,6 +231,9 @@ export default function ActivitiesPage() {
               </span>
               <span style={{ fontSize: "0.8rem", color: C.muted, paddingTop: 2 }}>
                 {a.rep?.user.name ?? "—"}
+              </span>
+              <span style={{ fontSize: "0.8rem", color: C.muted, paddingTop: 2 }}>
+                {a.createdByUser?.name ?? a.createdByUser?.email ?? "—"}
               </span>
               <span style={{ fontSize: "0.75rem", color: C.muted, paddingTop: 2 }}>
                 {relTime(a.completedAt ?? a.createdAt)}

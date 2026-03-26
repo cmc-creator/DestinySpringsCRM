@@ -67,6 +67,8 @@ model User {
   rep       Rep?
   hospital  Hospital?
 
+  createdActivities Activity[] @relation("ActivityCreatedBy")
+
   @@map("users")
 }
 
@@ -630,6 +632,9 @@ model Activity {
 
   scheduledAt DateTime?
   completedAt DateTime?
+
+  createdByUserId String?
+  createdByUser   User?   @relation("ActivityCreatedBy", fields: [createdByUserId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

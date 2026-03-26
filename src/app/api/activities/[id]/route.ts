@@ -35,8 +35,9 @@ export async function PATCH(
       ...(opportunityId !== undefined && { opportunityId }),
     },
     include: {
-      hospital: { select: { hospitalName: true } },
-      rep: { include: { user: { select: { name: true } } } },
+      hospital:      { select: { hospitalName: true } },
+      rep:           { include: { user: { select: { name: true } } } },
+      createdByUser: { select: { id: true, name: true, email: true } },
     },
   });
 
