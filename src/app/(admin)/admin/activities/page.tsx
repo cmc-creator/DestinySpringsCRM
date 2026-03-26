@@ -70,18 +70,27 @@ export default function ActivitiesPage() {
   const [form, setForm] = useState({ type: "CALL", title: "", notes: "" });
   const [saving, setSaving] = useState(false);
 
+  const [lastRefresh, setLastRefresh] = useState(Date.now());
+
   const load = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetch("/api/activities");
       const data = await res.json();
       setActivities(Array.isArray(data) ? data : []);
+      setLastRefresh(Date.now());
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => { load(); }, [load]);
+
+  // Auto-refresh every 30 seconds so new entries logged by other users appear
+  useEffect(() => {
+    const id = setInterval(() => load(), 30000);
+    return () => clearInterval(id);
+  }, [load]);
 
   const filtered = activities.filter((a) => {
     const matchesType = typeFilter === "ALL" || a.type === typeFilter;
@@ -137,6 +146,14 @@ export default function ActivitiesPage() {
           style={{ background: GOLD, color: "#100805", fontWeight: 800, fontSize: "0.85rem", border: "none", borderRadius: 10, padding: "10px 20px", cursor: "pointer" }}
         >
           + Log Activity
+        </button>
+        <button
+          onClick={load}
+          disabled={loading}
+          title="Refresh"
+          style={{ background: "rgba(255,255,255,0.05)", border: `1px solid rgba(201,168,76,0.2)`, color: loading ? "rgba(237,228,207,0.3)" : "rgba(237,228,207,0.6)", fontWeight: 700, fontSize: "0.82rem", borderRadius: 10, padding: "10px 14px", cursor: loading ? "not-allowed" : "pointer" }}
+        >
+          {loading ? "↻" : "↻ Refresh"}
         </button>
       </div>
 

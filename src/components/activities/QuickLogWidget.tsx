@@ -41,13 +41,20 @@ export default function QuickLogWidget({ repId, role }: { repId?: string; role: 
     if (!title.trim()) return;
     setSaving(true);
     try {
-      await fetch("/api/activities", {
+      const res = await fetch("/api/activities", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ type, title: title.trim(), notes: notes.trim() || null, repId: repId ?? null }),
       });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        alert(`Failed to log activity: ${err?.error ?? res.statusText}`);
+        return;
+      }
       setSaved(true);
       setTimeout(() => close(), 1200);
+    } catch (e) {
+      alert(`Network error: ${e instanceof Error ? e.message : String(e)}`);
     } finally {
       setSaving(false);
     }
