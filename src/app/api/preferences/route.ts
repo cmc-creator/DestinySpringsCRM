@@ -32,6 +32,7 @@ type StoredPreferences = {
   territory?: {
     defaultViewId?: string;
     savedViews?: Array<{ id: string; label: string; repFilter: string }>;
+    defaultsInitialized?: boolean;
   };
 };
 
@@ -119,6 +120,7 @@ function sanitizePreferences(input: unknown): StoredPreferences {
     next.territory = {
       defaultViewId: typeof territory.defaultViewId === "string" ? territory.defaultViewId.slice(0, 40) : "",
       savedViews,
+      defaultsInitialized: typeof territory.defaultsInitialized === "boolean" ? territory.defaultsInitialized : false,
     };
   }
 

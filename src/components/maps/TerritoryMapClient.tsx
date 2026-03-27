@@ -50,7 +50,7 @@ interface MapHospital {
   status: HospStatus; assignedRepName?: string | null; referralMapLabel?: string | null; referralMapColor?: string | null;
 }
 interface MapRep {
-  id: string; name: string; color: string; states: string[];
+  id: string; userId: string; name: string; color: string; states: string[];
 }
 
 interface Props {
@@ -143,41 +143,45 @@ export default function TerritoryMapClient({ hospitals, repTerritories }: Props)
 
         const nextViews = normalizeSavedViews(territory.savedViews);
         const nextDefault = typeof territory.defaultViewId === "string" ? territory.defaultViewId : "";
+        const defaultsInitialized = territory.defaultsInitialized === true;
         
         // Apply role-smart defaults on first login
         const finalDefault = nextDefault;
         let finalFilter = ALL_REPS;
-        const isFirstLogin = !nextDefault && nextViews.length === 0;
+        const isFirstLogin = !defaultsInitialized && !nextDefault && nextViews.length === 0;
         
         if (isFirstLogin && sessionUser) {
-          if (sessionRole === "REP" && sessionName) {
-            // For REP users, auto-select their own territory if available
-            const userRepMatch = repOptions.find((name) => name.toLowerCase() === sessionName.toLowerCase());
-            if (userRepMatch) {
-              finalFilter = userRepMatch;
+          if (sessionRole === "REP") {
+            // Prefer stable ID match; only fall back to display-name matching if needed.
+            const userRep = repTerritories.find((rep) => rep.userId === sessionUser.id);
+            if (userRep?.name && repOptions.includes(userRep.name)) {
+              finalFilter = userRep.name;
+            } else if (sessionName) {
+              const userRepByName = repOptions.find((name) => name.toLowerCase() === sessionName.toLowerCase());
+              if (userRepByName) {
+                finalFilter = userRepByName;
+              }
             }
           } else if (sessionRole === "ADMIN") {
             // For ADMIN users, default to All Territories (already the default)
             finalFilter = ALL_REPS;
           }
-          
-          // Only persist if we applied a non-default filter
-          if (finalFilter !== ALL_REPS) {
-            await fetch("/api/preferences", {
-              method: "PUT",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                preferences: {
-                  territory: {
-                    savedViews: nextViews,
-                    defaultViewId: finalDefault,
-                  },
+
+          await fetch("/api/preferences", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              preferences: {
+                territory: {
+                  savedViews: nextViews,
+                  defaultViewId: finalDefault,
+                  defaultsInitialized: true,
                 },
-              }),
-            }).catch(() => {
-              // best-effort
-            });
-          }
+              },
+            }),
+          }).catch(() => {
+            // best-effort
+          });
         }
         
         setSavedViews(nextViews);
@@ -197,7 +201,7 @@ export default function TerritoryMapClient({ hospitals, repTerritories }: Props)
     return () => {
       active = false;
     };
-  }, [repOptions, sessionUser, sessionRole, sessionName]);
+  }, [repOptions, repTerritories, sessionUser, sessionRole, sessionName]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
