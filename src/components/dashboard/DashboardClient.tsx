@@ -274,6 +274,8 @@ export default function DashboardClient({
   const [draggingStatId, setDraggingStatId] = useState<string | null>(null);
   const [dragOverStatId, setDragOverStatId] = useState<string | null>(null);
   const [mounted, setMounted]       = useState(false);
+  const [focusStatIds, setFocusStatIds] = useState<Set<string>>(new Set());
+  const [statTargets, setStatTargets] = useState<Record<string, number>>({});
 
   useEffect(() => {
     setMounted(true);
@@ -299,6 +301,44 @@ export default function DashboardClient({
       if (Array.isArray(parsed.hiddenStats)) setHiddenStats(new Set(parsed.hiddenStats));
     } catch { /* ignore */ }
   }, [statIds]);
+
+  useEffect(() => {
+    let active = true;
+    fetch("/api/preferences")
+      .then(async (response) => {
+        if (!response.ok) return null;
+        return response.json() as Promise<{ preferences?: unknown }>;
+      })
+      .then((data) => {
+        if (!active || !data?.preferences || typeof data.preferences !== "object" || Array.isArray(data.preferences)) return;
+        const root = data.preferences as Record<string, unknown>;
+        const dashboard = root.dashboard && typeof root.dashboard === "object" && !Array.isArray(root.dashboard)
+          ? root.dashboard as Record<string, unknown>
+          : null;
+        if (!dashboard) return;
+
+        if (Array.isArray(dashboard.focusStatIds)) {
+          const ids = dashboard.focusStatIds.filter((id): id is string => typeof id === "string");
+          setFocusStatIds(new Set(ids));
+        }
+
+        if (dashboard.statTargets && typeof dashboard.statTargets === "object" && !Array.isArray(dashboard.statTargets)) {
+          const parsedTargets = Object.fromEntries(
+            Object.entries(dashboard.statTargets as Record<string, unknown>)
+              .filter(([key, value]) => typeof key === "string" && Number.isFinite(Number(value)))
+              .map(([key, value]) => [key, Number(value)])
+          );
+          setStatTargets(parsedTargets);
+        }
+      })
+      .catch(() => {
+        // best-effort personalization
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const persist = (o: SectionId[], os: string[], h: Set<SectionId>, hs: Set<string>) => {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ order: o, orderStats: os, hidden: [...h], hiddenStats: [...hs] })); } catch { /* ignore */ }
@@ -395,8 +435,12 @@ export default function DashboardClient({
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 16, marginBottom: 32 }}>
             {orderedStats.map((s) => {
               const hidden = hiddenStats.has(s.id);
-              if (!customizing && hidden) return null;
+              const focusEnabled = focusStatIds.size > 0;
+              const focused = focusStatIds.has(s.id);
+              if (!customizing && (hidden || (focusEnabled && !focused))) return null;
               const statDragTarget = dragOverStatId === s.id && draggingStatId !== s.id;
+              const target = statTargets[s.id];
+              const progress = typeof target === "number" && target > 0 ? Math.min(999, Math.round((s.value / target) * 100)) : null;
 
               return (
                 <div
@@ -420,6 +464,11 @@ export default function DashboardClient({
                       <div style={{ marginBottom: 10, opacity: 0.85 }}><Icon id={s.icon} color="var(--nyx-accent)" /></div>
                       <div style={{ fontSize: "1.8rem", fontWeight: 900, color: TEXT, lineHeight: 1, marginBottom: 4 }}>{s.value}</div>
                       <div style={{ fontSize: "0.75rem", color: MUTED, fontWeight: 500 }}>{s.label}</div>
+                      {typeof target === "number" && target > 0 && (
+                        <div style={{ marginTop: 6, fontSize: "0.68rem", color: progress !== null && progress >= 100 ? "#34d399" : "var(--nyx-accent-label)", fontWeight: 600 }}>
+                          Target {target} · {progress ?? 0}%
+                        </div>
+                      )}
                     </div>
                   </Link>
                   {customizing && (

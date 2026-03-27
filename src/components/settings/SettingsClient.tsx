@@ -6,6 +6,12 @@ type ResponseStyle = "concise" | "checklist" | "strategy_memo" | "draft_email";
 type SuggestionAggressiveness = "minimal" | "balanced" | "proactive";
 type DigestCadence = "daily" | "weekly";
 
+type TerritorySavedView = {
+  id: string;
+  label: string;
+  repFilter: string;
+};
+
 type UserPreferenceState = {
   ai: {
     responseStyle: ResponseStyle;
@@ -22,6 +28,20 @@ type UserPreferenceState = {
     dailyDigest: boolean;
     digestCadence: DigestCadence;
     approvalRequiredForOutreach: boolean;
+  };
+  alerts: {
+    staleLeadDays: number;
+    stageStallDays: number;
+    noContactDays: number;
+    lowCensusThreshold: number;
+  };
+  dashboard: {
+    focusStatIds: string[];
+    statTargets: Record<string, number>;
+  };
+  territory: {
+    defaultViewId: string;
+    savedViews: TerritorySavedView[];
   };
 };
 
@@ -42,6 +62,24 @@ const DEFAULT_PREFS: UserPreferenceState = {
     digestCadence: "daily",
     approvalRequiredForOutreach: true,
   },
+  alerts: {
+    staleLeadDays: 14,
+    stageStallDays: 10,
+    noContactDays: 5,
+    lowCensusThreshold: 4,
+  },
+  dashboard: {
+    focusStatIds: ["leads", "opportunities", "invoices"],
+    statTargets: {
+      leads: 30,
+      opportunities: 20,
+      invoices: 12,
+    },
+  },
+  territory: {
+    defaultViewId: "",
+    savedViews: [],
+  },
 };
 
 const CHANNEL_OPTIONS = [
@@ -53,11 +91,33 @@ const CHANNEL_OPTIONS = [
   ["primary_care", "Primary Care"],
 ] as const;
 
+const KPI_OPTIONS = [
+  ["reps", "Active Reps"],
+  ["hospitals", "Active Clients"],
+  ["leads", "Open Leads"],
+  ["opportunities", "Open Opportunities"],
+  ["won", "Discharged"],
+  ["invoices", "Pending Invoices"],
+] as const;
+
+function clampNumber(value: unknown, fallback: number, min: number, max: number): number {
+  const n = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.min(max, Math.max(min, Math.round(n)));
+}
+
 function normalizePrefs(value: unknown): UserPreferenceState {
   if (!value || typeof value !== "object" || Array.isArray(value)) return DEFAULT_PREFS;
   const prefs = value as Record<string, unknown>;
   const ai = prefs.ai && typeof prefs.ai === "object" && !Array.isArray(prefs.ai) ? prefs.ai as Record<string, unknown> : {};
   const automations = prefs.automations && typeof prefs.automations === "object" && !Array.isArray(prefs.automations) ? prefs.automations as Record<string, unknown> : {};
+  const alerts = prefs.alerts && typeof prefs.alerts === "object" && !Array.isArray(prefs.alerts) ? prefs.alerts as Record<string, unknown> : {};
+  const dashboard = prefs.dashboard && typeof prefs.dashboard === "object" && !Array.isArray(prefs.dashboard) ? prefs.dashboard as Record<string, unknown> : {};
+  const territory = prefs.territory && typeof prefs.territory === "object" && !Array.isArray(prefs.territory) ? prefs.territory as Record<string, unknown> : {};
+  const statTargets = dashboard.statTargets && typeof dashboard.statTargets === "object" && !Array.isArray(dashboard.statTargets)
+    ? Object.fromEntries(Object.entries(dashboard.statTargets as Record<string, unknown>).map(([key, target]) => [key, clampNumber(target, 0, 0, 100000)]))
+    : DEFAULT_PREFS.dashboard.statTargets;
+
   return {
     ai: {
       responseStyle: ai.responseStyle === "checklist" || ai.responseStyle === "strategy_memo" || ai.responseStyle === "draft_email" ? ai.responseStyle : DEFAULT_PREFS.ai.responseStyle,
@@ -74,6 +134,31 @@ function normalizePrefs(value: unknown): UserPreferenceState {
       dailyDigest: typeof automations.dailyDigest === "boolean" ? automations.dailyDigest : DEFAULT_PREFS.automations.dailyDigest,
       digestCadence: automations.digestCadence === "weekly" ? "weekly" : DEFAULT_PREFS.automations.digestCadence,
       approvalRequiredForOutreach: typeof automations.approvalRequiredForOutreach === "boolean" ? automations.approvalRequiredForOutreach : DEFAULT_PREFS.automations.approvalRequiredForOutreach,
+    },
+    alerts: {
+      staleLeadDays: clampNumber(alerts.staleLeadDays, DEFAULT_PREFS.alerts.staleLeadDays, 1, 120),
+      stageStallDays: clampNumber(alerts.stageStallDays, DEFAULT_PREFS.alerts.stageStallDays, 1, 120),
+      noContactDays: clampNumber(alerts.noContactDays, DEFAULT_PREFS.alerts.noContactDays, 1, 60),
+      lowCensusThreshold: clampNumber(alerts.lowCensusThreshold, DEFAULT_PREFS.alerts.lowCensusThreshold, 1, 50),
+    },
+    dashboard: {
+      focusStatIds: Array.isArray(dashboard.focusStatIds)
+        ? dashboard.focusStatIds.filter((item): item is string => typeof item === "string")
+        : DEFAULT_PREFS.dashboard.focusStatIds,
+      statTargets,
+    },
+    territory: {
+      defaultViewId: typeof territory.defaultViewId === "string" ? territory.defaultViewId : "",
+      savedViews: Array.isArray(territory.savedViews)
+        ? territory.savedViews
+            .map((item) => {
+              if (!item || typeof item !== "object" || Array.isArray(item)) return null;
+              const view = item as Record<string, unknown>;
+              if (typeof view.id !== "string" || typeof view.label !== "string" || typeof view.repFilter !== "string") return null;
+              return { id: view.id, label: view.label, repFilter: view.repFilter };
+            })
+            .filter((item): item is TerritorySavedView => Boolean(item))
+        : [],
     },
   };
 }
@@ -969,6 +1054,38 @@ export default function SettingsClient() {
     setPrefs((current) => ({ ...current, automations: { ...current.automations, [key]: value } }));
   }
 
+  function setAlertPref<K extends keyof UserPreferenceState["alerts"]>(key: K, value: UserPreferenceState["alerts"][K]) {
+    setPrefs((current) => ({ ...current, alerts: { ...current.alerts, [key]: value } }));
+  }
+
+  function toggleFocusStat(statId: string) {
+    setPrefs((current) => {
+      const exists = current.dashboard.focusStatIds.includes(statId);
+      return {
+        ...current,
+        dashboard: {
+          ...current.dashboard,
+          focusStatIds: exists
+            ? current.dashboard.focusStatIds.filter((id) => id !== statId)
+            : [...current.dashboard.focusStatIds, statId],
+        },
+      };
+    });
+  }
+
+  function setStatTarget(statId: string, target: number) {
+    setPrefs((current) => ({
+      ...current,
+      dashboard: {
+        ...current.dashboard,
+        statTargets: {
+          ...current.dashboard.statTargets,
+          [statId]: Math.max(0, Math.round(target)),
+        },
+      },
+    }));
+  }
+
   function toggleChannel(channel: string) {
     setPrefs((current) => {
       const exists = current.ai.preferredChannels.includes(channel);
@@ -1243,6 +1360,78 @@ export default function SettingsClient() {
               <option value="daily">Daily</option>
               <option value="weekly">Weekly</option>
             </select>
+          </div>
+        </div>
+      </Section>
+
+      <Section title="Personal KPI Cards">
+        <p style={{ fontSize: "0.78rem", color: "var(--nyx-text-muted)", marginBottom: 12, lineHeight: 1.6 }}>
+          Pick the KPI cards that matter most to you and set your personal targets. The dashboard can prioritize these metrics first.
+        </p>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>
+          {KPI_OPTIONS.map(([id, label]) => {
+            const selected = prefs.dashboard.focusStatIds.includes(id);
+            return (
+              <button
+                key={id}
+                type="button"
+                onClick={() => toggleFocusStat(id)}
+                style={{
+                  padding: "6px 12px",
+                  borderRadius: 999,
+                  border: `1px solid ${selected ? "var(--nyx-accent-str)" : "var(--nyx-border)"}`,
+                  background: selected ? "var(--nyx-accent-dim)" : "rgba(255,255,255,0.03)",
+                  color: selected ? "var(--nyx-accent)" : "var(--nyx-text-muted)",
+                  cursor: "pointer",
+                  fontSize: "0.75rem",
+                  fontWeight: selected ? 700 : 500,
+                }}
+              >
+                {selected ? "* " : ""}{label}
+              </button>
+            );
+          })}
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>
+          {prefs.dashboard.focusStatIds.map((id) => {
+            const label = KPI_OPTIONS.find(([key]) => key === id)?.[1] ?? id;
+            return (
+              <div key={id}>
+                <label style={{ fontSize: "0.72rem", color: "var(--nyx-text-muted)", display: "block", marginBottom: 4 }}>{label.toUpperCase()} TARGET</label>
+                <input
+                  type="number"
+                  min={0}
+                  style={inp}
+                  value={prefs.dashboard.statTargets[id] ?? 0}
+                  onChange={(event) => setStatTarget(id, Number(event.target.value || 0))}
+                />
+              </div>
+            );
+          })}
+        </div>
+      </Section>
+
+      <Section title="Alert Thresholds">
+        <p style={{ fontSize: "0.78rem", color: "var(--nyx-text-muted)", marginBottom: 12, lineHeight: 1.6 }}>
+          Define when Aegis should nudge you. These thresholds drive personal reminders and stage-stall alert timing.
+        </p>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>
+          <div>
+            <label style={{ fontSize: "0.72rem", color: "var(--nyx-text-muted)", display: "block", marginBottom: 4 }}>STALE LEAD DAYS</label>
+            <input type="number" min={1} max={120} style={inp} value={prefs.alerts.staleLeadDays} onChange={e => setAlertPref("staleLeadDays", clampNumber(e.target.value, 14, 1, 120))} />
+          </div>
+          <div>
+            <label style={{ fontSize: "0.72rem", color: "var(--nyx-text-muted)", display: "block", marginBottom: 4 }}>STAGE STALL DAYS</label>
+            <input type="number" min={1} max={120} style={inp} value={prefs.alerts.stageStallDays} onChange={e => setAlertPref("stageStallDays", clampNumber(e.target.value, 10, 1, 120))} />
+          </div>
+          <div>
+            <label style={{ fontSize: "0.72rem", color: "var(--nyx-text-muted)", display: "block", marginBottom: 4 }}>NO-CONTACT DAYS</label>
+            <input type="number" min={1} max={60} style={inp} value={prefs.alerts.noContactDays} onChange={e => setAlertPref("noContactDays", clampNumber(e.target.value, 5, 1, 60))} />
+          </div>
+          <div>
+            <label style={{ fontSize: "0.72rem", color: "var(--nyx-text-muted)", display: "block", marginBottom: 4 }}>LOW CENSUS THRESHOLD</label>
+            <input type="number" min={1} max={50} style={inp} value={prefs.alerts.lowCensusThreshold} onChange={e => setAlertPref("lowCensusThreshold", clampNumber(e.target.value, 4, 1, 50))} />
           </div>
         </div>
       </Section>

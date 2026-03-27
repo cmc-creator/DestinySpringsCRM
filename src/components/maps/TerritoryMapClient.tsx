@@ -71,10 +71,32 @@ function jitter(seed: number, range: number) {
 const ALL_REPS = "__all__";
 const UNASSIGNED = "__unassigned__";
 
+type SavedTerritoryView = {
+  id: string;
+  label: string;
+  repFilter: string;
+};
+
+function normalizeSavedViews(raw: unknown): SavedTerritoryView[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((item) => {
+      if (!item || typeof item !== "object" || Array.isArray(item)) return null;
+      const view = item as Record<string, unknown>;
+      if (typeof view.id !== "string" || typeof view.label !== "string" || typeof view.repFilter !== "string") return null;
+      return { id: view.id, label: view.label, repFilter: view.repFilter };
+    })
+    .filter((item): item is SavedTerritoryView => Boolean(item));
+}
+
 export default function TerritoryMapClient({ hospitals, repTerritories }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<unknown>(null);
   const [repFilter, setRepFilter] = useState<string>(ALL_REPS);
+  const [savedViews, setSavedViews] = useState<SavedTerritoryView[]>([]);
+  const [defaultViewId, setDefaultViewId] = useState<string>("");
+  const [newViewLabel, setNewViewLabel] = useState("");
+  const [savingPrefs, setSavingPrefs] = useState(false);
 
   const repOptions = useMemo(() => {
     const names = new Set<string>();
@@ -96,10 +118,41 @@ export default function TerritoryMapClient({ hospitals, repTerritories }: Props)
     if (typeof window === "undefined") return;
     const key = `nyx-map-rep-filter:${window.location.pathname}`;
     const stored = localStorage.getItem(key);
-    if (!stored) return;
-    if (stored === ALL_REPS || stored === UNASSIGNED || repOptions.includes(stored)) {
+    if (stored && (stored === ALL_REPS || stored === UNASSIGNED || repOptions.includes(stored))) {
       setRepFilter(stored);
     }
+
+    let active = true;
+    fetch("/api/preferences")
+      .then(async (response) => {
+        if (!response.ok) return null;
+        return response.json() as Promise<{ preferences?: unknown }>;
+      })
+      .then((data) => {
+        if (!active || !data?.preferences || typeof data.preferences !== "object" || Array.isArray(data.preferences)) return;
+        const prefRoot = data.preferences as Record<string, unknown>;
+        const territory = prefRoot.territory && typeof prefRoot.territory === "object" && !Array.isArray(prefRoot.territory)
+          ? prefRoot.territory as Record<string, unknown>
+          : null;
+        if (!territory) return;
+
+        const nextViews = normalizeSavedViews(territory.savedViews);
+        const nextDefault = typeof territory.defaultViewId === "string" ? territory.defaultViewId : "";
+        setSavedViews(nextViews);
+        setDefaultViewId(nextDefault);
+
+        const defaultView = nextViews.find((view) => view.id === nextDefault);
+        if (defaultView && (defaultView.repFilter === ALL_REPS || defaultView.repFilter === UNASSIGNED || repOptions.includes(defaultView.repFilter))) {
+          setRepFilter(defaultView.repFilter);
+        }
+      })
+      .catch(() => {
+        // best-effort personalization
+      });
+
+    return () => {
+      active = false;
+    };
   }, [repOptions]);
 
   useEffect(() => {
@@ -107,6 +160,31 @@ export default function TerritoryMapClient({ hospitals, repTerritories }: Props)
     const key = `nyx-map-rep-filter:${window.location.pathname}`;
     localStorage.setItem(key, repFilter);
   }, [repFilter]);
+
+  useEffect(() => {
+    if (repFilter === ALL_REPS || repFilter === UNASSIGNED || repOptions.includes(repFilter)) return;
+    setRepFilter(ALL_REPS);
+  }, [repFilter, repOptions]);
+
+  const persistTerritoryPrefs = async (views: SavedTerritoryView[], defaultId: string) => {
+    setSavingPrefs(true);
+    try {
+      await fetch("/api/preferences", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          preferences: {
+            territory: {
+              savedViews: views,
+              defaultViewId: defaultId,
+            },
+          },
+        }),
+      });
+    } finally {
+      setSavingPrefs(false);
+    }
+  };
 
   const filteredHospitals = useMemo(() => {
     if (repFilter === ALL_REPS) return hospitals;
@@ -121,6 +199,33 @@ export default function TerritoryMapClient({ hospitals, repTerritories }: Props)
     if (repFilter === UNASSIGNED) return [];
     return repTerritories.filter((rep) => rep.name?.trim() === repFilter);
   }, [repFilter, repTerritories]);
+
+  const createSavedView = async () => {
+    const label = newViewLabel.trim();
+    if (!label) return;
+    const view: SavedTerritoryView = {
+      id: `view-${Date.now()}`,
+      label: label.slice(0, 40),
+      repFilter,
+    };
+    const nextViews = [view, ...savedViews].slice(0, 10);
+    setSavedViews(nextViews);
+    setNewViewLabel("");
+    await persistTerritoryPrefs(nextViews, defaultViewId);
+  };
+
+  const removeSavedView = async (id: string) => {
+    const nextViews = savedViews.filter((view) => view.id !== id);
+    const nextDefault = defaultViewId === id ? "" : defaultViewId;
+    setSavedViews(nextViews);
+    setDefaultViewId(nextDefault);
+    await persistTerritoryPrefs(nextViews, nextDefault);
+  };
+
+  const setDefaultView = async (id: string) => {
+    setDefaultViewId(id);
+    await persistTerritoryPrefs(savedViews, id);
+  };
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -273,6 +378,43 @@ export default function TerritoryMapClient({ hospitals, repTerritories }: Props)
           <div style={{ marginTop: 6, color: "var(--nyx-text-muted)", fontSize: "0.67rem" }}>
             Showing {filteredHospitals.length} location{filteredHospitals.length === 1 ? "" : "s"}
           </div>
+          <div style={{ marginTop: 8, display: "flex", gap: 6 }}>
+            <input
+              value={newViewLabel}
+              onChange={(event) => setNewViewLabel(event.target.value)}
+              placeholder="Save current view"
+              style={{ flex: 1, background: "rgba(0,0,0,0.35)", color: "var(--nyx-text)", border: "1px solid var(--nyx-accent-dim)", borderRadius: 6, padding: "5px 8px", fontSize: "0.72rem" }}
+            />
+            <button
+              type="button"
+              onClick={createSavedView}
+              disabled={savingPrefs || !newViewLabel.trim()}
+              style={{ background: "var(--nyx-accent-dim)", color: "var(--nyx-accent)", border: "1px solid var(--nyx-accent-str)", borderRadius: 6, padding: "5px 8px", fontSize: "0.7rem", cursor: savingPrefs ? "not-allowed" : "pointer" }}
+            >
+              Save
+            </button>
+          </div>
+          {savedViews.length > 0 && (
+            <div style={{ marginTop: 8, display: "flex", flexWrap: "wrap", gap: 6 }}>
+              {savedViews.map((view) => {
+                const active = view.repFilter === repFilter;
+                const isDefault = view.id === defaultViewId;
+                return (
+                  <div key={view.id} style={{ display: "inline-flex", alignItems: "center", gap: 4, borderRadius: 999, border: `1px solid ${active ? "var(--nyx-accent-str)" : "var(--nyx-border)"}`, background: active ? "var(--nyx-accent-dim)" : "rgba(255,255,255,0.03)", padding: "3px 8px" }}>
+                    <button type="button" onClick={() => setRepFilter(view.repFilter)} style={{ background: "transparent", border: "none", color: active ? "var(--nyx-accent)" : "var(--nyx-text-muted)", fontSize: "0.68rem", cursor: "pointer", padding: 0 }}>
+                      {isDefault ? "* " : ""}{view.label}
+                    </button>
+                    <button type="button" onClick={() => void setDefaultView(view.id)} title="Set default" style={{ background: "transparent", border: "none", color: isDefault ? "var(--nyx-accent)" : "var(--nyx-text-muted)", fontSize: "0.66rem", cursor: "pointer", padding: 0 }}>
+                      D
+                    </button>
+                    <button type="button" onClick={() => void removeSavedView(view.id)} title="Delete" style={{ background: "transparent", border: "none", color: "var(--nyx-text-muted)", fontSize: "0.66rem", cursor: "pointer", padding: 0 }}>
+                      x
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
       {/* Leaflet CSS */}

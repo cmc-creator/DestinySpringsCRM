@@ -19,24 +19,49 @@ type StoredPreferences = {
     digestCadence?: "daily" | "weekly";
     approvalRequiredForOutreach?: boolean;
   };
+  alerts?: {
+    staleLeadDays?: number;
+    stageStallDays?: number;
+    noContactDays?: number;
+    lowCensusThreshold?: number;
+  };
+  dashboard?: {
+    focusStatIds?: string[];
+    statTargets?: Record<string, number>;
+  };
+  territory?: {
+    defaultViewId?: string;
+    savedViews?: Array<{ id: string; label: string; repFilter: string }>;
+  };
 };
 
 function toObject(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
 }
 
+function clampNumber(value: unknown, fallback: number, min: number, max: number): number {
+  const n = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.min(max, Math.max(min, Math.round(n)));
+}
+
 function sanitizePreferences(input: unknown): StoredPreferences {
   const value = toObject(input);
-  const ai = toObject(value.ai);
-  const automations = toObject(value.automations);
-  return {
-    ai: {
+  const next: StoredPreferences = {};
+
+  if (value.ai !== undefined) {
+    const ai = toObject(value.ai);
+    next.ai = {
       responseStyle: ai.responseStyle === "checklist" || ai.responseStyle === "strategy_memo" || ai.responseStyle === "draft_email" ? ai.responseStyle : "concise",
       suggestionAggressiveness: ai.suggestionAggressiveness === "minimal" || ai.suggestionAggressiveness === "proactive" ? ai.suggestionAggressiveness : "balanced",
       preferredChannels: Array.isArray(ai.preferredChannels) ? ai.preferredChannels.filter((item): item is string => typeof item === "string").slice(0, 8) : ["emergency_department", "crisis_unit"],
       favoriteWorkflow: typeof ai.favoriteWorkflow === "string" ? ai.favoriteWorkflow.slice(0, 120) : "relationship_reactivation",
-    },
-    automations: {
+    };
+  }
+
+  if (value.automations !== undefined) {
+    const automations = toObject(value.automations);
+    next.automations = {
       followUpReminders: typeof automations.followUpReminders === "boolean" ? automations.followUpReminders : true,
       quietReferralAlerts: typeof automations.quietReferralAlerts === "boolean" ? automations.quietReferralAlerts : true,
       lowCensusPlaybooks: typeof automations.lowCensusPlaybooks === "boolean" ? automations.lowCensusPlaybooks : true,
@@ -45,8 +70,59 @@ function sanitizePreferences(input: unknown): StoredPreferences {
       dailyDigest: typeof automations.dailyDigest === "boolean" ? automations.dailyDigest : true,
       digestCadence: automations.digestCadence === "weekly" ? "weekly" : "daily",
       approvalRequiredForOutreach: typeof automations.approvalRequiredForOutreach === "boolean" ? automations.approvalRequiredForOutreach : true,
-    },
-  };
+    };
+  }
+
+  if (value.alerts !== undefined) {
+    const alerts = toObject(value.alerts);
+    next.alerts = {
+      staleLeadDays: clampNumber(alerts.staleLeadDays, 14, 1, 120),
+      stageStallDays: clampNumber(alerts.stageStallDays, 10, 1, 120),
+      noContactDays: clampNumber(alerts.noContactDays, 5, 1, 60),
+      lowCensusThreshold: clampNumber(alerts.lowCensusThreshold, 4, 1, 50),
+    };
+  }
+
+  if (value.dashboard !== undefined) {
+    const dashboard = toObject(value.dashboard);
+    const rawTargets = toObject(dashboard.statTargets);
+    const statTargets = Object.fromEntries(
+      Object.entries(rawTargets)
+        .filter(([key, target]) => typeof key === "string" && Number.isFinite(Number(target)))
+        .map(([key, target]) => [key, clampNumber(target, 0, 0, 100000)])
+    );
+
+    next.dashboard = {
+      focusStatIds: Array.isArray(dashboard.focusStatIds)
+        ? dashboard.focusStatIds.filter((item): item is string => typeof item === "string").slice(0, 12)
+        : [],
+      statTargets,
+    };
+  }
+
+  if (value.territory !== undefined) {
+    const territory = toObject(value.territory);
+    const savedViews = Array.isArray(territory.savedViews)
+      ? territory.savedViews
+          .map((item) => {
+            const view = toObject(item);
+            const id = typeof view.id === "string" ? view.id.slice(0, 40) : "";
+            const label = typeof view.label === "string" ? view.label.slice(0, 40) : "";
+            const repFilter = typeof view.repFilter === "string" ? view.repFilter.slice(0, 120) : "";
+            if (!id || !label || !repFilter) return null;
+            return { id, label, repFilter };
+          })
+          .filter((item): item is { id: string; label: string; repFilter: string } => Boolean(item))
+          .slice(0, 10)
+      : [];
+
+    next.territory = {
+      defaultViewId: typeof territory.defaultViewId === "string" ? territory.defaultViewId.slice(0, 40) : "",
+      savedViews,
+    };
+  }
+
+  return next;
 }
 
 export async function GET() {
