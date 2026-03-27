@@ -64,6 +64,46 @@ const WELCOME_MESSAGE: Message = {
   content: "Hi! I'm **Aegis**, your intelligent Destiny Springs CRM copilot. I can help you manage your admission pipeline, **scout your territory** for new BH referral sources, draft outreach, surface at-risk relationships, and suggest your next best action. Use the quick actions below or just ask me anything!",
 };
 
+function formatLabel(value: string): string {
+  return value
+    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+    .replace(/_/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/\b\w/g, (match) => match.toUpperCase());
+}
+
+function formatProposalValue(value: unknown): string {
+  if (value === null) return "None";
+  if (value === undefined) return "Not set";
+  if (typeof value === "boolean") return value ? "Yes" : "No";
+  if (typeof value === "number") return Number.isFinite(value) ? value.toLocaleString("en-US") : String(value);
+  if (typeof value === "string") return value.trim() || "Empty";
+  if (Array.isArray(value)) {
+    const rendered = value.map((item) => formatProposalValue(item)).join(", ");
+    return rendered || "Empty";
+  }
+  if (typeof value === "object") {
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return "[object]";
+    }
+  }
+  return String(value);
+}
+
+function getProposalPreviewEntries(data?: Record<string, unknown>) {
+  if (!data) return [];
+  return Object.entries(data)
+    .filter(([, value]) => value !== undefined)
+    .map(([key, value]) => ({
+      key,
+      label: formatLabel(key),
+      value: formatProposalValue(value),
+    }));
+}
+
 function renderMarkdown(text: string): string {
   return text
     .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
@@ -89,6 +129,7 @@ function TypingDots() {
 export default function AIChatWidget() {
   const [open, setOpen]         = useState(false);
   const [messages, setMessages] = useState<Message[]>([WELCOME_MESSAGE]);
+  const [messageFeedback, setMessageFeedback] = useState<Record<string, "helpful" | "not_helpful">>({});
   const [input, setInput]       = useState("");
   const [loading, setLoading]   = useState(false);
   const [allowEdits, setAllowEdits] = useState(true);
@@ -122,6 +163,30 @@ export default function AIChatWidget() {
     window.addEventListener("resize", check);
     return () => window.removeEventListener("resize", check);
   }, []);
+
+  const logAegisEvent = useCallback(async (eventType: string, details: Record<string, unknown> = {}) => {
+    try {
+      await fetch("/api/audit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "AI_EVENT",
+          resource: "Aegis",
+          diff: {
+            _meta: {
+              source: "AEGIS_AI",
+              eventType,
+              pageContext: pathname,
+              intent: typeof details.intent === "string" ? details.intent : null,
+            },
+            details,
+          },
+        }),
+      });
+    } catch {
+      // Ignore audit logging failures in the chat UI.
+    }
+  }, [pathname]);
 
   // External trigger: aegis:prompt pre-fills + auto-sends, aegis:open just opens
   useEffect(() => {
@@ -169,6 +234,21 @@ export default function AIChatWidget() {
       };
       setMessages((prev) => [...prev, reply]);
       setProposal(data.actionProposal ?? null);
+      void logAegisEvent("RESPONSE_GENERATED", {
+        messageId: reply.id,
+        responsePreview: reply.content.slice(0, 280),
+        hasProposal: Boolean(data.actionProposal),
+        intent: data.actionProposal?.intent ?? null,
+        promptLength: text.length,
+      });
+      if (data.actionProposal) {
+        void logAegisEvent("PROPOSAL_PRESENTED", {
+          intent: data.actionProposal.intent,
+          targetId: data.actionProposal.targetId ?? null,
+          fieldCount: Object.keys(data.actionProposal.data ?? {}).length,
+          fields: Object.keys(data.actionProposal.data ?? {}),
+        });
+      }
       // TTS: speak AI response if enabled
       if (ttsEnabled && typeof window !== "undefined" && window.speechSynthesis) {
         const plain = (data.content ?? "")
@@ -190,7 +270,7 @@ export default function AIChatWidget() {
     } finally {
       setLoading(false);
     }
-  }, [input, loading, messages, allowEdits, pathname, ttsEnabled]);
+  }, [input, loading, messages, allowEdits, pathname, ttsEnabled, logAegisEvent]);
 
   const startMic = () => {
     const Ctor = window.SpeechRecognition ?? window.webkitSpeechRecognition;
@@ -243,6 +323,12 @@ export default function AIChatWidget() {
     }
 
     setLoading(true);
+    void logAegisEvent("PROPOSAL_ACCEPTED", {
+      intent: proposal.intent,
+      targetId: proposal.targetId ?? null,
+      fieldCount: Object.keys(proposal.data ?? {}).length,
+      fields: Object.keys(proposal.data ?? {}),
+    });
     try {
       const res = await fetch("/api/ai/execute", {
         method: "POST",
@@ -256,8 +342,26 @@ export default function AIChatWidget() {
         content: res.ok ? (data.summary ?? "Action completed.") : (data.error ?? "Action failed."),
       };
       setMessages((prev) => [...prev, message]);
-      if (res.ok) setProposal(null);
+      if (res.ok) {
+        void logAegisEvent("PROPOSAL_APPLIED", {
+          intent: proposal.intent,
+          targetId: proposal.targetId ?? null,
+          summary: data.summary ?? null,
+        });
+        setProposal(null);
+      } else {
+        void logAegisEvent("PROPOSAL_FAILED", {
+          intent: proposal.intent,
+          targetId: proposal.targetId ?? null,
+          error: data.error ?? "Action failed",
+        });
+      }
     } catch {
+      void logAegisEvent("PROPOSAL_FAILED", {
+        intent: proposal.intent,
+        targetId: proposal.targetId ?? null,
+        error: "network_error",
+      });
       setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: "assistant", content: "Could not execute action due to a network error." }]);
     } finally {
       setLoading(false);
@@ -276,12 +380,29 @@ export default function AIChatWidget() {
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); }
   };
 
-  const clearChat = () => setMessages([WELCOME_MESSAGE]);
+  const clearChat = () => {
+    setMessages([WELCOME_MESSAGE]);
+    setProposal(null);
+    setMessageFeedback({});
+  };
 
   const triggerPrompt = (prompt: string) => {
     setInput(prompt);
     pendingPromptRef.current = prompt;
   };
+
+  const submitFeedback = (message: Message, feedback: "helpful" | "not_helpful") => {
+    if (message.id === "welcome" || messageFeedback[message.id]) return;
+    setMessageFeedback((prev) => ({ ...prev, [message.id]: feedback }));
+    void logAegisEvent("RESPONSE_FEEDBACK", {
+      messageId: message.id,
+      feedback,
+      responsePreview: message.content.slice(0, 280),
+    });
+  };
+
+  const proposalPreviewEntries = getProposalPreviewEntries(proposal?.data);
+  const extraProposalFields = Math.max(0, proposalPreviewEntries.length - 8);
 
   const scoutTerritory = () => {
     setOpen(true);
@@ -466,15 +587,48 @@ export default function AIChatWidget() {
                     <Image src="/Aegislogo.png" alt="Aegis" width={28} height={28} style={{ objectFit: "cover", width: "100%", height: "100%" }} />
                   </div>
                 )}
-                <div
-                  className={m.role === "user" ? "aegis-msg-user" : "aegis-msg-ai"}
-                  style={{
-                    maxWidth: "82%", borderRadius: m.role === "user" ? "14px 4px 14px 14px" : "4px 14px 14px 14px",
-                    padding: "9px 13px", fontSize: "0.82rem", color: TEXT, lineHeight: 1.65,
-                  }}
-                  
-                  dangerouslySetInnerHTML={{ __html: renderMarkdown(m.content) }}
-                />
+                <div style={{ maxWidth: "82%", display: "flex", flexDirection: "column", alignItems: m.role === "user" ? "flex-end" : "flex-start" }}>
+                  <div
+                    className={m.role === "user" ? "aegis-msg-user" : "aegis-msg-ai"}
+                    style={{
+                      width: "100%",
+                      borderRadius: m.role === "user" ? "14px 4px 14px 14px" : "4px 14px 14px 14px",
+                      padding: "9px 13px", fontSize: "0.82rem", color: TEXT, lineHeight: 1.65,
+                    }}
+                    dangerouslySetInnerHTML={{ __html: renderMarkdown(m.content) }}
+                  />
+                  {m.role === "assistant" && m.id !== "welcome" && (
+                    <div style={{ display: "flex", gap: 6, marginTop: 6, paddingLeft: 4 }}>
+                      {([
+                        { id: "helpful", label: "Useful" },
+                        { id: "not_helpful", label: "Not useful" },
+                      ] as const).map((option) => {
+                        const selected = messageFeedback[m.id] === option.id;
+                        const disabled = Boolean(messageFeedback[m.id]) && !selected;
+                        return (
+                          <button
+                            key={option.id}
+                            onClick={() => submitFeedback(m, option.id)}
+                            disabled={disabled}
+                            style={{
+                              borderRadius: 999,
+                              border: `1px solid ${selected ? GOLD_MID : BORDER}`,
+                              background: selected ? GOLD_DIM : "transparent",
+                              color: selected ? GOLD : MUTED,
+                              fontSize: "0.66rem",
+                              fontWeight: 700,
+                              padding: "4px 9px",
+                              cursor: disabled ? "default" : "pointer",
+                              opacity: disabled ? 0.55 : 1,
+                            }}
+                          >
+                            {selected ? `✓ ${option.label}` : option.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               </div>
             ))}
             {loading && (
@@ -531,12 +685,32 @@ export default function AIChatWidget() {
                   Action Proposed
                 </div>
                 <div style={{ fontSize: "0.78rem", color: TEXT, marginBottom: 8 }}>
-                  {proposal.intent.replaceAll("_", " ")}
+                  {formatLabel(proposal.intent)}
                   {proposal.targetId ? ` (${proposal.targetId})` : ""}
                 </div>
                 {proposal.rationale && (
                   <div style={{ fontSize: "0.72rem", color: MUTED, lineHeight: 1.55, marginBottom: 8 }}>
                     {proposal.rationale}
+                  </div>
+                )}
+                {proposalPreviewEntries.length > 0 && (
+                  <div style={{ marginBottom: 10 }}>
+                    <div style={{ fontSize: "0.66rem", color: "var(--nyx-accent-label)", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 6 }}>
+                      Proposed Fields
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: 6 }}>
+                      {proposalPreviewEntries.slice(0, 8).map((entry) => (
+                        <div key={entry.key} style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, padding: "6px 8px", borderRadius: 8, background: "rgba(255,255,255,0.04)" }}>
+                          <span style={{ fontSize: "0.68rem", color: MUTED, fontWeight: 700 }}>{entry.label}</span>
+                          <span style={{ fontSize: "0.68rem", color: TEXT, textAlign: "right", overflowWrap: "anywhere" }}>{entry.value}</span>
+                        </div>
+                      ))}
+                    </div>
+                    {extraProposalFields > 0 && (
+                      <div style={{ fontSize: "0.65rem", color: MUTED, marginTop: 6 }}>
+                        +{extraProposalFields} more field{extraProposalFields === 1 ? "" : "s"}
+                      </div>
+                    )}
                   </div>
                 )}
                 <div style={{ fontSize: "0.68rem", color: "rgba(216,232,244,0.5)", marginBottom: 8 }}>
@@ -551,7 +725,14 @@ export default function AIChatWidget() {
                     {proposal.intent.startsWith("delete_") ? "Confirm Delete" : "Apply"}
                   </button>
                   <button
-                    onClick={() => setProposal(null)}
+                    onClick={() => {
+                      void logAegisEvent("PROPOSAL_DISMISSED", {
+                        intent: proposal.intent,
+                        targetId: proposal.targetId ?? null,
+                        fieldCount: Object.keys(proposal.data ?? {}).length,
+                      });
+                      setProposal(null);
+                    }}
                     style={{ background: "transparent", border: `1px solid ${BORDER}`, color: MUTED, borderRadius: 8, fontSize: "0.74rem", fontWeight: 700, padding: "6px 10px", cursor: "pointer" }}
                   >
                     Dismiss

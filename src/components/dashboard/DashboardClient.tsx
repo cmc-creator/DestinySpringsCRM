@@ -42,6 +42,7 @@ export interface OppItem { id: string; title: string; stage: string; value: numb
 export interface MapHospital { id: string; hospitalName: string; city: string | null; state: string | null; status: string; assignedRepName: string | null }
 export interface RepTerritory { id: string; name: string; color: string; states: string[] }
 export interface ComplianceDocItem { id: string; type: string; repName: string; expiresAt: string }
+export interface AegisSummary { windowLabel: string; replies: number; proposals: number; applied: number; dismissed: number; helpful: number; notHelpful: number; topIntent: string | null; lastActivityAt: string | null }
 
 export interface DashboardClientProps {
   stats: StatItem[];
@@ -51,15 +52,17 @@ export interface DashboardClientProps {
   repTerritories: RepTerritory[];
   expiredDocs: ComplianceDocItem[];
   soonDocs: ComplianceDocItem[];
+  aegisSummary: AegisSummary;
 }
 
 // ─── Section definitions ──────────────────────────────────────────────────────
-type SectionId = "stats" | "quick-actions" | "compliance" | "ai-insights" | "territory" | "recent-opps" | "recent-activity";
+type SectionId = "stats" | "quick-actions" | "compliance" | "aegis-usage" | "ai-insights" | "territory" | "recent-opps" | "recent-activity";
 
 const SECTION_LABELS: Record<SectionId, string> = {
   "stats":           "Key Metrics",
   "quick-actions":   "Quick Actions",
   "compliance":      "Compliance Alerts",
+  "aegis-usage":     "Aegis Usage",
   "ai-insights":     "Ask Aegis AI",
   "territory":       "Territory Overview",
   "recent-opps":     "Recent Opportunities",
@@ -67,7 +70,7 @@ const SECTION_LABELS: Record<SectionId, string> = {
 };
 
 const ALL_SECTIONS: SectionId[] = [
-  "stats", "quick-actions", "compliance", "ai-insights",
+  "stats", "quick-actions", "compliance", "aegis-usage", "ai-insights",
   "territory", "recent-opps", "recent-activity",
 ];
 
@@ -123,6 +126,48 @@ function ComplianceSection({ expiredDocs, soonDocs }: { expiredDocs: ComplianceD
             ))}
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+function AegisUsageSection({ summary }: { summary: AegisSummary }) {
+  const feedbackTotal = summary.helpful + summary.notHelpful;
+  const helpfulRate = feedbackTotal > 0 ? Math.round((summary.helpful / feedbackTotal) * 100) : null;
+
+  return (
+    <div className="gold-card" style={{ borderRadius: 12, padding: "20px", marginBottom: 32 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, marginBottom: 16, flexWrap: "wrap" }}>
+        <div>
+          <p style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 4 }}>AEGIS MOMENTUM</p>
+          <p style={{ fontSize: "0.78rem", color: MUTED }}>{summary.windowLabel}</p>
+        </div>
+        <Link href="/admin/audit?source=AEGIS_AI" style={{ fontSize: "0.75rem", color: GOLD, textDecoration: "none", opacity: 0.7 }}>Open audit trail →</Link>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: 10, marginBottom: 16 }}>
+        {[
+          { label: "Replies", value: summary.replies },
+          { label: "Proposals", value: summary.proposals },
+          { label: "Applied", value: summary.applied },
+          { label: "Dismissed", value: summary.dismissed },
+        ].map((item) => (
+          <div key={item.label} style={{ borderRadius: 10, padding: "12px 14px", background: "rgba(255,255,255,0.04)", border: `1px solid ${BORDER}` }}>
+            <div style={{ fontSize: "1.35rem", color: TEXT, fontWeight: 900, lineHeight: 1.1 }}>{item.value}</div>
+            <div style={{ fontSize: "0.68rem", color: MUTED, marginTop: 4, textTransform: "uppercase", letterSpacing: "0.08em" }}>{item.label}</div>
+          </div>
+        ))}
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10 }}>
+        <div style={{ borderRadius: 10, padding: "12px 14px", background: "rgba(201,168,76,0.08)", border: `1px solid ${BORDER}` }}>
+          <div style={{ fontSize: "0.66rem", color: "var(--nyx-accent-label)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>Feedback Signal</div>
+          <div style={{ fontSize: "0.92rem", color: TEXT, fontWeight: 700 }}>{helpfulRate == null ? "No ratings yet" : `${helpfulRate}% useful`}</div>
+          <div style={{ fontSize: "0.72rem", color: MUTED, marginTop: 4 }}>{summary.helpful} useful, {summary.notHelpful} not useful</div>
+        </div>
+        <div style={{ borderRadius: 10, padding: "12px 14px", background: "rgba(255,255,255,0.04)", border: `1px solid ${BORDER}` }}>
+          <div style={{ fontSize: "0.66rem", color: "var(--nyx-accent-label)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>Top Workflow</div>
+          <div style={{ fontSize: "0.92rem", color: TEXT, fontWeight: 700 }}>{summary.topIntent ?? "Awaiting pattern"}</div>
+          <div style={{ fontSize: "0.72rem", color: MUTED, marginTop: 4 }}>{summary.lastActivityAt ? `Last activity ${relTime(summary.lastActivityAt)}` : "No recent Aegis activity"}</div>
+        </div>
       </div>
     </div>
   );
@@ -216,6 +261,7 @@ export default function DashboardClient({
   repTerritories,
   expiredDocs,
   soonDocs,
+  aegisSummary,
 }: DashboardClientProps) {
   const statIds = stats.map((s) => s.id);
   const [order, setOrder]           = useState<SectionId[]>(ALL_SECTIONS);
@@ -235,8 +281,20 @@ export default function DashboardClient({
       const raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return;
       const parsed = JSON.parse(raw) as { order?: SectionId[]; orderStats?: string[]; hidden?: SectionId[]; hiddenStats?: string[] };
-      if (Array.isArray(parsed.order) && parsed.order.length) setOrder(parsed.order);
-      if (Array.isArray(parsed.orderStats) && parsed.orderStats.length) setStatOrder(parsed.orderStats);
+      if (Array.isArray(parsed.order) && parsed.order.length) {
+        const nextOrder = [
+          ...parsed.order.filter((id): id is SectionId => ALL_SECTIONS.includes(id)),
+          ...ALL_SECTIONS.filter((id) => !parsed.order?.includes(id)),
+        ];
+        setOrder(nextOrder);
+      }
+      if (Array.isArray(parsed.orderStats) && parsed.orderStats.length) {
+        const nextStatOrder = [
+          ...parsed.orderStats.filter((id) => statIds.includes(id)),
+          ...statIds.filter((id) => !parsed.orderStats?.includes(id)),
+        ];
+        setStatOrder(nextStatOrder);
+      }
       if (Array.isArray(parsed.hidden)) setHidden(new Set(parsed.hidden));
       if (Array.isArray(parsed.hiddenStats)) setHiddenStats(new Set(parsed.hiddenStats));
     } catch { /* ignore */ }
@@ -391,6 +449,8 @@ export default function DashboardClient({
         return <QuickActionsWidget role="ADMIN" />;
       case "compliance":
         return <ComplianceSection expiredDocs={expiredDocs} soonDocs={soonDocs} />;
+      case "aegis-usage":
+        return <AegisUsageSection summary={aegisSummary} />;
       case "ai-insights":
         return (
           <div style={{ marginBottom: 32 }}>
