@@ -18,7 +18,7 @@ type MapHospital = {
   id: string; hospitalName: string; city?: string | null; state?: string | null;
   status: string; assignedRepName?: string | null; referralMapLabel?: string | null; referralMapColor?: string | null;
 };
-type MapRep = { id: string; userId: string; name: string; color: string; states: string[] };
+type MapRep = { id: string; userId?: string; name: string; color: string; states: string[] };
 
 export default function TerritoryMapWrapper({
   hospitals, repTerritories,

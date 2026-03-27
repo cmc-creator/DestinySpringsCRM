@@ -40,7 +40,7 @@ export interface StatItem { id: string; label: string; value: number; icon: stri
 export interface ActivityItem { id: string; title: string; notes: string | null; createdAt: string; hospitalName: string | null; repName: string | null }
 export interface OppItem { id: string; title: string; stage: string; value: number | null; hospitalName: string; repName: string | null }
 export interface MapHospital { id: string; hospitalName: string; city: string | null; state: string | null; status: string; assignedRepName: string | null }
-export interface RepTerritory { id: string; userId: string; name: string; color: string; states: string[] }
+export interface RepTerritory { id: string; userId?: string; name: string; color: string; states: string[] }
 export interface ComplianceDocItem { id: string; type: string; repName: string; expiresAt: string }
 export interface AegisSummary { windowLabel: string; replies: number; proposals: number; applied: number; dismissed: number; helpful: number; notHelpful: number; topIntent: string | null; lastActivityAt: string | null }
 

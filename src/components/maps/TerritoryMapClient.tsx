@@ -50,7 +50,7 @@ interface MapHospital {
   status: HospStatus; assignedRepName?: string | null; referralMapLabel?: string | null; referralMapColor?: string | null;
 }
 interface MapRep {
-  id: string; userId: string; name: string; color: string; states: string[];
+  id: string; userId?: string; name: string; color: string; states: string[];
 }
 
 interface Props {
