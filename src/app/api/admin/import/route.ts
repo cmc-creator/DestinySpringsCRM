@@ -862,8 +862,7 @@ async function importMarketingBudget(rows: Record<string, unknown>[], dryRun = f
     // Detect duplicates by item + hospitalId + periodMonth
     let existingBudget = null;
     if (duplicateMode === "update") {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      existingBudget = await (prisma as any).marketingBudget.findFirst({
+      existingBudget = await prisma.marketingBudget.findFirst({
         where: {
           hospitalId: hospital.id,
           item: { equals: item, mode: "insensitive" },
@@ -875,8 +874,7 @@ async function importMarketingBudget(rows: Record<string, unknown>[], dryRun = f
     if (existingBudget && duplicateMode === "update") {
       try {
         if (!dryRun) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          await (prisma as any).marketingBudget.update({
+          await prisma.marketingBudget.update({
             where: { id: existingBudget.id },
             data: {
               marketingMeals: new Prisma.Decimal(marketingMeals),
@@ -901,8 +899,7 @@ async function importMarketingBudget(rows: Record<string, unknown>[], dryRun = f
     } else {
       try {
         if (!dryRun) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          await (prisma as any).marketingBudget.create({
+          await prisma.marketingBudget.create({
             data: {
               item,
               hospitalId: hospital.id,
