@@ -273,11 +273,13 @@ async function importAccounts(rows: Record<string, unknown>[], dryRun = false) {
 
   for (const row of rows) {
     // Try known aliases, then fall back to the very first non-empty column
-    let name = col(row,
+    const rawName = col(row,
+      "Client",
       "Account Name", "Name", "Organization", "Company",
       "Hospital Name", "Facility Name", "Account", "Title",
       "Item", "Item Name", "Board Item"
     ) || colByHeaderToken(row, "account", "facility", "hospital", "organization", "company", "name");
+    let name = normalizeMondayCellText(rawName);
     if (!name) {
       // Monday.com: first column is usually the item name regardless of label
       const firstEntry = Object.entries(row).find(([k, v]) => {
@@ -286,29 +288,29 @@ async function importAccounts(rows: Record<string, unknown>[], dryRun = false) {
         const s = String(v ?? "").trim();
         return s.length > 1 && s !== "undefined" && s !== "null";
       });
-      name = firstEntry ? String(firstEntry[1]).trim() : "";
+      name = firstEntry ? normalizeMondayCellText(String(firstEntry[1])) : "";
     }
-    if (!name) {
+    if (!name || normalizeKey(name) === "client") {
       skipped++;
       skipReasons["no name found"] = (skipReasons["no name found"] ?? 0) + 1;
       if (preview.length < MAX_PREVIEW) preview.push({ action: "skip", reason: "no name found", fields: {} });
       continue;
     }
 
-    const type = col(row, "Account Type", "Type", "Facility Type", "Type of Facility") || colByHeaderToken(row, "facility type");
-    const location = col(row, "Location", "Address", "Billing Address", "City, State");
+    const type = normalizeMondayCellText(col(row, "Account Type", "Type", "Facility Type", "Type of Facility") || colByHeaderToken(row, "facility type"));
+    const location = normalizeMondayCellText(col(row, "Location", "Address", "Billing Address", "City, State"));
     const parsedLocation = parseCityStateZip(location);
-    const city  = col(row, "Billing City", "City") || parsedLocation.city || "";
-    const state = col(row, "Billing State", "State", "Billing State/Province") || parsedLocation.state || "";
-    const zip   = col(row, "Billing Zip", "Zip", "Billing Postal Code", "Postal Code") || parsedLocation.zip || "";
-    const phone = col(row, "Phone", "Main Phone", "Billing Phone");
-    const npi   = col(row, "NPI", "NPI Number");
+    const city  = normalizeMondayCellText(col(row, "Billing City", "City") || parsedLocation.city || "");
+    const state = normalizeMondayCellText(col(row, "Billing State", "State", "Billing State/Province") || parsedLocation.state || "");
+    const zip   = normalizeMondayCellText(col(row, "Billing Zip", "Zip", "Billing Postal Code", "Postal Code") || parsedLocation.zip || "");
+    const phone = normalizeMondayCellText(col(row, "Phone", "Main Phone", "Billing Phone"));
+    const npi   = normalizeMondayCellText(col(row, "NPI", "NPI Number"));
     const beds  = col(row, "Bed Count", "Beds", "Number of Beds", "NumberOfEmployees");
-    const notes = col(row, "Description", "Notes", "Comments");
-    const contactName  = col(row, "Primary Contact", "Contact Name", "Main Contact", "Contacts") || colByHeaderToken(row, "contact", "owner", "person");
-    const contactTitle = col(row, "Contact Title", "Primary Contact Title", "Title");
-    const contactEmail = col(row, "Contact Email", "Primary Email", "Email", "E-mail");
-    const contactPhone = col(row, "Contact Phone", "Primary Phone");
+    const notes = normalizeMondayCellText(col(row, "Description", "Notes", "Comments"));
+    const contactName  = normalizeMondayCellText(col(row, "Primary Contact", "Contact Name", "Main Contact", "Contacts") || colByHeaderToken(row, "contact", "owner", "person"));
+    const contactTitle = normalizeMondayCellText(col(row, "Contact Title", "Primary Contact Title", "Title"));
+    const contactEmail = normalizeMondayCellText(col(row, "Contact Email", "Primary Email", "Email", "E-mail"));
+    const contactPhone = normalizeMondayCellText(col(row, "Contact Phone", "Primary Phone"));
 
     try {
       const existing = await prisma.hospital.findFirst({
@@ -511,12 +513,13 @@ async function importActivities(rows: Record<string, unknown>[], dryRun = false)
   for (const row of rows) {
     // Try known aliases; if nothing matches, fall back to the first non-empty column
     // (Monday.com exports the item name as whatever the board column is called)
-    let subject = col(row, "Subject", "Activity", "Title", "Name", "Description",
+    let subject = col(row, "Subject", "Activity", "Account Activities", "Activities", "Title", "Name", "Description",
       "Item", "Task", "Task Name", "Item Name", "Board Item", "Activity Name", "Log", "Summary",
       "Event", "Action", "Record", "Entry");
     if (!subject) {
       subject = firstMeaningfulValue(row);
     }
+    subject = normalizeMondayCellText(subject);
     if (!subject) {
       skipped++;
       skipReasons["completely empty row"] = (skipReasons["completely empty row"] ?? 0) + 1;
@@ -532,14 +535,15 @@ async function importActivities(rows: Record<string, unknown>[], dryRun = false)
       continue;
     }
 
-    const typeStr = col(row, "Type", "Activity Type", "Call Type", "Subitem", "Status", "Category");
+    const typeStr = normalizeMondayCellText(col(row, "Type", "Activity Type", "Call Type", "Subitem", "Status", "Category"));
     const dateStr = col(row, "Date", "Due Date", "Completed Date", "ActivityDate", "Close Date",
-      "Created", "Last Updated", "Timeline", "Date Created");
+      "Created", "Last Updated", "Timeline", "Activities timeline", "Date Created");
     let accountName = col(row, "Account Name", "Organization", "Hospital", "Facility",
-      "Account", "Company", "Partner", "Referral Source", "Linked Account");
+      "Account", "Accounts", "Client", "Company", "Partner", "Referral Source", "Linked Account");
+    accountName = normalizeMondayCellText(accountName);
     const repName   = col(row, "Owner", "Assigned To", "Rep", "Rep Name", "Created By",
       "Assignee", "Person", "Team Member");
-    const notes     = col(row, "Description", "Comments", "Notes", "Body", "Details", "Update");
+    const notes     = normalizeMondayCellText(col(row, "Description", "Comments", "Notes", "Body", "Details", "Update"));
 
     // Monday often has "AccountName - ActivityTitle" in a single Name column.
     // If no explicit account column was found, try to split the subject on " - ".
