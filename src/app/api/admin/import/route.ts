@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { randomUUID } from "crypto";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
@@ -87,6 +88,46 @@ function normalizeMondayCellText(value: string): string {
   // Trim leading emoji/symbol noise and common separators that appear in exports.
   out = out.replace(/^[^A-Za-z0-9]+/, "").replace(/^[-:|]+\s*/, "").trim();
   return out;
+}
+
+function parseSpreadsheetDate(value: unknown): Date | undefined {
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? undefined : value;
+  }
+
+  if (typeof value === "number" && Number.isFinite(value)) {
+    const parsed = XLSX.SSF.parse_date_code(value);
+    if (parsed?.y && parsed?.m && parsed?.d) {
+      return new Date(Date.UTC(parsed.y, parsed.m - 1, parsed.d));
+    }
+  }
+
+  const raw = String(value ?? "").trim();
+  if (!raw) return undefined;
+
+  const asNumber = Number(raw);
+  if (Number.isFinite(asNumber) && asNumber > 20000) {
+    const parsed = XLSX.SSF.parse_date_code(asNumber);
+    if (parsed?.y && parsed?.m && parsed?.d) {
+      return new Date(Date.UTC(parsed.y, parsed.m - 1, parsed.d));
+    }
+  }
+
+  const parsedDate = new Date(raw);
+  return Number.isNaN(parsedDate.getTime()) ? undefined : parsedDate;
+}
+
+function extractBudgetSectionLabel(value: string): string {
+  const normalized = normalizeMondayCellText(value);
+  if (!/^marketing budget\b/i.test(normalized)) return "";
+  return normalized.replace(/^marketing budget\b/i, "").trim();
+}
+
+function formatBudgetPeriod(startDate?: Date, explicitLabel?: string): string {
+  const normalizedLabel = normalizeMondayCellText(explicitLabel || "");
+  if (normalizedLabel) return normalizedLabel;
+  if (!startDate) return "";
+  return startDate.toLocaleDateString("en-US", { month: "long", year: "numeric", timeZone: "UTC" });
 }
 
 function parseCityStateZip(location: string): { city?: string; state?: string; zip?: string } {
@@ -809,45 +850,43 @@ async function importMarketingBudget(rows: Record<string, unknown>[], dryRun = f
   const skipReasons: Record<string, number> = {};
   const preview: PreviewSample[] = [];
 
-  for (const row of rows) {
-    let item = col(row, "Item", "Item Name", "Budget Item", "Task", "Activity", "Name", "Subitems");
-    item = normalizeMondayCellText(item);
-    if (!item) {
-      skipped++;
-      skipReasons["missing item name"] = (skipReasons["missing item name"] ?? 0) + 1;
-      if (preview.length < MAX_PREVIEW) preview.push({ action: "skip", reason: "missing item name", fields: {} });
-      continue;
-    }
+  const hospitalCache = new Map<string, { id: string; hospitalName: string } | null>();
+  let currentSectionPeriod = "";
+  let currentSectionAccount = "";
+  let currentSectionPointOfContact = "";
+  let currentSectionStartDate: Date | undefined;
 
-    let accountName = col(row, "Account", "Hospital", "Facility", "Company", "Organization", "Account Name", "Client");
-    accountName = normalizeMondayCellText(accountName);
-    if (!accountName) {
-      skipped++;
-      skipReasons["missing account"] = (skipReasons["missing account"] ?? 0) + 1;
-      if (preview.length < MAX_PREVIEW) preview.push({ action: "skip", reason: "missing account", fields: { Item: item } });
-      continue;
-    }
+  async function findHospitalByName(name: string) {
+    const normalizedName = normalizeMondayCellText(name);
+    if (!normalizedName) return null;
+    const cacheKey = normalizeKey(normalizedName);
+    if (hospitalCache.has(cacheKey)) return hospitalCache.get(cacheKey) ?? null;
 
-    // Match hospital
-    const hospital = await prisma.hospital.findFirst({
-      where: { hospitalName: { equals: accountName, mode: "insensitive" } },
+    let hospital = await prisma.hospital.findFirst({
+      where: { hospitalName: { equals: normalizedName, mode: "insensitive" } },
+      select: { id: true, hospitalName: true },
     });
 
     if (!hospital) {
-      skipped++;
-      skipReasons["account not found"] = (skipReasons["account not found"] ?? 0) + 1;
-      if (preview.length < MAX_PREVIEW) preview.push({ action: "skip", reason: "account not found", fields: { Item: item, Account: accountName } });
-      continue;
+      hospital = await prisma.hospital.findFirst({
+        where: { hospitalName: { contains: normalizedName, mode: "insensitive" } },
+        select: { id: true, hospitalName: true },
+      });
     }
 
-    const pointOfContact = normalizeMondayCellText(col(row, "Point of Contact", "POC", "Contact", "Contact Name", "Person", "Point of contact"));
-    const periodMonth = normalizeMondayCellText(col(row, "Period", "Month", "Period Month", "Time", "Time Period"));
-    const startDateStr = col(row, "Start Date", "Date", "Due Date", "Timeline", "Activities timeline", "Start Date - Start");
-    const startDate = startDateStr ? new Date(startDateStr) : undefined;
+    hospitalCache.set(cacheKey, hospital ?? null);
+    return hospital ?? null;
+  }
 
-    // Parse budget amounts
+  for (const row of rows) {
+    let item = normalizeMondayCellText(col(row, "Item", "Item Name", "Budget Item", "Task", "Activity", "Name", "Subitems"));
+    const explicitAccountName = normalizeMondayCellText(col(row, "Account", "Hospital", "Facility", "Company", "Organization", "Account Name", "Client"));
+    const explicitPointOfContact = normalizeMondayCellText(col(row, "Point of Contact", "POC", "Contact", "Contact Name", "Person", "Point of contact"));
+    const explicitPeriodMonth = normalizeMondayCellText(col(row, "Period", "Month", "Period Month", "Time", "Time Period"));
+    const explicitStartDate = parseSpreadsheetDate(col(row, "Start Date", "Date", "Due Date", "Timeline", "Activities timeline", "Start Date - Start"));
+
     const parseMoney = (val: unknown): number | undefined => {
-      if (!val) return undefined;
+      if (val === undefined || val === null || String(val).trim() === "") return undefined;
       const str = String(val).replace(/[$,]/g, "").trim();
       const num = parseFloat(str);
       return Number.isNaN(num) ? undefined : num;
@@ -858,39 +897,126 @@ async function importMarketingBudget(rows: Record<string, unknown>[], dryRun = f
     const marketingEvents = parseMoney(col(row, "Marketing Events")) || 0;
     const actualSpend = parseMoney(col(row, "Actual Spend")) || 0;
     const budgeted = parseMoney(col(row, "Budgeted")) || 0;
+    const hasMoney = [marketingMeals, marketingSupplies, marketingEvents, actualSpend, budgeted].some((value) => value !== 0);
+
+    const isRepeatedHeader =
+      normalizeKey(item) === "name" &&
+      normalizeKey(explicitAccountName) === "account" &&
+      normalizeKey(explicitPointOfContact) === "point of contact";
+
+    if (isRepeatedHeader) {
+      continue;
+    }
+
+    const sectionLabel = extractBudgetSectionLabel(item);
+    const isSectionTitle = Boolean(sectionLabel) && !explicitAccountName && !explicitPointOfContact && !explicitStartDate && !hasMoney;
+    if (isSectionTitle) {
+      currentSectionPeriod = sectionLabel;
+      currentSectionAccount = "";
+      currentSectionPointOfContact = "";
+      currentSectionStartDate = undefined;
+      continue;
+    }
+
+    if (!item && !explicitAccountName && !explicitPointOfContact && !explicitStartDate && !hasMoney) {
+      continue;
+    }
+
+    if (normalizeKey(item) === "marketing budget" && explicitAccountName) {
+      currentSectionAccount = explicitAccountName;
+      currentSectionPointOfContact = explicitPointOfContact || currentSectionPointOfContact;
+      currentSectionStartDate = explicitStartDate || currentSectionStartDate;
+      currentSectionPeriod = explicitPeriodMonth || currentSectionPeriod || formatBudgetPeriod(currentSectionStartDate);
+    }
+
+    const startDate = explicitStartDate || currentSectionStartDate;
+    const pointOfContact = explicitPointOfContact || currentSectionPointOfContact;
+    const periodMonth = formatBudgetPeriod(startDate, explicitPeriodMonth || currentSectionPeriod);
+    const accountName = explicitAccountName || currentSectionAccount;
+
+    if (!item) {
+      skipped++;
+      skipReasons["summary row"] = (skipReasons["summary row"] ?? 0) + 1;
+      if (preview.length < MAX_PREVIEW) preview.push({ action: "skip", reason: "summary row", fields: {} });
+      continue;
+    }
+
+    if (/^task\s+\d+$/i.test(item) && !explicitAccountName && !explicitPointOfContact && !explicitStartDate && !hasMoney) {
+      skipped++;
+      skipReasons["empty placeholder row"] = (skipReasons["empty placeholder row"] ?? 0) + 1;
+      if (preview.length < MAX_PREVIEW) preview.push({ action: "skip", reason: "empty placeholder row", fields: { Item: item } });
+      continue;
+    }
+
+    if (!accountName) {
+      skipped++;
+      skipReasons["missing account"] = (skipReasons["missing account"] ?? 0) + 1;
+      if (preview.length < MAX_PREVIEW) preview.push({ action: "skip", reason: "missing account", fields: { Item: item } });
+      continue;
+    }
+
+    let resolvedItem = item;
+    let hospital = await findHospitalByName(accountName);
+    if (!hospital && explicitAccountName && currentSectionAccount && normalizeKey(explicitAccountName) !== normalizeKey(currentSectionAccount)) {
+      const sectionHospital = await findHospitalByName(currentSectionAccount);
+      if (sectionHospital) {
+        hospital = sectionHospital;
+        resolvedItem = `${item} - ${explicitAccountName}`;
+      }
+    }
+
+    if (!hospital) {
+      skipped++;
+      skipReasons["account not found"] = (skipReasons["account not found"] ?? 0) + 1;
+      if (preview.length < MAX_PREVIEW) preview.push({ action: "skip", reason: "account not found", fields: { Item: item, Account: accountName } });
+      continue;
+    }
 
     // Detect duplicates by item + hospitalId + periodMonth
     let existingBudget = null;
     if (duplicateMode === "update") {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      existingBudget = await (prisma as any).marketingBudget.findFirst({
-        where: {
-          hospitalId: hospital.id,
-          item: { equals: item, mode: "insensitive" },
-          periodMonth: periodMonth || null,
-        },
-      });
+      const periodCondition = periodMonth
+        ? Prisma.sql`period_month = ${periodMonth}`
+        : Prisma.sql`period_month IS NULL`;
+      const rows = await prisma.$queryRaw<Array<{ id: string }>>(
+        Prisma.sql`
+          SELECT id
+          FROM marketing_budgets
+          WHERE hospital_id = ${hospital.id}
+            AND LOWER(item) = LOWER(${resolvedItem})
+            AND ${periodCondition}
+          LIMIT 1
+        `,
+      );
+      existingBudget = rows[0] ?? null;
     }
 
     if (existingBudget && duplicateMode === "update") {
       try {
         if (!dryRun) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          await (prisma as any).marketingBudget.update({
-            where: { id: existingBudget.id },
-            data: {
-              marketingMeals: new Prisma.Decimal(marketingMeals),
-              marketingSupplies: new Prisma.Decimal(marketingSupplies),
-              marketingEvents: new Prisma.Decimal(marketingEvents),
-              actualSpend: new Prisma.Decimal(actualSpend),
-              budgeted: new Prisma.Decimal(budgeted),
-              ...(pointOfContact && { pointOfContact }),
-              ...(startDate && { startDate }),
-            },
-          });
+          const updates: Prisma.Sql[] = [
+            Prisma.sql`marketing_meals = ${new Prisma.Decimal(marketingMeals)}`,
+            Prisma.sql`marketing_supplies = ${new Prisma.Decimal(marketingSupplies)}`,
+            Prisma.sql`marketing_events = ${new Prisma.Decimal(marketingEvents)}`,
+            Prisma.sql`actual_spend = ${new Prisma.Decimal(actualSpend)}`,
+            Prisma.sql`budgeted = ${new Prisma.Decimal(budgeted)}`,
+            Prisma.sql`updated_at = NOW()`,
+          ];
+
+          if (pointOfContact) updates.push(Prisma.sql`point_of_contact = ${pointOfContact}`);
+          if (startDate) updates.push(Prisma.sql`start_date = ${startDate}`);
+          if (periodMonth) updates.push(Prisma.sql`period_month = ${periodMonth}`);
+
+          await prisma.$executeRaw(
+            Prisma.sql`
+              UPDATE marketing_budgets
+              SET ${Prisma.join(updates, Prisma.sql`, `)}
+              WHERE id = ${existingBudget.id}
+            `,
+          );
         }
         updated++;
-        if (preview.length < MAX_PREVIEW) preview.push({ action: "update", fields: { Item: item, Account: hospital.hospitalName } });
+        if (preview.length < MAX_PREVIEW) preview.push({ action: "update", fields: { Item: resolvedItem, Account: hospital.hospitalName } });
       } catch (e) {
         errors.push(`Failed to update budget: ${e instanceof Error ? e.message : String(e)}`);
       }
@@ -901,24 +1027,42 @@ async function importMarketingBudget(rows: Record<string, unknown>[], dryRun = f
     } else {
       try {
         if (!dryRun) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          await (prisma as any).marketingBudget.create({
-            data: {
-              item,
-              hospitalId: hospital.id,
-              pointOfContact: pointOfContact || undefined,
-              periodMonth: periodMonth || undefined,
-              startDate: startDate || undefined,
-              marketingMeals: new Prisma.Decimal(marketingMeals),
-              marketingSupplies: new Prisma.Decimal(marketingSupplies),
-              marketingEvents: new Prisma.Decimal(marketingEvents),
-              actualSpend: new Prisma.Decimal(actualSpend),
-              budgeted: new Prisma.Decimal(budgeted),
-            },
-          });
+          await prisma.$executeRaw(
+            Prisma.sql`
+              INSERT INTO marketing_budgets (
+                id,
+                item,
+                point_of_contact,
+                period_month,
+                start_date,
+                marketing_meals,
+                marketing_supplies,
+                marketing_events,
+                actual_spend,
+                budgeted,
+                hospital_id,
+                created_at,
+                updated_at
+              ) VALUES (
+                ${randomUUID()},
+                ${resolvedItem},
+                ${pointOfContact || null},
+                ${periodMonth || null},
+                ${startDate || null},
+                ${new Prisma.Decimal(marketingMeals)},
+                ${new Prisma.Decimal(marketingSupplies)},
+                ${new Prisma.Decimal(marketingEvents)},
+                ${new Prisma.Decimal(actualSpend)},
+                ${new Prisma.Decimal(budgeted)},
+                ${hospital.id},
+                NOW(),
+                NOW()
+              )
+            `,
+          );
         }
         created++;
-        if (preview.length < MAX_PREVIEW) preview.push({ action: "create", fields: { Item: item, Account: hospital.hospitalName, Spent: String(actualSpend) } });
+        if (preview.length < MAX_PREVIEW) preview.push({ action: "create", fields: { Item: resolvedItem, Account: hospital.hospitalName, Spent: String(actualSpend) } });
       } catch (e) {
         errors.push(`Failed to create budget: ${e instanceof Error ? e.message : String(e)}`);
       }
