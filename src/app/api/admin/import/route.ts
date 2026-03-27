@@ -713,6 +713,216 @@ async function importActivities(rows: Record<string, unknown>[], dryRun = false,
   return { created, updated, skipped, errors, skipReasons, preview };
 }
 
+async function importLeads(rows: Record<string, unknown>[], dryRun = false, duplicateMode: DuplicateMode = "skip") {
+  let created = 0, updated = 0, skipped = 0;
+  const errors: string[] = [];
+  const skipReasons: Record<string, number> = {};
+  const preview: PreviewSample[] = [];
+
+  for (const row of rows) {
+    let hospitalName = col(row, "Lead", "Hospital Name", "Hospital", "Lead Name", "Prospect", "Company", "Organization", "Account Name");
+    hospitalName = normalizeMondayCellText(hospitalName);
+    if (!hospitalName) {
+      skipped++;
+      skipReasons["missing lead name"] = (skipReasons["missing lead name"] ?? 0) + 1;
+      if (preview.length < MAX_PREVIEW) preview.push({ action: "skip", reason: "missing lead name", fields: {} });
+      continue;
+    }
+
+    const status = col(row, "Status") || "NEW";
+    const contactName = normalizeMondayCellText(col(row, "Contact Name", "Name", "Contact", "Primary Contact", "POC"));
+    const contactEmail = col(row, "Email", "Contact Email", "Email Address");
+    const contactPhone = col(row, "Phone", "Contact Phone", "Phone Number");
+    const contactTitle = normalizeMondayCellText(col(row, "Title", "Contact Title", "Position", "Role"));
+    const serviceInterest = normalizeMondayCellText(col(row, "Service Interest", "Services", "Interest", "Service Line", "Interested In"));
+    const estValueStr = col(row, "Estimated Value", "Value", "Est Value", "Potential Value");
+    const estimatedValue = estValueStr ? parseFloat(estValueStr) : undefined;
+    const notes = normalizeMondayCellText(col(row, "Notes", "Description", "Comments", "Details"));
+    const lastInteractionStr = col(row, "Last Interaction", "Last Activity", "Last Contact", "Last Touchpoint", "Last Date");
+
+    // Detect duplicates by hospitalName
+    let existingLead = null;
+    if (duplicateMode === "update") {
+      existingLead = await prisma.lead.findFirst({
+        where: { hospitalName: { contains: hospitalName, mode: "insensitive" } },
+      });
+    }
+
+    if (existingLead && duplicateMode === "update") {
+      try {
+        if (!dryRun) {
+          await prisma.lead.update({
+            where: { id: existingLead.id },
+            data: {
+              ...(contactName && { contactName }),
+              ...(contactEmail && { contactEmail }),
+              ...(contactPhone && { contactPhone }),
+              ...(contactTitle && { contactTitle }),
+              ...(serviceInterest && { serviceInterest }),
+              ...(estimatedValue && { estimatedValue: new prisma.Prisma.Decimal(estimatedValue) }),
+              ...(notes && { notes }),
+            },
+          });
+        }
+        updated++;
+        if (preview.length < MAX_PREVIEW) preview.push({ action: "update", fields: { Lead: hospitalName } });
+      } catch (e) {
+        errors.push(`Failed to update lead: ${e instanceof Error ? e.message : String(e)}`);
+      }
+    } else if (existingLead) {
+      skipped++;
+      skipReasons["already exists"] = (skipReasons["already exists"] ?? 0) + 1;
+      if (preview.length < MAX_PREVIEW) preview.push({ action: "skip", reason: "already exists", fields: { Lead: hospitalName } });
+    } else {
+      try {
+        if (!dryRun) {
+          await prisma.lead.create({
+            data: {
+              hospitalName,
+              status: (status.toUpperCase() === "QUALIFIED" ? "QUALIFIED" : status.toUpperCase() === "CONTACTED" ? "CONTACTED" : "NEW") as any,
+              contactName: contactName || undefined,
+              contactEmail: contactEmail || undefined,
+              contactPhone: contactPhone || undefined,
+              contactTitle: contactTitle || undefined,
+              serviceInterest: serviceInterest || undefined,
+              estimatedValue: estimatedValue ? new prisma.Prisma.Decimal(estimatedValue) : undefined,
+              notes: notes || undefined,
+            },
+          });
+        }
+        created++;
+        if (preview.length < MAX_PREVIEW) preview.push({ action: "create", fields: { Lead: hospitalName, Email: contactEmail || "", Phone: contactPhone || "" } });
+      } catch (e) {
+        errors.push(`Failed to create lead: ${e instanceof Error ? e.message : String(e)}`);
+      }
+    }
+  }
+
+  return { created, updated, skipped, errors, skipReasons, preview };
+}
+
+async function importMarketingBudget(rows: Record<string, unknown>[], dryRun = false, duplicateMode: DuplicateMode = "skip") {
+  let created = 0, updated = 0, skipped = 0;
+  const errors: string[] = [];
+  const skipReasons: Record<string, number> = {};
+  const preview: PreviewSample[] = [];
+
+  for (const row of rows) {
+    let item = col(row, "Item", "Item Name", "Budget Item", "Task", "Activity", "Name");
+    item = normalizeMondayCellText(item);
+    if (!item) {
+      skipped++;
+      skipReasons["missing item name"] = (skipReasons["missing item name"] ?? 0) + 1;
+      if (preview.length < MAX_PREVIEW) preview.push({ action: "skip", reason: "missing item name", fields: {} });
+      continue;
+    }
+
+    let accountName = col(row, "Account", "Hospital", "Facility", "Company", "Organization", "Account Name", "Client");
+    accountName = normalizeMondayCellText(accountName);
+    if (!accountName) {
+      skipped++;
+      skipReasons["missing account"] = (skipReasons["missing account"] ?? 0) + 1;
+      if (preview.length < MAX_PREVIEW) preview.push({ action: "skip", reason: "missing account", fields: { Item: item } });
+      continue;
+    }
+
+    // Match hospital
+    const hospital = await prisma.hospital.findFirst({
+      where: { hospitalName: { contains: accountName, mode: "insensitive" } },
+    });
+
+    if (!hospital) {
+      skipped++;
+      skipReasons["account not found"] = (skipReasons["account not found"] ?? 0) + 1;
+      if (preview.length < MAX_PREVIEW) preview.push({ action: "skip", reason: "account not found", fields: { Item: item, Account: accountName } });
+      continue;
+    }
+
+    const pointOfContact = normalizeMondayCellText(col(row, "Point of Contact", "POC", "Contact", "Contact Name", "Person"));
+    const periodMonth = normalizeMondayCellText(col(row, "Period", "Month", "Period Month", "Time", "Time Period"));
+    const startDateStr = col(row, "Start Date", "Date", "Due Date", "Timeline", "Activities timeline");
+    const startDate = startDateStr ? new Date(startDateStr) : undefined;
+
+    // Parse budget amounts
+    const parseMoney = (val: unknown): number | undefined => {
+      if (!val) return undefined;
+      const str = String(val).replace(/[$,]/g, "").trim();
+      const num = parseFloat(str);
+      return Number.isNaN(num) ? undefined : num;
+    };
+
+    const marketingMeals = parseMoney(col(row, "Marketing Meals")) || 0;
+    const marketingSupplies = parseMoney(col(row, "Marketing Supplies")) || 0;
+    const marketingEvents = parseMoney(col(row, "Marketing Events")) || 0;
+    const actualSpend = parseMoney(col(row, "Actual Spend")) || 0;
+    const budgeted = parseMoney(col(row, "Budgeted")) || 0;
+
+    // Detect duplicates by item + hospitalId + periodMonth
+    let existingBudget = null;
+    if (duplicateMode === "update") {
+      existingBudget = await prisma.marketingBudget.findFirst({
+        where: {
+          hospitalId: hospital.id,
+          item: { equals: item, mode: "insensitive" },
+          periodMonth: periodMonth || null,
+        },
+      });
+    }
+
+    if (existingBudget && duplicateMode === "update") {
+      try {
+        if (!dryRun) {
+          await prisma.marketingBudget.update({
+            where: { id: existingBudget.id },
+            data: {
+              marketingMeals: new prisma.Prisma.Decimal(marketingMeals),
+              marketingSupplies: new prisma.Prisma.Decimal(marketingSupplies),
+              marketingEvents: new prisma.Prisma.Decimal(marketingEvents),
+              actualSpend: new prisma.Prisma.Decimal(actualSpend),
+              budgeted: new prisma.Prisma.Decimal(budgeted),
+              ...(pointOfContact && { pointOfContact }),
+              ...(startDate && { startDate }),
+            },
+          });
+        }
+        updated++;
+        if (preview.length < MAX_PREVIEW) preview.push({ action: "update", fields: { Item: item, Account: hospital.hospitalName } });
+      } catch (e) {
+        errors.push(`Failed to update budget: ${e instanceof Error ? e.message : String(e)}`);
+      }
+    } else if (existingBudget) {
+      skipped++;
+      skipReasons["already exists"] = (skipReasons["already exists"] ?? 0) + 1;
+      if (preview.length < MAX_PREVIEW) preview.push({ action: "skip", reason: "already exists", fields: { Item: item } });
+    } else {
+      try {
+        if (!dryRun) {
+          await prisma.marketingBudget.create({
+            data: {
+              item,
+              hospitalId: hospital.id,
+              pointOfContact: pointOfContact || undefined,
+              periodMonth: periodMonth || undefined,
+              startDate: startDate || undefined,
+              marketingMeals: new prisma.Prisma.Decimal(marketingMeals),
+              marketingSupplies: new prisma.Prisma.Decimal(marketingSupplies),
+              marketingEvents: new prisma.Prisma.Decimal(marketingEvents),
+              actualSpend: new prisma.Prisma.Decimal(actualSpend),
+              budgeted: new prisma.Prisma.Decimal(budgeted),
+            },
+          });
+        }
+        created++;
+        if (preview.length < MAX_PREVIEW) preview.push({ action: "create", fields: { Item: item, Account: hospital.hospitalName, Spent: String(actualSpend) } });
+      } catch (e) {
+        errors.push(`Failed to create budget: ${e instanceof Error ? e.message : String(e)}`);
+      }
+    }
+  }
+
+  return { created, updated, skipped, errors, skipReasons, preview };
+}
+
 // ─── enum mappers ──────────────────────────────────────────────────────────────
 
 function mapFacilityType(s: string) {
@@ -775,14 +985,14 @@ export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
     const file     = formData.get("file") as File | null;
-    const type     = (formData.get("type") as string ?? "").toLowerCase(); // accounts | contacts | activities
+    const type     = (formData.get("type") as string ?? "").toLowerCase(); // accounts | contacts | activities | leads | marketingbudget
     const dryRun   = formData.get("dryRun") === "true";
     const duplicateModeRaw = (formData.get("duplicateMode") as string ?? "skip").toLowerCase();
     const duplicateMode: DuplicateMode = duplicateModeRaw === "update" ? "update" : "skip";
 
     if (!file) return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
-    if (!["accounts", "contacts", "activities"].includes(type)) {
-      return NextResponse.json({ error: "type must be accounts, contacts, or activities" }, { status: 400 });
+    if (!["accounts", "contacts", "activities", "leads", "marketingbudget"].includes(type)) {
+      return NextResponse.json({ error: "type must be accounts, contacts, activities, leads, or marketingbudget" }, { status: 400 });
     }
 
     const parsed = await parseSheet(file);
@@ -797,7 +1007,9 @@ export async function POST(req: NextRequest) {
     let result;
     if (type === "accounts")    result = await importAccounts(rows, dryRun, duplicateMode);
     else if (type === "contacts") result = await importContacts(rows, dryRun, duplicateMode);
-    else                         result = await importActivities(rows, dryRun, duplicateMode);
+    else if (type === "activities") result = await importActivities(rows, dryRun, duplicateMode);
+    else if (type === "leads")  result = await importLeads(rows, dryRun, duplicateMode);
+    else                         result = await importMarketingBudget(rows, dryRun, duplicateMode);
 
     return NextResponse.json({ ok: true, isDryRun: dryRun, type, totalRows: rows.length, columns, duplicateMode, ...result });
   } catch (err) {

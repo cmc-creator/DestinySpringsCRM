@@ -1,18 +1,20 @@
 "use client";
 import React, { useState, useRef } from "react";
 
-type ImportType = "accounts" | "contacts" | "activities";
+type ImportType = "accounts" | "contacts" | "activities" | "leads" | "marketingbudget";
 type DuplicateMode = "skip" | "update";
 
 function defaultDuplicateModeForType(type: ImportType): DuplicateMode {
-  if (type === "accounts") return "update";
+  if (type === "accounts" || type === "leads") return "update";
   return "skip";
 }
 
 function duplicateModeLabel(type: ImportType): string {
   if (type === "accounts") return "Duplicate accounts:";
   if (type === "contacts") return "Duplicate contacts:";
-  return "Duplicate activities:";
+  if (type === "activities") return "Duplicate activities:";
+  if (type === "leads") return "Duplicate leads:";
+  return "Duplicate items:";
 }
 
 type PreviewSample = { action: "create" | "update" | "skip"; reason?: string; fields: Record<string, string> };
@@ -50,6 +52,18 @@ const IMPORT_TYPES: { value: ImportType; label: string; hint: string; badge: str
     label: "Activities",
     badge: "ACTIVITIES",
     hint: "Import past visit logs, calls, and emails. Expected columns: Subject, Type, Date, Account Name, Owner, Description, etc.",
+  },
+  {
+    value: "leads",
+    label: "Leads",
+    badge: "LEADS",
+    hint: "Import sales leads and prospects for outreach. Expected columns: Lead (hospital name), Status, Company, Contact Name, Email, Phone, Service Interest, etc.",
+  },
+  {
+    value: "marketingbudget",
+    label: "Marketing Budget",
+    badge: "BUDGET",
+    hint: "Import marketing campaign budgets and expenses. Expected columns: Item, Account, Point of Contact, Start Date, Marketing Meals, Marketing Supplies, Marketing Events, Actual Spend, Budgeted, etc.",
   },
 ];
 
