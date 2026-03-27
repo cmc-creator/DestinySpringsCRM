@@ -11,6 +11,8 @@ type ParsedSheet = {
   columns: string[];
 };
 
+type DuplicateMode = "skip" | "update";
+
 type PreviewSample = { action: "create" | "update" | "skip"; reason?: string; fields: Record<string, string> };
 const MAX_PREVIEW = 10;
 
@@ -502,8 +504,8 @@ function isJunkActivitySubject(s: string): boolean {
   return false;
 }
 
-async function importActivities(rows: Record<string, unknown>[], dryRun = false) {
-  let created = 0, skipped = 0;
+async function importActivities(rows: Record<string, unknown>[], dryRun = false, duplicateMode: DuplicateMode = "skip") {
+  let created = 0, updated = 0, skipped = 0;
   const errors: string[] = [];
   const skipReasons: Record<string, number> = {};
   const preview: PreviewSample[] = [];
@@ -593,7 +595,7 @@ async function importActivities(rows: Record<string, unknown>[], dryRun = false)
       if (!isNaN(d.getTime())) completedAt = d;
     }
 
-    // Dedup: skip if same title + hospital already exists
+    // Dedup: update or skip when same title + hospital already exists
     const existingActivity = await prisma.activity.findFirst({
       where: {
         title: { equals: resolvedTitle.slice(0, 255), mode: "insensitive" },
@@ -601,9 +603,35 @@ async function importActivities(rows: Record<string, unknown>[], dryRun = false)
       },
     });
     if (existingActivity) {
-      skipped++;
-      skipReasons["already exists"] = (skipReasons["already exists"] ?? 0) + 1;
-      if (preview.length < MAX_PREVIEW) preview.push({ action: "skip", reason: "already exists", fields: { Subject: resolvedTitle.slice(0, 80) } });
+      if (duplicateMode === "update") {
+        try {
+          if (!dryRun) {
+            await prisma.activity.update({
+              where: { id: existingActivity.id },
+              data: {
+                type: mapActivityType(typeStr),
+                notes: notes || undefined,
+                hospitalId: hospitalId ?? existingActivity.hospitalId ?? undefined,
+                repId: repId ?? existingActivity.repId ?? undefined,
+                completedAt: completedAt ?? existingActivity.completedAt ?? new Date(),
+              },
+            });
+          }
+          updated++;
+          if (preview.length < MAX_PREVIEW) {
+            preview.push({ action: "update", fields: Object.fromEntries([
+              ["Subject", resolvedTitle.slice(0, 80)], ["Type", mapActivityType(typeStr)],
+              ["Date", dateStr], ["Account", accountName], ["Rep", repName],
+            ].filter(([, v]) => v)) });
+          }
+        } catch (e) {
+          errors.push(`${subject}: ${e instanceof Error ? e.message : String(e)}`);
+        }
+      } else {
+        skipped++;
+        skipReasons["already exists"] = (skipReasons["already exists"] ?? 0) + 1;
+        if (preview.length < MAX_PREVIEW) preview.push({ action: "skip", reason: "already exists", fields: { Subject: resolvedTitle.slice(0, 80) } });
+      }
       continue;
     }
 
@@ -632,7 +660,7 @@ async function importActivities(rows: Record<string, unknown>[], dryRun = false)
     }
   }
 
-  return { created, skipped, errors, skipReasons, preview };
+  return { created, updated, skipped, errors, skipReasons, preview };
 }
 
 // ─── enum mappers ──────────────────────────────────────────────────────────────
@@ -699,6 +727,8 @@ export async function POST(req: NextRequest) {
     const file     = formData.get("file") as File | null;
     const type     = (formData.get("type") as string ?? "").toLowerCase(); // accounts | contacts | activities
     const dryRun   = formData.get("dryRun") === "true";
+    const duplicateModeRaw = (formData.get("duplicateMode") as string ?? "skip").toLowerCase();
+    const duplicateMode: DuplicateMode = duplicateModeRaw === "update" ? "update" : "skip";
 
     if (!file) return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
     if (!["accounts", "contacts", "activities"].includes(type)) {
@@ -717,9 +747,9 @@ export async function POST(req: NextRequest) {
     let result;
     if (type === "accounts")    result = await importAccounts(rows, dryRun);
     else if (type === "contacts") result = await importContacts(rows, dryRun);
-    else                         result = await importActivities(rows, dryRun);
+    else                         result = await importActivities(rows, dryRun, duplicateMode);
 
-    return NextResponse.json({ ok: true, isDryRun: dryRun, type, totalRows: rows.length, columns, ...result });
+    return NextResponse.json({ ok: true, isDryRun: dryRun, type, totalRows: rows.length, columns, duplicateMode, ...result });
   } catch (err) {
     console.error("[admin/import]", err);
     return NextResponse.json({ error: err instanceof Error ? err.message : "Import failed" }, { status: 500 });

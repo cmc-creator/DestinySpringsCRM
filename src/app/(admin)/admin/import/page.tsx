@@ -2,6 +2,7 @@
 import React, { useState, useRef } from "react";
 
 type ImportType = "accounts" | "contacts" | "activities";
+type DuplicateMode = "skip" | "update";
 
 type PreviewSample = { action: "create" | "update" | "skip"; reason?: string; fields: Record<string, string> };
 
@@ -47,6 +48,7 @@ export default function AdminImportPage() {
   const [uploading, setUploading] = useState(false);
   const [result, setResult]     = useState<ImportResult | null>(null);
   const [dragging, setDragging] = useState(false);
+  const [duplicateMode, setDuplicateMode] = useState<DuplicateMode>("skip");
   const fileRef                 = useRef<HTMLInputElement>(null);
 
   function handleDrop(e: React.DragEvent) {
@@ -65,6 +67,9 @@ export default function AdminImportPage() {
     fd.append("file", fileToImport);
     fd.append("type", type);
     fd.append("dryRun", dryRun ? "true" : "false");
+    if (type === "activities") {
+      fd.append("duplicateMode", duplicateMode);
+    }
 
     try {
       const res  = await fetch("/api/admin/import", { method: "POST", body: fd });
@@ -130,6 +135,28 @@ export default function AdminImportPage() {
 
       {/* Upload form */}
       <form onSubmit={runImport} style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(201,168,76,0.12)", borderRadius: 14, padding: "22px 24px" }}>
+        {type === "activities" && (
+          <div style={{ marginBottom: 14, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+            <label htmlFor="duplicate-mode" style={{ color: "rgba(237,228,207,0.7)", fontSize: "0.8rem", fontWeight: 700 }}>
+              Duplicate handling:
+            </label>
+            <select
+              id="duplicate-mode"
+              value={duplicateMode}
+              onChange={(e) => {
+                setDuplicateMode(e.target.value as DuplicateMode);
+                setResult(null);
+              }}
+              style={{ background: "rgba(0,0,0,0.35)", color: "var(--nyx-text)", border: "1px solid var(--nyx-accent-dim)", borderRadius: 6, padding: "6px 10px", fontSize: "0.78rem" }}
+            >
+              <option value="skip">Skip duplicates</option>
+              <option value="update">Update duplicates</option>
+            </select>
+            <span style={{ color: "rgba(237,228,207,0.45)", fontSize: "0.75rem" }}>
+              Update mode modifies existing matched activities instead of skipping them.
+            </span>
+          </div>
+        )}
         <div
           onClick={() => fileRef.current?.click()}
           onDrop={handleDrop}
