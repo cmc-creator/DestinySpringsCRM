@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 
 type ChatMessage = { role: string; content: string };
 
@@ -83,6 +84,212 @@ When a user mentions a location or service gap:
 
 You are NOT a general-purpose assistant. Stay focused on behavioral health business development, referral management, admission pipeline strategy, and platform navigation. Politely redirect unrelated requests.`;
 
+function formatIntent(intent: string | null | undefined): string | null {
+  if (!intent) return null;
+  return intent
+    .replace(/_/g, " ")
+    .toLowerCase()
+    .replace(/\b\w/g, (match) => match.toUpperCase());
+}
+
+function stringifyContext(value: unknown): string | null {
+  if (value == null) return null;
+  if (typeof value === "string") return value;
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return null;
+  }
+}
+
+function getJsonObject(value: unknown): Record<string, unknown> | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  return value as Record<string, unknown>;
+}
+
+async function buildUserContext(userId: string, role: string) {
+  try {
+    const baseUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        preferences: true,
+        rep: {
+          select: {
+            id: true,
+            title: true,
+            territory: true,
+            city: true,
+            state: true,
+            licensedStates: true,
+          },
+        },
+        hospital: {
+          select: {
+            id: true,
+            hospitalName: true,
+            hospitalType: true,
+            city: true,
+            state: true,
+            status: true,
+            serviceLines: true,
+          },
+        },
+      },
+    });
+
+    if (!baseUser) return null;
+
+    const aegisLogs = await prisma.auditLog.findMany({
+      where: {
+        userId,
+        diff: { path: ["_meta", "source"], equals: "AEGIS_AI" },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 40,
+      select: {
+        createdAt: true,
+        diff: true,
+      },
+    });
+
+    const intentCounts = new Map<string, number>();
+    let helpfulCount = 0;
+    let notHelpfulCount = 0;
+
+    for (const log of aegisLogs) {
+      const diff = getJsonObject(log.diff);
+      const meta = getJsonObject(diff?._meta);
+      const details = getJsonObject(diff?.details);
+      const intent = typeof meta?.intent === "string" ? meta.intent : null;
+      if (intent) intentCounts.set(intent, (intentCounts.get(intent) ?? 0) + 1);
+      if (typeof details?.feedback === "string") {
+        if (details.feedback === "helpful") helpfulCount += 1;
+        if (details.feedback === "not_helpful") notHelpfulCount += 1;
+      }
+    }
+
+    const topIntent = [...intentCounts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+
+    const context: Record<string, unknown> = {
+      profile: {
+        name: baseUser.name,
+        email: baseUser.email,
+        role: baseUser.role,
+        preferences: baseUser.preferences,
+      },
+      aegisUsage: {
+        topIntent: formatIntent(topIntent),
+        helpfulCount,
+        notHelpfulCount,
+        lastInteractionAt: aegisLogs[0]?.createdAt.toISOString() ?? null,
+      },
+    };
+
+    if (role === "REP" && baseUser.rep?.id) {
+      const [openOppCount, overdueFollowUps, recentActivities] = await Promise.all([
+        prisma.opportunity.count({
+          where: {
+            assignedRepId: baseUser.rep.id,
+            stage: { notIn: ["DISCHARGED", "DECLINED"] },
+          },
+        }),
+        Promise.all([
+          prisma.lead.count({
+            where: {
+              assignedRepId: baseUser.rep.id,
+              nextFollowUp: { lte: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) },
+            },
+          }),
+          prisma.opportunity.count({
+            where: {
+              assignedRepId: baseUser.rep.id,
+              nextFollowUp: { lte: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) },
+              stage: { notIn: ["DISCHARGED", "DECLINED"] },
+            },
+          }),
+        ]),
+        prisma.activity.findMany({
+          where: { repId: baseUser.rep.id },
+          orderBy: { createdAt: "desc" },
+          take: 3,
+          select: { title: true, type: true, createdAt: true },
+        }),
+      ]);
+
+      context.repSnapshot = {
+        title: baseUser.rep.title,
+        territory: baseUser.rep.territory,
+        city: baseUser.rep.city,
+        state: baseUser.rep.state,
+        licensedStates: baseUser.rep.licensedStates,
+        openOpportunityCount: openOppCount,
+        followUpsDueNext7Days: overdueFollowUps[0] + overdueFollowUps[1],
+        recentActivities: recentActivities.map((activity) => ({
+          title: activity.title,
+          type: activity.type,
+          createdAt: activity.createdAt.toISOString(),
+        })),
+      };
+    }
+
+    if (role === "ACCOUNT" && baseUser.hospital?.id) {
+      const [activeEngagements, openInvoices] = await Promise.all([
+        prisma.opportunity.count({
+          where: {
+            hospitalId: baseUser.hospital.id,
+            stage: { notIn: ["DISCHARGED", "DECLINED"] },
+          },
+        }),
+        prisma.invoice.findMany({
+          where: {
+            hospitalId: baseUser.hospital.id,
+            status: { in: ["SENT", "OVERDUE", "DRAFT"] },
+          },
+          select: { totalAmount: true, status: true },
+          take: 10,
+        }),
+      ]);
+
+      const totalOpenInvoiceAmount = openInvoices.reduce((sum, invoice) => sum + Number(invoice.totalAmount), 0);
+      context.accountSnapshot = {
+        hospitalName: baseUser.hospital.hospitalName,
+        hospitalType: baseUser.hospital.hospitalType,
+        city: baseUser.hospital.city,
+        state: baseUser.hospital.state,
+        status: baseUser.hospital.status,
+        serviceLines: baseUser.hospital.serviceLines,
+        activeEngagements,
+        openInvoiceCount: openInvoices.length,
+        totalOpenInvoiceAmount,
+      };
+    }
+
+    if (role === "ADMIN") {
+      const [openLeads, openOpportunities, pendingInvoices, pendingApprovals] = await Promise.all([
+        prisma.lead.count({ where: { status: { in: ["NEW", "CONTACTED", "QUALIFIED"] } } }),
+        prisma.opportunity.count({ where: { stage: { notIn: ["DISCHARGED", "DECLINED"] } } }),
+        prisma.invoice.count({ where: { status: { in: ["SENT", "OVERDUE"] } } }),
+        prisma.rep.count({ where: { status: "PENDING_REVIEW" } }),
+      ]);
+
+      context.adminSnapshot = {
+        openLeads,
+        openOpportunities,
+        pendingInvoices,
+        pendingRepApprovals: pendingApprovals,
+      };
+    }
+
+    return context;
+  } catch {
+    return null;
+  }
+}
+
 const ACTION_EXTRACTION_SYSTEM = `You extract a single CRM action from the latest user message.
 
 Rules:
@@ -159,10 +366,20 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  // Build system prompt — inject current page context for pro-active, relevant responses
-  const systemPromptWithContext = pageContext
-    ? `${SYSTEM_PROMPT}\n\n## Current Navigation Context\nThe user is currently viewing page: \`${pageContext}\`. Use this to tailor your response and proactively surface relevant insights for that view (e.g., if they are on /admin/leads, focus on lead pipeline and prospecting strategies).`
-    : SYSTEM_PROMPT;
+  const userContext = await buildUserContext(session.user.id, session.user.role);
+
+  // Build system prompt — inject current page context and live user context for pro-active, relevant responses
+  const promptSections = [SYSTEM_PROMPT];
+  if (pageContext) {
+    promptSections.push(`## Current Navigation Context\nThe user is currently viewing page: \`${pageContext}\`. Use this to tailor your response and proactively surface relevant insights for that view (e.g., if they are on /admin/leads, focus on lead pipeline and prospecting strategies).`);
+  }
+  if (userContext) {
+    const rendered = stringifyContext(userContext);
+    if (rendered) {
+      promptSections.push(`## Logged-In User Context\nUse this live CRM context to personalize tone, recommendations, follow-ups, automation ideas, and suggested next actions. Do not claim hidden certainty beyond what is shown here.\n${rendered}`);
+    }
+  }
+  const systemPromptWithContext = promptSections.join("\n\n");
 
   // Map OpenAI-style roles to Gemini roles (assistant -> model)
   const geminiContents = messages.map((m) => ({
