@@ -180,6 +180,8 @@ async function buildUserContext(userId: string, role: string) {
         email: baseUser.email,
         role: baseUser.role,
         preferences: baseUser.preferences,
+        aiPreferences: getJsonObject(baseUser.preferences)?.ai ?? null,
+        automationPreferences: getJsonObject(baseUser.preferences)?.automations ?? null,
       },
       aegisUsage: {
         topIntent: formatIntent(topIntent),

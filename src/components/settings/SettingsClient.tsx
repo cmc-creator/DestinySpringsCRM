@@ -2,6 +2,82 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 
+type ResponseStyle = "concise" | "checklist" | "strategy_memo" | "draft_email";
+type SuggestionAggressiveness = "minimal" | "balanced" | "proactive";
+type DigestCadence = "daily" | "weekly";
+
+type UserPreferenceState = {
+  ai: {
+    responseStyle: ResponseStyle;
+    suggestionAggressiveness: SuggestionAggressiveness;
+    preferredChannels: string[];
+    favoriteWorkflow: string;
+  };
+  automations: {
+    followUpReminders: boolean;
+    quietReferralAlerts: boolean;
+    lowCensusPlaybooks: boolean;
+    stageStallAlerts: boolean;
+    draftedOutreach: boolean;
+    dailyDigest: boolean;
+    digestCadence: DigestCadence;
+    approvalRequiredForOutreach: boolean;
+  };
+};
+
+const DEFAULT_PREFS: UserPreferenceState = {
+  ai: {
+    responseStyle: "concise",
+    suggestionAggressiveness: "balanced",
+    preferredChannels: ["emergency_department", "crisis_unit"],
+    favoriteWorkflow: "relationship_reactivation",
+  },
+  automations: {
+    followUpReminders: true,
+    quietReferralAlerts: true,
+    lowCensusPlaybooks: true,
+    stageStallAlerts: true,
+    draftedOutreach: true,
+    dailyDigest: true,
+    digestCadence: "daily",
+    approvalRequiredForOutreach: true,
+  },
+};
+
+const CHANNEL_OPTIONS = [
+  ["emergency_department", "Emergency Departments"],
+  ["crisis_unit", "Crisis Units"],
+  ["court_legal", "Court / Legal"],
+  ["outpatient_psych", "Outpatient Psychiatry"],
+  ["community_mh", "Community Mental Health"],
+  ["primary_care", "Primary Care"],
+] as const;
+
+function normalizePrefs(value: unknown): UserPreferenceState {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return DEFAULT_PREFS;
+  const prefs = value as Record<string, unknown>;
+  const ai = prefs.ai && typeof prefs.ai === "object" && !Array.isArray(prefs.ai) ? prefs.ai as Record<string, unknown> : {};
+  const automations = prefs.automations && typeof prefs.automations === "object" && !Array.isArray(prefs.automations) ? prefs.automations as Record<string, unknown> : {};
+  return {
+    ai: {
+      responseStyle: ai.responseStyle === "checklist" || ai.responseStyle === "strategy_memo" || ai.responseStyle === "draft_email" ? ai.responseStyle : DEFAULT_PREFS.ai.responseStyle,
+      suggestionAggressiveness: ai.suggestionAggressiveness === "minimal" || ai.suggestionAggressiveness === "proactive" ? ai.suggestionAggressiveness : DEFAULT_PREFS.ai.suggestionAggressiveness,
+      preferredChannels: Array.isArray(ai.preferredChannels) ? ai.preferredChannels.filter((item): item is string => typeof item === "string") : DEFAULT_PREFS.ai.preferredChannels,
+      favoriteWorkflow: typeof ai.favoriteWorkflow === "string" && ai.favoriteWorkflow.trim() ? ai.favoriteWorkflow : DEFAULT_PREFS.ai.favoriteWorkflow,
+    },
+    automations: {
+      followUpReminders: typeof automations.followUpReminders === "boolean" ? automations.followUpReminders : DEFAULT_PREFS.automations.followUpReminders,
+      quietReferralAlerts: typeof automations.quietReferralAlerts === "boolean" ? automations.quietReferralAlerts : DEFAULT_PREFS.automations.quietReferralAlerts,
+      lowCensusPlaybooks: typeof automations.lowCensusPlaybooks === "boolean" ? automations.lowCensusPlaybooks : DEFAULT_PREFS.automations.lowCensusPlaybooks,
+      stageStallAlerts: typeof automations.stageStallAlerts === "boolean" ? automations.stageStallAlerts : DEFAULT_PREFS.automations.stageStallAlerts,
+      draftedOutreach: typeof automations.draftedOutreach === "boolean" ? automations.draftedOutreach : DEFAULT_PREFS.automations.draftedOutreach,
+      dailyDigest: typeof automations.dailyDigest === "boolean" ? automations.dailyDigest : DEFAULT_PREFS.automations.dailyDigest,
+      digestCadence: automations.digestCadence === "weekly" ? "weekly" : DEFAULT_PREFS.automations.digestCadence,
+      approvalRequiredForOutreach: typeof automations.approvalRequiredForOutreach === "boolean" ? automations.approvalRequiredForOutreach : DEFAULT_PREFS.automations.approvalRequiredForOutreach,
+    },
+  };
+}
+
 const inp: React.CSSProperties = {
   width: "100%", background: "var(--nyx-input-bg)", border: "1px solid var(--nyx-border)",
   borderRadius: 7, padding: "8px 12px", color: "var(--nyx-text)", fontSize: "0.875rem",
@@ -737,10 +813,14 @@ export default function SettingsClient() {
   const { data: session } = useSession();
   const isAdmin = session?.user?.role === "ADMIN";
   const isProduction = process.env.NODE_ENV === "production";
+  const roleLabel = session?.user?.role === "REP" ? "Rep" : session?.user?.role === "ACCOUNT" ? "Account" : "Admin";
   const [activeTheme, setActiveTheme]     = useState("luxury");
   const [orgName, setOrgName]             = useState("Destiny Springs Healthcare");
   const [supportEmail, setSupportEmail]   = useState("intake@destinysprings.com");
   const [notifs, setNotifs]               = useState({ email: true, push: false, digest: true, leads: true, contracts: false });
+  const [prefs, setPrefs]                 = useState<UserPreferenceState>(DEFAULT_PREFS);
+  const [prefsLoading, setPrefsLoading]   = useState(true);
+  const [prefsError, setPrefsError]       = useState("");
   const [devMsg, setDevMsg]               = useState("");
   const [devLoading, setDevLoading]       = useState<string | null>(null);
   const [confirmAction, setConfirmAction] = useState<string | null>(null);
@@ -776,6 +856,31 @@ export default function SettingsClient() {
     const tile = localStorage.getItem(`destinysprings-bg-tile-${stored}`) === "1";
     setBgTile(tile);
     applyTileMode(tile);
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    fetch("/api/preferences")
+      .then(async (response) => {
+        if (!response.ok) throw new Error("Could not load preferences");
+        return response.json() as Promise<{ preferences?: unknown }>;
+      })
+      .then((data) => {
+        if (!active) return;
+        setPrefs(normalizePrefs(data.preferences));
+        setPrefsError("");
+      })
+      .catch(() => {
+        if (!active) return;
+        setPrefs(DEFAULT_PREFS);
+        setPrefsError("Could not load Aegis preferences. Defaults are shown.");
+      })
+      .finally(() => {
+        if (active) setPrefsLoading(false);
+      });
+    return () => {
+      active = false;
+    };
   }, []);
 
   // Fetch available images whenever theme or tab changes
@@ -830,9 +935,22 @@ export default function SettingsClient() {
     applyTileMode(tiled);
   }
 
-  function saveOrg() {
+  async function saveOrg() {
     localStorage.setItem("destinysprings-orgName", orgName);
     localStorage.setItem("destinysprings-supportEmail", supportEmail);
+    try {
+      const response = await fetch("/api/preferences", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ preferences: prefs }),
+      });
+      if (!response.ok) throw new Error("save_failed");
+      setPrefsError("");
+    } catch {
+      setPrefsError("Could not save Aegis settings right now.");
+      setSaved(false);
+      return;
+    }
     setSaved(true);
     setTimeout(() => setSaved(false), 2200);
   }
@@ -841,6 +959,29 @@ export default function SettingsClient() {
     const updated = { ...notifs, [k]: v };
     setNotifs(updated);
     localStorage.setItem("destinysprings-notifs", JSON.stringify(updated));
+  }
+
+  function setAiPref<K extends keyof UserPreferenceState["ai"]>(key: K, value: UserPreferenceState["ai"][K]) {
+    setPrefs((current) => ({ ...current, ai: { ...current.ai, [key]: value } }));
+  }
+
+  function setAutomationPref<K extends keyof UserPreferenceState["automations"]>(key: K, value: UserPreferenceState["automations"][K]) {
+    setPrefs((current) => ({ ...current, automations: { ...current.automations, [key]: value } }));
+  }
+
+  function toggleChannel(channel: string) {
+    setPrefs((current) => {
+      const exists = current.ai.preferredChannels.includes(channel);
+      return {
+        ...current,
+        ai: {
+          ...current.ai,
+          preferredChannels: exists
+            ? current.ai.preferredChannels.filter((item) => item !== channel)
+            : [...current.ai.preferredChannels, channel],
+        },
+      };
+    });
   }
 
   async function devAction(action: string) {
@@ -1016,6 +1157,96 @@ export default function SettingsClient() {
         ))}
       </Section>
 
+      <Section title="Aegis AI Preferences">
+        <p style={{ fontSize: "0.78rem", color: "var(--nyx-text-muted)", marginBottom: 18, lineHeight: 1.65 }}>
+          Control how Aegis supports your workflow. These settings shape response style, proactive guidance, preferred referral channels, and automation behavior for your {roleLabel.toLowerCase()} workflow.
+        </p>
+        {prefsLoading ? (
+          <div style={{ fontSize: "0.78rem", color: "var(--nyx-text-muted)" }}>Loading Aegis profile…</div>
+        ) : (
+          <>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14, marginBottom: 18 }}>
+              <div>
+                <label style={{ fontSize: "0.72rem", color: "var(--nyx-text-muted)", display: "block", marginBottom: 4 }}>RESPONSE STYLE</label>
+                <select style={inp} value={prefs.ai.responseStyle} onChange={e => setAiPref("responseStyle", e.target.value as ResponseStyle)}>
+                  <option value="concise">Concise</option>
+                  <option value="checklist">Checklist</option>
+                  <option value="strategy_memo">Strategy Memo</option>
+                  <option value="draft_email">Draft Email</option>
+                </select>
+              </div>
+              <div>
+                <label style={{ fontSize: "0.72rem", color: "var(--nyx-text-muted)", display: "block", marginBottom: 4 }}>SUGGESTION STYLE</label>
+                <select style={inp} value={prefs.ai.suggestionAggressiveness} onChange={e => setAiPref("suggestionAggressiveness", e.target.value as SuggestionAggressiveness)}>
+                  <option value="minimal">Minimal</option>
+                  <option value="balanced">Balanced</option>
+                  <option value="proactive">Proactive</option>
+                </select>
+              </div>
+            </div>
+            <div style={{ marginBottom: 18 }}>
+              <label style={{ fontSize: "0.72rem", color: "var(--nyx-text-muted)", display: "block", marginBottom: 4 }}>FAVORITE WORKFLOW</label>
+              <input style={inp} value={prefs.ai.favoriteWorkflow} onChange={e => setAiPref("favoriteWorkflow", e.target.value)} placeholder="relationship_reactivation, low_census_recovery, court_strategy" />
+            </div>
+            <div>
+              <div style={{ fontSize: "0.72rem", color: "var(--nyx-text-muted)", marginBottom: 8 }}>PRIORITY REFERRAL CHANNELS</div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                {CHANNEL_OPTIONS.map(([value, label]) => {
+                  const selected = prefs.ai.preferredChannels.includes(value);
+                  return (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => toggleChannel(value)}
+                      style={{
+                        padding: "6px 12px",
+                        borderRadius: 999,
+                        border: `1px solid ${selected ? "var(--nyx-accent-str)" : "var(--nyx-border)"}`,
+                        background: selected ? "var(--nyx-accent-dim)" : "rgba(255,255,255,0.03)",
+                        color: selected ? "var(--nyx-accent)" : "var(--nyx-text-muted)",
+                        cursor: "pointer",
+                        fontSize: "0.75rem",
+                        fontWeight: selected ? 700 : 500,
+                      }}
+                    >
+                      {selected ? "✓ " : ""}{label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </>
+        )}
+      </Section>
+
+      <Section title="Automation Preferences">
+        <p style={{ fontSize: "0.78rem", color: "var(--nyx-text-muted)", marginBottom: 10, lineHeight: 1.65 }}>
+          Choose which automations Aegis should prepare or monitor for you. High-risk actions remain approval-based by design.
+        </p>
+        {([
+          ["followUpReminders", "Follow-Up Reminders", "Notify when leads or opportunities are due or overdue"],
+          ["quietReferralAlerts", "Quiet Referral Alerts", "Flag sending facilities or referral sources that have gone quiet"],
+          ["lowCensusPlaybooks", "Low Census Playbooks", "Generate action plans when census or pipeline softness appears"],
+          ["stageStallAlerts", "Stage Stall Alerts", "Detect opportunities sitting too long in Inquiry, Clinical Review, or Insurance Auth"],
+          ["draftedOutreach", "Drafted Outreach", "Let Aegis generate outreach sequences and follow-up drafts"],
+          ["dailyDigest", "Digest Emails", "Prepare daily or weekly workload summaries"],
+          ["approvalRequiredForOutreach", "Approval Required For Outreach", "Never auto-send relationship or marketing emails without review"],
+        ] as [keyof UserPreferenceState["automations"], string, string][]).map(([key, label, desc]) => (
+          <SettingRow key={key} label={label} desc={desc}>
+            <Toggle checked={prefs.automations[key] as boolean} onChange={v => setAutomationPref(key, v as never)} />
+          </SettingRow>
+        ))}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14, marginTop: 16 }}>
+          <div>
+            <label style={{ fontSize: "0.72rem", color: "var(--nyx-text-muted)", display: "block", marginBottom: 4 }}>DIGEST CADENCE</label>
+            <select style={inp} value={prefs.automations.digestCadence} onChange={e => setAutomationPref("digestCadence", e.target.value as DigestCadence)}>
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly</option>
+            </select>
+          </div>
+        </div>
+      </Section>
+
       {/*  SECURITY / 2FA  */}
       <Section title="Security &amp; Authentication">
         <SettingRow
@@ -1110,6 +1341,7 @@ export default function SettingsClient() {
         gap: 14, marginTop: 32, paddingTop: 20, paddingBottom: 32,
         borderTop: "1px solid var(--nyx-border)",
       }}>
+        {prefsError && <span style={{ fontSize: "0.78rem", color: "#f87171", marginRight: "auto" }}>{prefsError}</span>}
         <button onClick={saveOrg} style={{
           background: saved ? "rgba(52,211,153,0.18)" : "var(--nyx-accent)",
           border: `1px solid ${saved ? "rgba(52,211,153,0.45)" : "transparent"}`,

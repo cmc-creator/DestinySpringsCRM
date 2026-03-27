@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import TerritoryMapWrapper from "@/components/maps/TerritoryMapWrapper";
 import QuickActionsWidget from "@/components/dashboard/QuickActionsWidget";
@@ -263,7 +263,7 @@ export default function DashboardClient({
   soonDocs,
   aegisSummary,
 }: DashboardClientProps) {
-  const statIds = stats.map((s) => s.id);
+  const statIds = useMemo(() => stats.map((s) => s.id), [stats]);
   const [order, setOrder]           = useState<SectionId[]>(ALL_SECTIONS);
   const [statOrder, setStatOrder]   = useState<string[]>(statIds);
   const [hidden, setHidden]         = useState<Set<SectionId>>(new Set());
@@ -298,7 +298,7 @@ export default function DashboardClient({
       if (Array.isArray(parsed.hidden)) setHidden(new Set(parsed.hidden));
       if (Array.isArray(parsed.hiddenStats)) setHiddenStats(new Set(parsed.hiddenStats));
     } catch { /* ignore */ }
-  }, []);
+  }, [statIds]);
 
   const persist = (o: SectionId[], os: string[], h: Set<SectionId>, hs: Set<string>) => {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ order: o, orderStats: os, hidden: [...h], hiddenStats: [...hs] })); } catch { /* ignore */ }
