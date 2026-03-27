@@ -879,7 +879,7 @@ async function importMarketingBudget(rows: Record<string, unknown>[], dryRun = f
   }
 
   for (const row of rows) {
-    let item = normalizeMondayCellText(col(row, "Item", "Item Name", "Budget Item", "Task", "Activity", "Name", "Subitems"));
+    const item = normalizeMondayCellText(col(row, "Item", "Item Name", "Budget Item", "Task", "Activity", "Name", "Subitems"));
     const explicitAccountName = normalizeMondayCellText(col(row, "Account", "Hospital", "Facility", "Company", "Organization", "Account Name", "Client"));
     const explicitPointOfContact = normalizeMondayCellText(col(row, "Point of Contact", "POC", "Contact", "Contact Name", "Person", "Point of contact"));
     const explicitPeriodMonth = normalizeMondayCellText(col(row, "Period", "Month", "Period Month", "Time", "Time Period"));
