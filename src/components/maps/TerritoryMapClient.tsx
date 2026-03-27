@@ -1,5 +1,6 @@
 ﻿"use client";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useSession } from "next-auth/react";
 
 // State center lat/lng lookup
 const STATE_CENTERS: Record<string, [number, number]> = {
@@ -90,6 +91,7 @@ function normalizeSavedViews(raw: unknown): SavedTerritoryView[] {
 }
 
 export default function TerritoryMapClient({ hospitals, repTerritories }: Props) {
+  const { data: session } = useSession();
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<unknown>(null);
   const [repFilter, setRepFilter] = useState<string>(ALL_REPS);
@@ -128,7 +130,7 @@ export default function TerritoryMapClient({ hospitals, repTerritories }: Props)
         if (!response.ok) return null;
         return response.json() as Promise<{ preferences?: unknown }>;
       })
-      .then((data) => {
+      .then(async (data) => {
         if (!active || !data?.preferences || typeof data.preferences !== "object" || Array.isArray(data.preferences)) return;
         const prefRoot = data.preferences as Record<string, unknown>;
         const territory = prefRoot.territory && typeof prefRoot.territory === "object" && !Array.isArray(prefRoot.territory)
@@ -138,12 +140,51 @@ export default function TerritoryMapClient({ hospitals, repTerritories }: Props)
 
         const nextViews = normalizeSavedViews(territory.savedViews);
         const nextDefault = typeof territory.defaultViewId === "string" ? territory.defaultViewId : "";
+        
+        // Apply role-smart defaults on first login
+        let finalDefault = nextDefault;
+        let finalFilter = ALL_REPS;
+        const isFirstLogin = !nextDefault && nextViews.length === 0;
+        
+        if (isFirstLogin && session?.user) {
+          if (session.user.role === "REP" && session.user.name) {
+            // For REP users, auto-select their own territory if available
+            const userRepMatch = repOptions.find((name) => name.toLowerCase() === session.user.name!.toLowerCase());
+            if (userRepMatch) {
+              finalFilter = userRepMatch;
+            }
+          } else if (session.user.role === "ADMIN") {
+            // For ADMIN users, default to All Territories (already the default)
+            finalFilter = ALL_REPS;
+          }
+          
+          // Only persist if we applied a non-default filter
+          if (finalFilter !== ALL_REPS) {
+            await fetch("/api/preferences", {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                preferences: {
+                  territory: {
+                    savedViews: nextViews,
+                    defaultViewId: finalDefault,
+                  },
+                },
+              }),
+            }).catch(() => {
+              // best-effort
+            });
+          }
+        }
+        
         setSavedViews(nextViews);
-        setDefaultViewId(nextDefault);
+        setDefaultViewId(finalDefault);
 
-        const defaultView = nextViews.find((view) => view.id === nextDefault);
+        const defaultView = nextViews.find((view) => view.id === finalDefault);
         if (defaultView && (defaultView.repFilter === ALL_REPS || defaultView.repFilter === UNASSIGNED || repOptions.includes(defaultView.repFilter))) {
           setRepFilter(defaultView.repFilter);
+        } else {
+          setRepFilter(finalFilter);
         }
       })
       .catch(() => {
@@ -153,7 +194,7 @@ export default function TerritoryMapClient({ hospitals, repTerritories }: Props)
     return () => {
       active = false;
     };
-  }, [repOptions]);
+  }, [repOptions, session?.user.role, session?.user.name]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
