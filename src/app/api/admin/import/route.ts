@@ -810,7 +810,7 @@ async function importMarketingBudget(rows: Record<string, unknown>[], dryRun = f
   const preview: PreviewSample[] = [];
 
   for (const row of rows) {
-    let item = col(row, "Item", "Item Name", "Budget Item", "Task", "Activity", "Name");
+    let item = col(row, "Item", "Item Name", "Budget Item", "Task", "Activity", "Name", "Subitems");
     item = normalizeMondayCellText(item);
     if (!item) {
       skipped++;
@@ -830,7 +830,7 @@ async function importMarketingBudget(rows: Record<string, unknown>[], dryRun = f
 
     // Match hospital
     const hospital = await prisma.hospital.findFirst({
-      where: { hospitalName: { contains: accountName, mode: "insensitive" } },
+      where: { hospitalName: { equals: accountName, mode: "insensitive" } },
     });
 
     if (!hospital) {
@@ -840,9 +840,9 @@ async function importMarketingBudget(rows: Record<string, unknown>[], dryRun = f
       continue;
     }
 
-    const pointOfContact = normalizeMondayCellText(col(row, "Point of Contact", "POC", "Contact", "Contact Name", "Person"));
+    const pointOfContact = normalizeMondayCellText(col(row, "Point of Contact", "POC", "Contact", "Contact Name", "Person", "Point of contact"));
     const periodMonth = normalizeMondayCellText(col(row, "Period", "Month", "Period Month", "Time", "Time Period"));
-    const startDateStr = col(row, "Start Date", "Date", "Due Date", "Timeline", "Activities timeline");
+    const startDateStr = col(row, "Start Date", "Date", "Due Date", "Timeline", "Activities timeline", "Start Date - Start");
     const startDate = startDateStr ? new Date(startDateStr) : undefined;
 
     // Parse budget amounts
