@@ -1,5 +1,5 @@
 ﻿"use client";
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 // State center lat/lng lookup
 const STATE_CENTERS: Record<string, [number, number]> = {
@@ -68,15 +68,74 @@ function jitter(seed: number, range: number) {
   return ((a - Math.floor(a)) - 0.5) * range * 2;
 }
 
+const ALL_REPS = "__all__";
+const UNASSIGNED = "__unassigned__";
+
 export default function TerritoryMapClient({ hospitals, repTerritories }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<unknown>(null);
+  const [repFilter, setRepFilter] = useState<string>(ALL_REPS);
+
+  const repOptions = useMemo(() => {
+    const names = new Set<string>();
+    repTerritories.forEach((rep) => {
+      if (rep.name?.trim()) names.add(rep.name.trim());
+    });
+    hospitals.forEach((h) => {
+      if (h.assignedRepName?.trim()) names.add(h.assignedRepName.trim());
+    });
+    return [...names].sort((a, b) => a.localeCompare(b));
+  }, [hospitals, repTerritories]);
+
+  const hasUnassigned = useMemo(
+    () => hospitals.some((h) => !h.assignedRepName?.trim()),
+    [hospitals]
+  );
 
   useEffect(() => {
-    if (!containerRef.current || mapRef.current) return;
+    if (typeof window === "undefined") return;
+    const key = `nyx-map-rep-filter:${window.location.pathname}`;
+    const stored = localStorage.getItem(key);
+    if (!stored) return;
+    if (stored === ALL_REPS || stored === UNASSIGNED || repOptions.includes(stored)) {
+      setRepFilter(stored);
+    }
+  }, [repOptions]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const key = `nyx-map-rep-filter:${window.location.pathname}`;
+    localStorage.setItem(key, repFilter);
+  }, [repFilter]);
+
+  const filteredHospitals = useMemo(() => {
+    if (repFilter === ALL_REPS) return hospitals;
+    if (repFilter === UNASSIGNED) {
+      return hospitals.filter((h) => !h.assignedRepName?.trim());
+    }
+    return hospitals.filter((h) => h.assignedRepName?.trim() === repFilter);
+  }, [hospitals, repFilter]);
+
+  const filteredTerritories = useMemo(() => {
+    if (repFilter === ALL_REPS) return repTerritories;
+    if (repFilter === UNASSIGNED) return [];
+    return repTerritories.filter((rep) => rep.name?.trim() === repFilter);
+  }, [repFilter, repTerritories]);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    if (mapRef.current) {
+      (mapRef.current as { remove: () => void }).remove();
+      mapRef.current = null;
+    }
+
+    let cancelled = false;
 
     // Dynamically require leaflet to avoid SSR issues
     import("leaflet").then(L => {
+      if (cancelled || !containerRef.current) return;
+
       // Fix default icon paths
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -103,7 +162,7 @@ export default function TerritoryMapClient({ hospitals, repTerritories }: Props)
       }).addTo(map);
 
       // Draw state territory fills per rep
-      repTerritories.forEach(rep => {
+      filteredTerritories.forEach(rep => {
         rep.states.forEach(state => {
           const normalizedState = normalizeStateCode(state);
           if (!normalizedState) return;
@@ -120,21 +179,13 @@ export default function TerritoryMapClient({ hospitals, repTerritories }: Props)
         });
       });
 
-      // State label markers
-      const stateAssignments = new Map<string, string>();
-      repTerritories.forEach(rep => rep.states.forEach(s => stateAssignments.set(s, rep.name)));
-
       const referralLegend = new Map<string, string>();
 
       // Hospital markers
-      const stateCounts = new Map<string, number>();
-      hospitals.forEach((h, idx) => {
+      filteredHospitals.forEach((h, idx) => {
         const state = normalizeStateCode(h.state) ?? "";
         const center = STATE_CENTERS[state];
         if (!center) return;
-
-        const count = stateCounts.get(state) ?? 0;
-        stateCounts.set(state, count + 1);
 
         const lat = center[0] + jitter(idx * 3, 0.6);
         const lng = center[1] + jitter(idx * 3 + 1, 0.8);
@@ -192,18 +243,41 @@ export default function TerritoryMapClient({ hospitals, repTerritories }: Props)
     });
 
     return () => {
+      cancelled = true;
       if (mapRef.current) {
         (mapRef.current as { remove: () => void }).remove();
         mapRef.current = null;
       }
     };
-  }, [hospitals, repTerritories]);
+  }, [filteredHospitals, filteredTerritories]);
 
   return (
-    <>
+    <div style={{ position: "relative" }}>
+      {(repOptions.length > 1 || hasUnassigned) && (
+        <div style={{ position: "absolute", top: 10, right: 10, zIndex: 500, background: "rgba(10,18,35,0.9)", border: "1px solid var(--nyx-accent-mid)", borderRadius: 8, padding: "8px 10px", minWidth: 210 }}>
+          <label htmlFor="territory-map-filter" style={{ display: "block", color: "var(--nyx-accent-label)", fontSize: "0.62rem", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 4 }}>
+            View Territory
+          </label>
+          <select
+            id="territory-map-filter"
+            value={repFilter}
+            onChange={(event) => setRepFilter(event.target.value)}
+            style={{ width: "100%", background: "rgba(0,0,0,0.35)", color: "var(--nyx-text)", border: "1px solid var(--nyx-accent-dim)", borderRadius: 6, padding: "6px 8px", fontSize: "0.75rem" }}
+          >
+            <option value={ALL_REPS}>All Territories</option>
+            {repOptions.map((name) => (
+              <option key={name} value={name}>{name}</option>
+            ))}
+            {hasUnassigned && <option value={UNASSIGNED}>Unassigned Only</option>}
+          </select>
+          <div style={{ marginTop: 6, color: "var(--nyx-text-muted)", fontSize: "0.67rem" }}>
+            Showing {filteredHospitals.length} location{filteredHospitals.length === 1 ? "" : "s"}
+          </div>
+        </div>
+      )}
       {/* Leaflet CSS */}
       <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
       <div ref={containerRef} style={{ width: "100%", height: "clamp(300px, 50vh, 620px)", borderRadius: 10, overflow: "hidden" }} />
-    </>
+    </div>
   );
 }
