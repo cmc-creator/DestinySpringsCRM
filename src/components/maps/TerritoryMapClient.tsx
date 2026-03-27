@@ -92,6 +92,9 @@ function normalizeSavedViews(raw: unknown): SavedTerritoryView[] {
 
 export default function TerritoryMapClient({ hospitals, repTerritories }: Props) {
   const { data: session } = useSession();
+  const sessionUser = session?.user;
+  const sessionRole = sessionUser?.role;
+  const sessionName = sessionUser?.name;
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<unknown>(null);
   const [repFilter, setRepFilter] = useState<string>(ALL_REPS);
@@ -142,18 +145,18 @@ export default function TerritoryMapClient({ hospitals, repTerritories }: Props)
         const nextDefault = typeof territory.defaultViewId === "string" ? territory.defaultViewId : "";
         
         // Apply role-smart defaults on first login
-        let finalDefault = nextDefault;
+        const finalDefault = nextDefault;
         let finalFilter = ALL_REPS;
         const isFirstLogin = !nextDefault && nextViews.length === 0;
         
-        if (isFirstLogin && session?.user) {
-          if (session.user.role === "REP" && session.user.name) {
+        if (isFirstLogin && sessionUser) {
+          if (sessionRole === "REP" && sessionName) {
             // For REP users, auto-select their own territory if available
-            const userRepMatch = repOptions.find((name) => name.toLowerCase() === session.user.name!.toLowerCase());
+            const userRepMatch = repOptions.find((name) => name.toLowerCase() === sessionName.toLowerCase());
             if (userRepMatch) {
               finalFilter = userRepMatch;
             }
-          } else if (session.user.role === "ADMIN") {
+          } else if (sessionRole === "ADMIN") {
             // For ADMIN users, default to All Territories (already the default)
             finalFilter = ALL_REPS;
           }
@@ -194,7 +197,7 @@ export default function TerritoryMapClient({ hospitals, repTerritories }: Props)
     return () => {
       active = false;
     };
-  }, [repOptions, session?.user.role, session?.user.name]);
+  }, [repOptions, sessionUser, sessionRole, sessionName]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
