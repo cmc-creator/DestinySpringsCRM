@@ -1010,7 +1010,7 @@ async function importMarketingBudget(rows: Record<string, unknown>[], dryRun = f
           await prisma.$executeRaw(
             Prisma.sql`
               UPDATE marketing_budgets
-              SET ${Prisma.join(updates, Prisma.sql`, `)}
+              SET ${Prisma.join(updates, ", ")}
               WHERE id = ${existingBudget.id}
             `,
           );
