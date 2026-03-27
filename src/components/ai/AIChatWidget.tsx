@@ -24,8 +24,7 @@ type ActionProposal = {
     | "create_opportunity"
     | "update_opportunity"
     | "delete_opportunity"
-    | "create_activity"
-    | "update_referral_source";
+    | "create_activity";
   targetId?: string;
   data?: Record<string, unknown>;
   rationale?: string;
@@ -191,7 +190,7 @@ export default function AIChatWidget() {
     } finally {
       setLoading(false);
     }
-  }, [input, loading, messages, allowEdits]);
+  }, [input, loading, messages, allowEdits, pathname, ttsEnabled]);
 
   const startMic = () => {
     const Ctor = window.SpeechRecognition ?? window.webkitSpeechRecognition;
@@ -532,6 +531,14 @@ export default function AIChatWidget() {
                 <div style={{ fontSize: "0.78rem", color: TEXT, marginBottom: 8 }}>
                   {proposal.intent.replaceAll("_", " ")}
                   {proposal.targetId ? ` (${proposal.targetId})` : ""}
+                </div>
+                {proposal.rationale && (
+                  <div style={{ fontSize: "0.72rem", color: MUTED, lineHeight: 1.55, marginBottom: 8 }}>
+                    {proposal.rationale}
+                  </div>
+                )}
+                <div style={{ fontSize: "0.68rem", color: "rgba(216,232,244,0.5)", marginBottom: 8 }}>
+                  AI actions require your review and are recorded in the audit log.
                 </div>
                 <div style={{ display: "flex", gap: 8 }}>
                   <button

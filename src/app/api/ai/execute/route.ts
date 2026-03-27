@@ -42,6 +42,7 @@ async function logAudit(args: {
   resource: string;
   resourceId?: string;
   diff?: unknown;
+  ip?: string | null;
 }) {
   try {
     await prisma.auditLog.create({
@@ -53,6 +54,7 @@ async function logAudit(args: {
         resource: args.resource,
         resourceId: args.resourceId,
         diff: (args.diff ?? null) as never,
+        ip: args.ip ?? null,
       },
     });
   } catch {
@@ -75,6 +77,13 @@ export async function POST(req: NextRequest) {
   if (isDelete && !body.confirmedDelete) {
     return NextResponse.json({ error: "Delete requires explicit confirmation", requiresDeleteConfirmation: true }, { status: 400 });
   }
+
+  const requestIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? req.headers.get("x-real-ip") ?? null;
+  const auditMeta = {
+    source: "AEGIS_AI",
+    intent: body.intent,
+    confirmedDelete: Boolean(body.confirmedDelete),
+  };
 
   try {
     switch (body.intent) {
@@ -103,7 +112,7 @@ export async function POST(req: NextRequest) {
             notes: data.notes ?? null,
           },
         });
-        await logAudit({ userId: session.user.id, userEmail: session.user.email, userName: session.user.name, action: "CREATE", resource: "Referral", resourceId: created.id, diff: { after: created } });
+        await logAudit({ userId: session.user.id, userEmail: session.user.email, userName: session.user.name, action: "CREATE", resource: "Referral", resourceId: created.id, diff: { _meta: auditMeta, after: created }, ip: requestIp });
         return NextResponse.json({ ok: true, result: created, summary: `Created referral ${created.id}` });
       }
 
@@ -130,7 +139,7 @@ export async function POST(req: NextRequest) {
             ...(data.notes !== undefined ? { notes: data.notes } : {}),
           },
         });
-        await logAudit({ userId: session.user.id, userEmail: session.user.email, userName: session.user.name, action: "UPDATE", resource: "Referral", resourceId: updated.id, diff: { before, after: updated } });
+        await logAudit({ userId: session.user.id, userEmail: session.user.email, userName: session.user.name, action: "UPDATE", resource: "Referral", resourceId: updated.id, diff: { _meta: auditMeta, before, after: updated }, ip: requestIp });
         return NextResponse.json({ ok: true, result: updated, summary: `Updated referral ${updated.id}` });
       }
 
@@ -138,7 +147,7 @@ export async function POST(req: NextRequest) {
         if (!body.targetId) return NextResponse.json({ error: "targetId is required" }, { status: 400 });
         const before = await prisma.referral.findUnique({ where: { id: body.targetId } });
         await prisma.referral.delete({ where: { id: body.targetId } });
-        await logAudit({ userId: session.user.id, userEmail: session.user.email, userName: session.user.name, action: "DELETE", resource: "Referral", resourceId: body.targetId, diff: { before } });
+        await logAudit({ userId: session.user.id, userEmail: session.user.email, userName: session.user.name, action: "DELETE", resource: "Referral", resourceId: body.targetId, diff: { _meta: auditMeta, before }, ip: requestIp });
         return NextResponse.json({ ok: true, summary: `Deleted referral ${body.targetId}` });
       }
 
@@ -164,7 +173,7 @@ export async function POST(req: NextRequest) {
             notes: (data.notes as string | undefined) ?? null,
           },
         });
-        await logAudit({ userId: session.user.id, userEmail: session.user.email, userName: session.user.name, action: "CREATE", resource: "ReferralSource", resourceId: created.id, diff: { after: created } });
+        await logAudit({ userId: session.user.id, userEmail: session.user.email, userName: session.user.name, action: "CREATE", resource: "ReferralSource", resourceId: created.id, diff: { _meta: auditMeta, after: created }, ip: requestIp });
         return NextResponse.json({ ok: true, result: created, summary: `Created referral source ${created.name}` });
       }
 
@@ -193,7 +202,7 @@ export async function POST(req: NextRequest) {
             ...(data.active !== undefined ? { active: Boolean(data.active) } : {}),
           } as never,
         });
-        await logAudit({ userId: session.user.id, userEmail: session.user.email, userName: session.user.name, action: "UPDATE", resource: "ReferralSource", resourceId: updated.id, diff: { before, after: updated } });
+        await logAudit({ userId: session.user.id, userEmail: session.user.email, userName: session.user.name, action: "UPDATE", resource: "ReferralSource", resourceId: updated.id, diff: { _meta: auditMeta, before, after: updated }, ip: requestIp });
         return NextResponse.json({ ok: true, result: updated, summary: `Updated referral source ${updated.name}` });
       }
 
@@ -201,7 +210,7 @@ export async function POST(req: NextRequest) {
         if (!body.targetId) return NextResponse.json({ error: "targetId is required" }, { status: 400 });
         const before = await prisma.referralSource.findUnique({ where: { id: body.targetId } });
         await prisma.referralSource.delete({ where: { id: body.targetId } });
-        await logAudit({ userId: session.user.id, userEmail: session.user.email, userName: session.user.name, action: "DELETE", resource: "ReferralSource", resourceId: body.targetId, diff: { before } });
+        await logAudit({ userId: session.user.id, userEmail: session.user.email, userName: session.user.name, action: "DELETE", resource: "ReferralSource", resourceId: body.targetId, diff: { _meta: auditMeta, before }, ip: requestIp });
         return NextResponse.json({ ok: true, summary: `Deleted referral source ${body.targetId}` });
       }
 
@@ -230,7 +239,7 @@ export async function POST(req: NextRequest) {
             assignedRepId: (data.assignedRepId as string | undefined) ?? null,
           },
         });
-        await logAudit({ userId: session.user.id, userEmail: session.user.email, userName: session.user.name, action: "CREATE", resource: "Lead", resourceId: created.id, diff: { after: created } });
+        await logAudit({ userId: session.user.id, userEmail: session.user.email, userName: session.user.name, action: "CREATE", resource: "Lead", resourceId: created.id, diff: { _meta: auditMeta, after: created }, ip: requestIp });
         return NextResponse.json({ ok: true, result: created, summary: `Created lead ${created.hospitalName}` });
       }
 
@@ -261,7 +270,7 @@ export async function POST(req: NextRequest) {
             ...(data.assignedRepId !== undefined ? { assignedRepId: data.assignedRepId as string | null } : {}),
           } as never,
         });
-        await logAudit({ userId: session.user.id, userEmail: session.user.email, userName: session.user.name, action: "UPDATE", resource: "Lead", resourceId: updated.id, diff: { before, after: updated } });
+        await logAudit({ userId: session.user.id, userEmail: session.user.email, userName: session.user.name, action: "UPDATE", resource: "Lead", resourceId: updated.id, diff: { _meta: auditMeta, before, after: updated }, ip: requestIp });
         return NextResponse.json({ ok: true, result: updated, summary: `Updated lead ${updated.id}` });
       }
 
@@ -269,7 +278,7 @@ export async function POST(req: NextRequest) {
         if (!body.targetId) return NextResponse.json({ error: "targetId is required" }, { status: 400 });
         const before = await prisma.lead.findUnique({ where: { id: body.targetId } });
         await prisma.lead.delete({ where: { id: body.targetId } });
-        await logAudit({ userId: session.user.id, userEmail: session.user.email, userName: session.user.name, action: "DELETE", resource: "Lead", resourceId: body.targetId, diff: { before } });
+        await logAudit({ userId: session.user.id, userEmail: session.user.email, userName: session.user.name, action: "DELETE", resource: "Lead", resourceId: body.targetId, diff: { _meta: auditMeta, before }, ip: requestIp });
         return NextResponse.json({ ok: true, summary: `Deleted lead ${body.targetId}` });
       }
 
@@ -290,7 +299,7 @@ export async function POST(req: NextRequest) {
             notes: (data.notes as string | undefined) ?? null,
           },
         });
-        await logAudit({ userId: session.user.id, userEmail: session.user.email, userName: session.user.name, action: "CREATE", resource: "Opportunity", resourceId: created.id, diff: { after: created } });
+        await logAudit({ userId: session.user.id, userEmail: session.user.email, userName: session.user.name, action: "CREATE", resource: "Opportunity", resourceId: created.id, diff: { _meta: auditMeta, after: created }, ip: requestIp });
         return NextResponse.json({ ok: true, result: created, summary: `Created opportunity ${created.title}` });
       }
 
@@ -313,7 +322,7 @@ export async function POST(req: NextRequest) {
             ...(data.notes !== undefined ? { notes: data.notes as string | null } : {}),
           } as never,
         });
-        await logAudit({ userId: session.user.id, userEmail: session.user.email, userName: session.user.name, action: "UPDATE", resource: "Opportunity", resourceId: updated.id, diff: { before, after: updated } });
+        await logAudit({ userId: session.user.id, userEmail: session.user.email, userName: session.user.name, action: "UPDATE", resource: "Opportunity", resourceId: updated.id, diff: { _meta: auditMeta, before, after: updated }, ip: requestIp });
         return NextResponse.json({ ok: true, result: updated, summary: `Updated opportunity ${updated.id}` });
       }
 
@@ -321,7 +330,7 @@ export async function POST(req: NextRequest) {
         if (!body.targetId) return NextResponse.json({ error: "targetId is required" }, { status: 400 });
         const before = await prisma.opportunity.findUnique({ where: { id: body.targetId } });
         await prisma.opportunity.delete({ where: { id: body.targetId } });
-        await logAudit({ userId: session.user.id, userEmail: session.user.email, userName: session.user.name, action: "DELETE", resource: "Opportunity", resourceId: body.targetId, diff: { before } });
+        await logAudit({ userId: session.user.id, userEmail: session.user.email, userName: session.user.name, action: "DELETE", resource: "Opportunity", resourceId: body.targetId, diff: { _meta: auditMeta, before }, ip: requestIp });
         return NextResponse.json({ ok: true, summary: `Deleted opportunity ${body.targetId}` });
       }
 
@@ -344,7 +353,7 @@ export async function POST(req: NextRequest) {
             createdByUserId: session.user.id,
           },
         });
-        await logAudit({ userId: session.user.id, userEmail: session.user.email, userName: session.user.name, action: "CREATE", resource: "Activity", resourceId: created.id, diff: { after: created } });
+        await logAudit({ userId: session.user.id, userEmail: session.user.email, userName: session.user.name, action: "CREATE", resource: "Activity", resourceId: created.id, diff: { _meta: auditMeta, after: created }, ip: requestIp });
         return NextResponse.json({ ok: true, result: created, summary: `Logged activity: ${created.type}${created.title ? ` - ${created.title}` : ""}` });
       }
 
