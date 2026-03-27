@@ -738,7 +738,7 @@ async function importLeads(rows: Record<string, unknown>[], dryRun = false, dupl
     const estValueStr = col(row, "Estimated Value", "Value", "Est Value", "Potential Value");
     const estimatedValue = estValueStr ? parseFloat(estValueStr) : undefined;
     const notes = normalizeMondayCellText(col(row, "Notes", "Description", "Comments", "Details"));
-    const lastInteractionStr = col(row, "Last Interaction", "Last Activity", "Last Contact", "Last Touchpoint", "Last Date");
+    const _lastInteractionStr = col(row, "Last Interaction", "Last Activity", "Last Contact", "Last Touchpoint", "Last Date");
 
     // Detect duplicates by hospitalName
     let existingLead = null;
@@ -776,10 +776,11 @@ async function importLeads(rows: Record<string, unknown>[], dryRun = false, dupl
     } else {
       try {
         if (!dryRun) {
+          const leadStatus: "NEW" | "CONTACTED" | "QUALIFIED" = status.toUpperCase() === "QUALIFIED" ? "QUALIFIED" : status.toUpperCase() === "CONTACTED" ? "CONTACTED" : "NEW";
           await prisma.lead.create({
             data: {
               hospitalName,
-              status: (status.toUpperCase() === "QUALIFIED" ? "QUALIFIED" : status.toUpperCase() === "CONTACTED" ? "CONTACTED" : "NEW") as any,
+              status: leadStatus,
               contactName: contactName || undefined,
               contactEmail: contactEmail || undefined,
               contactPhone: contactPhone || undefined,
