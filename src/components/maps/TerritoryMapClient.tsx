@@ -16,6 +16,33 @@ const STATE_CENTERS: Record<string, [number, number]> = {
   DC:[38.9,-77.0],
 };
 
+const STATE_NAME_TO_CODE: Record<string, string> = {
+  ALABAMA: "AL", ALASKA: "AK", ARIZONA: "AZ", ARKANSAS: "AR", CALIFORNIA: "CA",
+  COLORADO: "CO", CONNECTICUT: "CT", DELAWARE: "DE", FLORIDA: "FL", GEORGIA: "GA",
+  HAWAII: "HI", IDAHO: "ID", ILLINOIS: "IL", INDIANA: "IN", IOWA: "IA",
+  KANSAS: "KS", KENTUCKY: "KY", LOUISIANA: "LA", MAINE: "ME", MARYLAND: "MD",
+  MASSACHUSETTS: "MA", MICHIGAN: "MI", MINNESOTA: "MN", MISSISSIPPI: "MS", MISSOURI: "MO",
+  MONTANA: "MT", NEBRASKA: "NE", NEVADA: "NV", "NEW HAMPSHIRE": "NH", "NEW JERSEY": "NJ",
+  "NEW MEXICO": "NM", "NEW YORK": "NY", "NORTH CAROLINA": "NC", "NORTH DAKOTA": "ND", OHIO: "OH",
+  OKLAHOMA: "OK", OREGON: "OR", PENNSYLVANIA: "PA", "RHODE ISLAND": "RI", "SOUTH CAROLINA": "SC",
+  "SOUTH DAKOTA": "SD", TENNESSEE: "TN", TEXAS: "TX", UTAH: "UT", VERMONT: "VT",
+  VIRGINIA: "VA", WASHINGTON: "WA", "WEST VIRGINIA": "WV", WISCONSIN: "WI", WYOMING: "WY",
+  "DISTRICT OF COLUMBIA": "DC",
+};
+
+function normalizeStateCode(rawState: string | null | undefined): string | null {
+  if (!rawState) return null;
+  const value = rawState.trim();
+  if (!value) return null;
+
+  const upper = value.toUpperCase();
+  const directCode = upper.match(/\b([A-Z]{2})\b/);
+  if (directCode && STATE_CENTERS[directCode[1]]) return directCode[1];
+
+  const cleanedName = upper.replace(/[^A-Z ]/g, " ").replace(/\s+/g, " ").trim();
+  return STATE_NAME_TO_CODE[cleanedName] ?? null;
+}
+
 type HospStatus = "PROSPECT" | "ACTIVE" | "INACTIVE" | string;
 interface MapHospital {
   id: string; hospitalName: string; city?: string | null; state?: string | null;
@@ -78,7 +105,9 @@ export default function TerritoryMapClient({ hospitals, repTerritories }: Props)
       // Draw state territory fills per rep
       repTerritories.forEach(rep => {
         rep.states.forEach(state => {
-          const center = STATE_CENTERS[state];
+          const normalizedState = normalizeStateCode(state);
+          if (!normalizedState) return;
+          const center = STATE_CENTERS[normalizedState];
           if (!center) return;
           L.circle(center, {
             radius: 180000,
@@ -100,7 +129,7 @@ export default function TerritoryMapClient({ hospitals, repTerritories }: Props)
       // Hospital markers
       const stateCounts = new Map<string, number>();
       hospitals.forEach((h, idx) => {
-        const state = h.state ?? "";
+        const state = normalizeStateCode(h.state) ?? "";
         const center = STATE_CENTERS[state];
         if (!center) return;
 
