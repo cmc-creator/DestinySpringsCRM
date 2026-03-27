@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import * as XLSX from "xlsx";
 
 export const maxDuration = 60;
@@ -759,7 +760,7 @@ async function importLeads(rows: Record<string, unknown>[], dryRun = false, dupl
               ...(contactPhone && { contactPhone }),
               ...(contactTitle && { contactTitle }),
               ...(serviceInterest && { serviceInterest }),
-              ...(estimatedValue && { estimatedValue: new prisma.Prisma.Decimal(estimatedValue) }),
+              ...(estimatedValue && { estimatedValue: new Prisma.Decimal(estimatedValue) }),
               ...(notes && { notes }),
             },
           });
@@ -786,7 +787,7 @@ async function importLeads(rows: Record<string, unknown>[], dryRun = false, dupl
               contactPhone: contactPhone || undefined,
               contactTitle: contactTitle || undefined,
               serviceInterest: serviceInterest || undefined,
-              estimatedValue: estimatedValue ? new prisma.Prisma.Decimal(estimatedValue) : undefined,
+              estimatedValue: estimatedValue ? new Prisma.Decimal(estimatedValue) : undefined,
               notes: notes || undefined,
             },
           });
@@ -876,11 +877,11 @@ async function importMarketingBudget(rows: Record<string, unknown>[], dryRun = f
           await prisma.marketingBudget.update({
             where: { id: existingBudget.id },
             data: {
-              marketingMeals: new prisma.Prisma.Decimal(marketingMeals),
-              marketingSupplies: new prisma.Prisma.Decimal(marketingSupplies),
-              marketingEvents: new prisma.Prisma.Decimal(marketingEvents),
-              actualSpend: new prisma.Prisma.Decimal(actualSpend),
-              budgeted: new prisma.Prisma.Decimal(budgeted),
+              marketingMeals: new Prisma.Decimal(marketingMeals),
+              marketingSupplies: new Prisma.Decimal(marketingSupplies),
+              marketingEvents: new Prisma.Decimal(marketingEvents),
+              actualSpend: new Prisma.Decimal(actualSpend),
+              budgeted: new Prisma.Decimal(budgeted),
               ...(pointOfContact && { pointOfContact }),
               ...(startDate && { startDate }),
             },
@@ -905,11 +906,11 @@ async function importMarketingBudget(rows: Record<string, unknown>[], dryRun = f
               pointOfContact: pointOfContact || undefined,
               periodMonth: periodMonth || undefined,
               startDate: startDate || undefined,
-              marketingMeals: new prisma.Prisma.Decimal(marketingMeals),
-              marketingSupplies: new prisma.Prisma.Decimal(marketingSupplies),
-              marketingEvents: new prisma.Prisma.Decimal(marketingEvents),
-              actualSpend: new prisma.Prisma.Decimal(actualSpend),
-              budgeted: new prisma.Prisma.Decimal(budgeted),
+              marketingMeals: new Prisma.Decimal(marketingMeals),
+              marketingSupplies: new Prisma.Decimal(marketingSupplies),
+              marketingEvents: new Prisma.Decimal(marketingEvents),
+              actualSpend: new Prisma.Decimal(actualSpend),
+              budgeted: new Prisma.Decimal(budgeted),
             },
           });
         }
