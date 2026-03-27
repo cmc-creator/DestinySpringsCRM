@@ -355,6 +355,7 @@ async function importAccounts(rows: Record<string, unknown>[], dryRun = false, d
     const contactTitle = normalizeMondayCellText(col(row, "Contact Title", "Primary Contact Title", "Title"));
     const contactEmail = normalizeMondayCellText(col(row, "Contact Email", "Primary Email", "Email", "E-mail"));
     const contactPhone = normalizeMondayCellText(col(row, "Contact Phone", "Primary Phone"));
+    const portalEmail = normalizeMondayCellText(col(row, "Portal Email", "Portal Login Email", "Login Email", "User Email", "Account Portal Email"));
 
     try {
       const existing = await prisma.hospital.findFirst({
@@ -401,37 +402,66 @@ async function importAccounts(rows: Record<string, unknown>[], dryRun = false, d
         continue;
       }
 
+      if (!portalEmail) {
+        skipped++;
+        skipReasons["new facility requires portal email - use Referral Sources for network accounts"] = (skipReasons["new facility requires portal email - use Referral Sources for network accounts"] ?? 0) + 1;
+        if (preview.length < MAX_PREVIEW) {
+          preview.push({
+            action: "skip",
+            reason: "new facility requires portal email",
+            fields: Object.fromEntries([
+              ["Name", name], ["Primary Contact", contactName], ["Contact Email", contactEmail],
+            ].filter(([, v]) => v)),
+          });
+        }
+        continue;
+      }
+
+      const existingPortalUser = await prisma.user.findUnique({ where: { email: portalEmail } });
+      if (existingPortalUser) {
+        skipped++;
+        skipReasons["portal email already exists"] = (skipReasons["portal email already exists"] ?? 0) + 1;
+        if (preview.length < MAX_PREVIEW) {
+          preview.push({ action: "skip", reason: "portal email already exists", fields: { Name: name, "Portal Email": portalEmail } });
+        }
+        continue;
+      }
+
       if (!dryRun) {
-        await prisma.hospital.create({
-          data: {
-            hospitalName: name,
-            city: city || undefined,
-            state: state || undefined,
-            zip: zip || undefined,
-            npi: npi || undefined,
-            bedCount: beds ? parseInt(beds) || undefined : undefined,
-            notes: notes || undefined,
-            primaryContactName: contactName || undefined,
-            primaryContactTitle: contactTitle || undefined,
-            primaryContactEmail: contactEmail || undefined,
-            primaryContactPhone: contactPhone || phone || undefined,
-            hospitalType: mapFacilityType(type),
-            status: "PROSPECT",
-            user: {
-              create: {
-                email: `imported-${Date.now()}-${Math.random().toString(36).slice(2, 9)}@noreply.import`,
-                name: contactName || name,
-                role: "ACCOUNT",
-              },
+        await prisma.$transaction(async (tx) => {
+          const user = await tx.user.create({
+            data: {
+              email: portalEmail,
+              name: contactName || name,
+              role: "ACCOUNT",
             },
-          },
+          });
+
+          await tx.hospital.create({
+            data: {
+              userId: user.id,
+              hospitalName: name,
+              city: city || undefined,
+              state: state || undefined,
+              zip: zip || undefined,
+              npi: npi || undefined,
+              bedCount: beds ? parseInt(beds) || undefined : undefined,
+              notes: notes || undefined,
+              primaryContactName: contactName || undefined,
+              primaryContactTitle: contactTitle || undefined,
+              primaryContactEmail: contactEmail || undefined,
+              primaryContactPhone: contactPhone || phone || undefined,
+              hospitalType: mapFacilityType(type),
+              status: "PROSPECT",
+            },
+          });
         });
       }
       created++;
       if (preview.length < MAX_PREVIEW) {
         preview.push({ action: "create", fields: Object.fromEntries([
           ["Name", name], ["City", city], ["State", state], ["Phone", phone],
-          ["NPI", npi], ["Beds", beds], ["Primary Contact", contactName],
+          ["NPI", npi], ["Beds", beds], ["Primary Contact", contactName], ["Portal Email", portalEmail],
         ].filter(([, v]) => v)) });
       }
     } catch (e) {

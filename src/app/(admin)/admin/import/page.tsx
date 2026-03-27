@@ -40,7 +40,7 @@ const IMPORT_TYPES: { value: ImportType; label: string; hint: string; badge: str
     value: "accounts",
     label: "Facilities / Accounts",
     badge: "ACCOUNTS",
-    hint: "Import referral sources and sending facility records. Expected columns: Account Name, Billing City, Billing State, Phone, NPI, Primary Contact, etc.",
+    hint: "Import only true facility portal accounts. New rows must include a Portal Email because this creates a linked account-portal user. For field network and referral relationships, use Referral Sources instead.",
   },
   {
     value: "contacts",
