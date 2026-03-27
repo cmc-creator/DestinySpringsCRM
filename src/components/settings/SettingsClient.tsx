@@ -899,6 +899,7 @@ export default function SettingsClient() {
   const isAdmin = session?.user?.role === "ADMIN";
   const isProduction = process.env.NODE_ENV === "production";
   const roleLabel = session?.user?.role === "REP" ? "Rep" : session?.user?.role === "ACCOUNT" ? "Account" : "Admin";
+  const isAccountRole = session?.user?.role === "ACCOUNT";
   const [activeTheme, setActiveTheme]     = useState("luxury");
   const [orgName, setOrgName]             = useState("Destiny Springs Healthcare");
   const [supportEmail, setSupportEmail]   = useState("intake@destinysprings.com");
@@ -1124,8 +1125,8 @@ export default function SettingsClient() {
     <div style={{ maxWidth: 740, paddingBottom: 40 }}>
       <div style={{ marginBottom: 32 }}>
         <p style={{ color: "var(--nyx-accent)", opacity: 0.55, fontSize: "0.68rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 4 }}>CONFIGURATION</p>
-        <h1 style={{ fontSize: "1.9rem", fontWeight: 900, color: "var(--nyx-text)", letterSpacing: "-0.025em" }}>Settings</h1>
-        <p style={{ color: "var(--nyx-text-muted)", fontSize: "0.875rem", marginTop: 5 }}>Appearance, organization, notifications, and developer tools</p>
+        <h1 style={{ fontSize: "1.9rem", fontWeight: 900, color: "var(--nyx-text)", letterSpacing: "-0.025em" }}>{isAccountRole ? "My Account" : "Settings"}</h1>
+        <p style={{ color: "var(--nyx-text-muted)", fontSize: "0.875rem", marginTop: 5 }}>{isAccountRole ? "Personal preferences, security, and account-level settings" : "Appearance, organization, notifications, and developer tools"}</p>
       </div>
 
       {/*  THEMES  */}
