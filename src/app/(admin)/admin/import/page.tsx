@@ -1,11 +1,11 @@
 "use client";
 import React, { useState, useRef } from "react";
 
-type ImportType = "accounts" | "contacts" | "activities" | "leads" | "marketingbudget";
+type ImportType = "accounts" | "contacts" | "activities" | "leads" | "referralsources" | "marketingbudget";
 type DuplicateMode = "skip" | "update";
 
 function defaultDuplicateModeForType(type: ImportType): DuplicateMode {
-  if (type === "accounts" || type === "leads") return "update";
+  if (type === "accounts" || type === "leads" || type === "referralsources") return "update";
   return "skip";
 }
 
@@ -14,6 +14,7 @@ function duplicateModeLabel(type: ImportType): string {
   if (type === "contacts") return "Duplicate contacts:";
   if (type === "activities") return "Duplicate activities:";
   if (type === "leads") return "Duplicate leads:";
+  if (type === "referralsources") return "Duplicate referral sources:";
   return "Duplicate items:";
 }
 
@@ -58,6 +59,12 @@ const IMPORT_TYPES: { value: ImportType; label: string; hint: string; badge: str
     label: "Leads",
     badge: "LEADS",
     hint: "Import sales leads and prospects for outreach. Expected columns: Lead (hospital name), Status, Company, Contact Name, Email, Phone, Service Interest, etc.",
+  },
+  {
+    value: "referralsources",
+    label: "Referral Sources",
+    badge: "SOURCES",
+    hint: "Import referral source directory records. Expected columns: Referral Source or Name, Type, Specialty, Practice Name, NPI, Contact Name, Email, Phone, Address, City, State, Zip, Monthly Goal, Notes.",
   },
   {
     value: "marketingbudget",

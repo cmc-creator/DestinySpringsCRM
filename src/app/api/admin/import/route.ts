@@ -844,6 +844,134 @@ async function importLeads(rows: Record<string, unknown>[], dryRun = false, dupl
   return { created, updated, skipped, errors, skipReasons, preview };
 }
 
+function mapReferralSourceType(input: string) {
+  const v = input.toLowerCase();
+  if (!v) return "OTHER" as const;
+  if (v.includes("emergency") || v.includes("ed") || v.includes("hospital")) return "EMERGENCY_DEPARTMENT" as const;
+  if (v.includes("primary care") || v.includes("pcp") || v.includes("family medicine") || v.includes("internal medicine")) return "PRIMARY_CARE_PHYSICIAN" as const;
+  if (v.includes("psychiatrist") || v.includes("psych md")) return "PSYCHIATRIST" as const;
+  if (v.includes("therap") || v.includes("counsel") || v.includes("lpc") || v.includes("lcsw")) return "OUTPATIENT_THERAPIST" as const;
+  if (v.includes("iop") || v.includes("php")) return "IOP_PHP_PROGRAM" as const;
+  if (v.includes("crisis line") || v.includes("hotline")) return "CRISIS_LINE" as const;
+  if (v.includes("crisis")) return "CRISIS_STABILIZATION_UNIT" as const;
+  if (v.includes("court") || v.includes("legal") || v.includes("probation") || v.includes("dcs")) return "COURT_LEGAL_SYSTEM" as const;
+  if (v.includes("community") || v.includes("mental health") || v.includes("fqhc")) return "COMMUNITY_MENTAL_HEALTH" as const;
+  if (v.includes("snf") || v.includes("ltach") || v.includes("nursing")) return "SNF_LTACH" as const;
+  if (v.includes("school")) return "SCHOOL_COUNSELOR" as const;
+  if (v.includes("peer") || v.includes("recovery")) return "PEER_SUPPORT" as const;
+  if (v.includes("self") || v.includes("family")) return "SELF_REFERRAL" as const;
+  return "OTHER" as const;
+}
+
+async function importReferralSources(rows: Record<string, unknown>[], dryRun = false, duplicateMode: DuplicateMode = "update") {
+  let created = 0, updated = 0, skipped = 0;
+  const errors: string[] = [];
+  const skipReasons: Record<string, number> = {};
+  const preview: PreviewSample[] = [];
+
+  for (const row of rows) {
+    const rawName = col(
+      row,
+      "Referral Source",
+      "Referral Source Name",
+      "Source Name",
+      "Facility Name",
+      "Referring Facility",
+      "Name",
+      "Practice Name",
+      "Organization",
+      "Company",
+      "Account Name",
+      "Account",
+    ) || colByHeaderToken(row, "referral source", "source name", "facility name", "practice", "organization", "company", "account", "name");
+    const name = normalizeMondayCellText(rawName);
+
+    if (!name || normalizeKey(name) === "name" || normalizeKey(name) === "referral source") {
+      skipped++;
+      skipReasons["missing referral source name"] = (skipReasons["missing referral source name"] ?? 0) + 1;
+      if (preview.length < MAX_PREVIEW) preview.push({ action: "skip", reason: "missing referral source name", fields: {} });
+      continue;
+    }
+
+    const typeStr = normalizeMondayCellText(col(row, "Type", "Source Type", "Referral Type", "Facility Type", "Category", "Specialty Type"));
+    const specialty = normalizeMondayCellText(col(row, "Specialty", "Service Line", "Focus", "Program"));
+    const practiceName = normalizeMondayCellText(col(row, "Practice Name", "Organization", "Company", "Group", "Agency"));
+    const npi = normalizeMondayCellText(col(row, "NPI", "NPI Number", "Provider NPI"));
+    const contactName = normalizeMondayCellText(col(row, "Contact Name", "Primary Contact", "Contact", "Point of Contact", "POC", "Person"));
+    const email = normalizeMondayCellText(col(row, "Email", "Contact Email", "Primary Email", "E-mail", "Email Address"));
+    const phone = normalizeMondayCellText(col(row, "Phone", "Contact Phone", "Primary Phone", "Work Phone", "Mobile"));
+    const address = normalizeMondayCellText(col(row, "Address", "Street", "Billing Address", "Location"));
+    const parsedLocation = parseCityStateZip(address);
+    const city = normalizeMondayCellText(col(row, "City", "Billing City") || parsedLocation.city || "");
+    const state = normalizeMondayCellText(col(row, "State", "Billing State", "Billing State/Province") || parsedLocation.state || "");
+    const zip = normalizeMondayCellText(col(row, "Zip", "Postal Code", "Billing Zip") || parsedLocation.zip || "");
+    const monthlyGoalStr = col(row, "Monthly Goal", "Goal", "Monthly Referrals", "Target");
+    const monthlyGoal = monthlyGoalStr ? parseInt(monthlyGoalStr, 10) : undefined;
+    const notes = normalizeMondayCellText(col(row, "Notes", "Description", "Comments", "Competitive Intelligence"));
+
+    let existing = null;
+    if (npi) {
+      existing = await prisma.referralSource.findFirst({ where: { npi: { equals: npi, mode: "insensitive" } } });
+    }
+    if (!existing) {
+      existing = await prisma.referralSource.findFirst({ where: { name: { equals: name, mode: "insensitive" } } });
+    }
+
+    const data = {
+      name,
+      type: mapReferralSourceType(typeStr || specialty),
+      specialty: specialty || undefined,
+      practiceName: practiceName || undefined,
+      npi: npi || undefined,
+      contactName: contactName || undefined,
+      email: email || undefined,
+      phone: phone || undefined,
+      address: address || undefined,
+      city: city || undefined,
+      state: state || undefined,
+      zip: zip || undefined,
+      monthlyGoal: Number.isFinite(monthlyGoal) ? monthlyGoal : undefined,
+      notes: notes || undefined,
+      active: true,
+    };
+
+    if (existing && duplicateMode === "update") {
+      try {
+        if (!dryRun) {
+          await prisma.referralSource.update({
+            where: { id: existing.id },
+            data,
+          });
+        }
+        updated++;
+        if (preview.length < MAX_PREVIEW) preview.push({ action: "update", fields: { Name: name, Type: data.type, Contact: contactName || "" } });
+      } catch (e) {
+        errors.push(`Failed to update referral source ${name}: ${e instanceof Error ? e.message : String(e)}`);
+      }
+      continue;
+    }
+
+    if (existing) {
+      skipped++;
+      skipReasons["already exists"] = (skipReasons["already exists"] ?? 0) + 1;
+      if (preview.length < MAX_PREVIEW) preview.push({ action: "skip", reason: "already exists", fields: { Name: name } });
+      continue;
+    }
+
+    try {
+      if (!dryRun) {
+        await prisma.referralSource.create({ data });
+      }
+      created++;
+      if (preview.length < MAX_PREVIEW) preview.push({ action: "create", fields: { Name: name, Type: data.type, Contact: contactName || "", Email: email || "" } });
+    } catch (e) {
+      errors.push(`Failed to create referral source ${name}: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  }
+
+  return { created, updated, skipped, errors, skipReasons, preview };
+}
+
 async function importMarketingBudget(rows: Record<string, unknown>[], dryRun = false, duplicateMode: DuplicateMode = "skip") {
   let created = 0, updated = 0, skipped = 0;
   const errors: string[] = [];
@@ -1124,7 +1252,7 @@ function mapActivityType(s: string) {
 }
 
 // ─── route handler ─────────────────────────────────────────────────────────────
-// Supports: accounts, contacts, activities, leads, marketingbudget
+// Supports: accounts, contacts, activities, leads, referralsources, marketingbudget
 
 export async function POST(req: NextRequest) {
   const session = await auth();
@@ -1135,14 +1263,14 @@ export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
     const file     = formData.get("file") as File | null;
-    const type     = (formData.get("type") as string ?? "").toLowerCase(); // accounts | contacts | activities | leads | marketingbudget
+    const type     = (formData.get("type") as string ?? "").toLowerCase(); // accounts | contacts | activities | leads | referralsources | marketingbudget
     const dryRun   = formData.get("dryRun") === "true";
     const duplicateModeRaw = (formData.get("duplicateMode") as string ?? "skip").toLowerCase();
     const duplicateMode: DuplicateMode = duplicateModeRaw === "update" ? "update" : "skip";
 
     if (!file) return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
-    if (!["accounts", "contacts", "activities", "leads", "marketingbudget"].includes(type)) {
-      return NextResponse.json({ error: "type must be accounts, contacts, activities, leads, or marketingbudget" }, { status: 400 });
+    if (!["accounts", "contacts", "activities", "leads", "referralsources", "marketingbudget"].includes(type)) {
+      return NextResponse.json({ error: "type must be accounts, contacts, activities, leads, referral sources, or marketingbudget" }, { status: 400 });
     }
 
     const parsed = await parseSheet(file);
@@ -1159,6 +1287,7 @@ export async function POST(req: NextRequest) {
     else if (type === "contacts") result = await importContacts(rows, dryRun, duplicateMode);
     else if (type === "activities") result = await importActivities(rows, dryRun, duplicateMode);
     else if (type === "leads")  result = await importLeads(rows, dryRun, duplicateMode);
+    else if (type === "referralsources") result = await importReferralSources(rows, dryRun, duplicateMode);
     else                         result = await importMarketingBudget(rows, dryRun, duplicateMode);
 
     return NextResponse.json({ ok: true, isDryRun: dryRun, type, totalRows: rows.length, columns, duplicateMode, ...result });
