@@ -267,7 +267,7 @@ async function parseSheet(file: File): Promise<ParsedSheet> {
 
 // ─── individual importers ──────────────────────────────────────────────────────
 
-async function importAccounts(rows: Record<string, unknown>[], dryRun = false) {
+async function importAccounts(rows: Record<string, unknown>[], dryRun = false, duplicateMode: DuplicateMode = "update") {
   let created = 0, updated = 0, skipped = 0;
   const errors: string[] = [];
   const skipReasons: Record<string, number> = {};
@@ -334,21 +334,27 @@ async function importAccounts(rows: Record<string, unknown>[], dryRun = false) {
       };
 
       if (existing) {
-        if (!dryRun) {
-          await prisma.hospital.update({
-            where: { id: existing.id },
-            data: updateData,
-          });
-        }
-        updated++;
-        if (preview.length < MAX_PREVIEW) {
-          preview.push({
-            action: "update",
-            fields: Object.fromEntries([
-              ["Name", name], ["City", city], ["State", state], ["Phone", phone],
-              ["NPI", npi], ["Beds", beds], ["Primary Contact", contactName],
-            ].filter(([, v]) => v)),
-          });
+        if (duplicateMode === "update") {
+          if (!dryRun) {
+            await prisma.hospital.update({
+              where: { id: existing.id },
+              data: updateData,
+            });
+          }
+          updated++;
+          if (preview.length < MAX_PREVIEW) {
+            preview.push({
+              action: "update",
+              fields: Object.fromEntries([
+                ["Name", name], ["City", city], ["State", state], ["Phone", phone],
+                ["NPI", npi], ["Beds", beds], ["Primary Contact", contactName],
+              ].filter(([, v]) => v)),
+            });
+          }
+        } else {
+          skipped++;
+          skipReasons["already exists"] = (skipReasons["already exists"] ?? 0) + 1;
+          if (preview.length < MAX_PREVIEW) preview.push({ action: "skip", reason: "already exists", fields: { Name: name } });
         }
         continue;
       }
@@ -394,8 +400,8 @@ async function importAccounts(rows: Record<string, unknown>[], dryRun = false) {
   return { created, updated, skipped, errors, skipReasons, preview };
 }
 
-async function importContacts(rows: Record<string, unknown>[], dryRun = false) {
-  let created = 0, skipped = 0;
+async function importContacts(rows: Record<string, unknown>[], dryRun = false, duplicateMode: DuplicateMode = "skip") {
+  let created = 0, updated = 0, skipped = 0;
   const errors: string[] = [];
   const skipReasons: Record<string, number> = {};
   const preview: PreviewSample[] = [];
@@ -464,6 +470,50 @@ async function importContacts(rows: Record<string, unknown>[], dryRun = false) {
       continue;
     }
 
+    const existingContact = await prisma.contact.findFirst({
+      where: {
+        hospitalId,
+        OR: [
+          { name: { equals: name, mode: "insensitive" } },
+          ...(email ? [{ email: { equals: email, mode: "insensitive" as const } }] : []),
+        ],
+      },
+    });
+
+    if (existingContact) {
+      if (duplicateMode === "update") {
+        try {
+          if (!dryRun) {
+            await prisma.contact.update({
+              where: { id: existingContact.id },
+              data: {
+                title: title || undefined,
+                email: email || undefined,
+                phone: phone || undefined,
+                department: department || undefined,
+                notes: notes || undefined,
+                type: mapContactType(typeStr),
+              },
+            });
+          }
+          updated++;
+          if (preview.length < MAX_PREVIEW) {
+            preview.push({ action: "update", fields: Object.fromEntries([
+              ["Name", name], ["Title", title], ["Email", email], ["Phone", phone],
+              ["Account", accountName], ["Department", department],
+            ].filter(([, v]) => v)) });
+          }
+        } catch (e) {
+          errors.push(`${name}: ${e instanceof Error ? e.message : String(e)}`);
+        }
+      } else {
+        skipped++;
+        skipReasons["already exists"] = (skipReasons["already exists"] ?? 0) + 1;
+        if (preview.length < MAX_PREVIEW) preview.push({ action: "skip", reason: "already exists", fields: { Name: name } });
+      }
+      continue;
+    }
+
     try {
       if (!dryRun) {
         await prisma.contact.create({
@@ -491,7 +541,7 @@ async function importContacts(rows: Record<string, unknown>[], dryRun = false) {
     }
   }
 
-  return { created, skipped, errors, skipReasons, preview };
+  return { created, updated, skipped, errors, skipReasons, preview };
 }
 
 /** Filter out Monday.com board description text and stray column-header rows */
@@ -745,8 +795,8 @@ export async function POST(req: NextRequest) {
     const columns = parsed.columns.length > 0 ? parsed.columns : (rows.length > 0 ? Object.keys(rows[0]) : []);
 
     let result;
-    if (type === "accounts")    result = await importAccounts(rows, dryRun);
-    else if (type === "contacts") result = await importContacts(rows, dryRun);
+    if (type === "accounts")    result = await importAccounts(rows, dryRun, duplicateMode);
+    else if (type === "contacts") result = await importContacts(rows, dryRun, duplicateMode);
     else                         result = await importActivities(rows, dryRun, duplicateMode);
 
     return NextResponse.json({ ok: true, isDryRun: dryRun, type, totalRows: rows.length, columns, duplicateMode, ...result });
