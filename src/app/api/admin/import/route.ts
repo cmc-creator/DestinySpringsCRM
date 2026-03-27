@@ -58,6 +58,34 @@ function firstMeaningfulValue(row: Record<string, unknown>): string {
   return firstEntry ? String(firstEntry[1]).trim() : "";
 }
 
+function normalizeMondayCellText(value: string): string {
+  let out = String(value ?? "").trim();
+  if (!out) return "";
+
+  // Monday linked/board columns sometimes export as JSON-like strings.
+  if ((out.startsWith("{") && out.endsWith("}")) || (out.startsWith("[") && out.endsWith("]"))) {
+    try {
+      const parsed = JSON.parse(out) as unknown;
+      if (typeof parsed === "string") return parsed.trim();
+      if (Array.isArray(parsed)) {
+        const firstText = parsed.find((v) => typeof v === "string" && v.trim()) as string | undefined;
+        if (firstText) return firstText.trim();
+      }
+      if (parsed && typeof parsed === "object") {
+        const obj = parsed as Record<string, unknown>;
+        const fromText = [obj.text, obj.label, obj.name].find((v) => typeof v === "string" && String(v).trim()) as string | undefined;
+        if (fromText) return fromText.trim();
+      }
+    } catch {
+      // leave original value
+    }
+  }
+
+  // Trim leading emoji/symbol noise and common separators that appear in exports.
+  out = out.replace(/^[^A-Za-z0-9]+/, "").replace(/^[-:|]+\s*/, "").trim();
+  return out;
+}
+
 function parseCityStateZip(location: string): { city?: string; state?: string; zip?: string } {
   const raw = String(location || "").trim();
   if (!raw) return {};
@@ -380,19 +408,21 @@ async function importContacts(rows: Record<string, unknown>[], dryRun = false) {
 
     const first = col(row, "First Name", "First", "FirstName");
     const last  = col(row, "Last Name", "Last", "LastName");
-    const name  = col(row, "Name", "Full Name", "Contact Name", "Person", "People") || `${first} ${last}`.trim();
-    if (!name || name === " ") {
+    const rawName = col(row, "Contact", "Name", "Full Name", "Contact Name", "Person", "People") || `${first} ${last}`.trim() || firstMeaningfulValue(row);
+    const name = normalizeMondayCellText(rawName);
+    if (!name || name === " " || normalizeKey(name) === "contact") {
       skipped++;
       skipReasons["no name"] = (skipReasons["no name"] ?? 0) + 1;
       if (preview.length < MAX_PREVIEW) preview.push({ action: "skip", reason: "no name", fields: {} });
       continue;
     }
 
-    const accountName = col(row,
+    const rawAccountName = col(row,
       "Account Name", "Organization", "Company", "Hospital", "Facility",
       "Account", "Linked Account", "Accounts", "Board", "Board Item",
       "Referral Source", "Facility Name", "Hospital Name", "Site", "Partner"
     ) || colByHeaderToken(row, "account", "facility", "hospital", "organization", "company", "site", "partner", "board");
+    const accountName = normalizeMondayCellText(rawAccountName);
     const title       = col(row, "Title", "Job Title", "Position", "Role");
     const email       = col(row, "Email", "Work Email", "E-mail", "Email Address");
     const phone       = col(row, "Phone", "Work Phone", "Mobile", "Cell", "Direct", "Phone Number");
