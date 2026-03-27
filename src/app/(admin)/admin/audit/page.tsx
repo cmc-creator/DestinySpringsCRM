@@ -26,7 +26,7 @@ interface AuditEntry {
   action: string;
   resource: string;
   resourceId?: string | null;
-  diff?: { before?: unknown; after?: unknown } | null;
+  diff?: { _meta?: { source?: string; intent?: string }; before?: unknown; after?: unknown } | null;
   ip?: string | null;
   createdAt: string;
 }
@@ -48,15 +48,17 @@ export default function AuditLogPage() {
   const [entries, setEntries] = useState<AuditEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [resource, setResource] = useState("");
+  const [source, setSource] = useState("");
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
 
-  const load = useCallback(async (pg = 1, res = resource) => {
+  const load = useCallback(async (pg = 1, res = resource, src = source) => {
     setLoading(true);
     try {
       const params = new URLSearchParams({ page: String(pg) });
       if (res) params.set("resource", res);
+      if (src) params.set("source", src);
       const r = await fetch(`/api/audit?${params}`);
       if (r.ok) {
         const { logs }: { logs: AuditEntry[] } = await r.json();
@@ -67,9 +69,9 @@ export default function AuditLogPage() {
     } finally {
       setLoading(false);
     }
-  }, [resource]);
+  }, [resource, source]);
 
-  useEffect(() => { load(1, resource); }, [resource]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { load(1, resource, source); }, [resource, source]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div>
@@ -86,6 +88,13 @@ export default function AuditLogPage() {
             <select style={{ ...sel, width: 180 }} value={resource} onChange={e => { setResource(e.target.value); setPage(1); }}>
               <option value="">All resources</option>
               {RESOURCES.filter(Boolean).map(r => <option key={r} value={r}>{r}</option>)}
+            </select>
+          </div>
+          <div style={{ position: "relative" }}>
+            <label style={{ fontSize: "0.68rem", color: C.muted, display: "block", marginBottom: 4 }}>FILTER BY SOURCE</label>
+            <select style={{ ...sel, width: 180 }} value={source} onChange={e => { setSource(e.target.value); setPage(1); }}>
+              <option value="">All sources</option>
+              <option value="AEGIS_AI">Aegis AI only</option>
             </select>
           </div>
         </div>
@@ -135,6 +144,9 @@ export default function AuditLogPage() {
                       </td>
                       <td style={{ padding: "12px 14px", fontSize: "0.72rem", color: C.muted }}>{entry.ip ?? "-"}</td>
                       <td style={{ padding: "12px 14px", fontSize: "0.72rem", color: C.cyan }}>
+                        {(entry.diff?._meta?.source === "AEGIS_AI") && (
+                          <span style={{ display: "inline-block", marginRight: 8, color: "#a78bfa", fontWeight: 700 }}>Aegis</span>
+                        )}
                         {entry.diff ? (expanded === entry.id ? "Hide ▲" : "Show ▼") : "-"}
                       </td>
                     </tr>

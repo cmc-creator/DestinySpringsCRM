@@ -498,6 +498,8 @@ export default function AIChatWidget() {
                 { label: "📊 Pipeline Summary", prompt: "Summarize my current admission pipeline — what\'s stalled, what stage has the most volume, and what needs immediate attention?" },
                 { label: "⚡ Who Needs Attention?", prompt: "Which referral sources or sending facilities haven\'t referred in 30+ days and need a visit or outreach call?" },
                 { label: "📝 Draft ED Outreach", prompt: "Draft a short, professional outreach message I can send to a hospital emergency department social worker to introduce Destiny Springs Healthcare and request a facility visit." },
+                { label: "🏥 Low Census Plan", prompt: "Census is soft. Give me a 72-hour business development action plan focused on the highest-yield behavioral health referral channels." },
+                { label: "⚖️ Court Referral Strategy", prompt: "What is the best strategy to build more court-ordered treatment referrals in my territory?" },
               ] as { label: string; action?: () => void; prompt?: string }[]).map(({ label, action, prompt }) => (
                 <button
                   key={label}

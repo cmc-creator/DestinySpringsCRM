@@ -12,17 +12,23 @@ export async function GET(req: NextRequest) {
 
   const { searchParams } = new URL(req.url);
   const resource = searchParams.get("resource") ?? undefined;
+  const source = searchParams.get("source") ?? undefined;
   const page = Math.max(1, parseInt(searchParams.get("page") ?? "1"));
   const limit = 50;
 
+  const where = {
+    ...(resource ? { resource } : {}),
+    ...(source ? { diff: { path: ["_meta", "source"], equals: source } } : {}),
+  };
+
   const logs = await prisma.auditLog.findMany({
-    where: resource ? { resource } : undefined,
+    where,
     orderBy: { createdAt: "desc" },
     take: limit,
     skip: (page - 1) * limit,
   });
 
-  const total = await prisma.auditLog.count({ where: resource ? { resource } : undefined });
+  const total = await prisma.auditLog.count({ where });
 
   return NextResponse.json({ logs, total, page });
 }

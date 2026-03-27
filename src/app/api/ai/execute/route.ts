@@ -26,6 +26,40 @@ type ExecutePayload = {
   confirmedDelete?: boolean;
 };
 
+const LEAD_STATUSES = new Set(["NEW", "CONTACTED", "QUALIFIED", "PROPOSAL_SENT", "NEGOTIATING", "WON", "LOST", "UNQUALIFIED"]);
+const LEAD_SOURCES = new Set(["REFERRAL", "COLD_OUTREACH", "CONFERENCE", "INBOUND", "LINKEDIN", "WEBINAR", "EXISTING_RELATIONSHIP", "OTHER"]);
+const OPPORTUNITY_STAGES = new Set(["INQUIRY", "CLINICAL_REVIEW", "INSURANCE_AUTH", "ADMITTED", "ACTIVE", "DISCHARGED", "DECLINED", "ON_HOLD"]);
+const SERVICE_LINES = new Set(["ADULT_INPATIENT_PSYCH", "ADOLESCENT_PSYCH", "GERIATRIC_PSYCH", "DUAL_DIAGNOSIS", "DETOX_STABILIZATION", "CRISIS_STABILIZATION", "PARTIAL_HOSPITALIZATION", "INTENSIVE_OUTPATIENT", "OUTPATIENT_THERAPY", "MED_MGMT", "COURT_ORDERED_TREATMENT", "OTHER"]);
+const REFERRAL_SOURCE_TYPES = new Set(["EMERGENCY_DEPARTMENT", "PRIMARY_CARE_PHYSICIAN", "PSYCHIATRIST", "OUTPATIENT_THERAPIST", "IOP_PHP_PROGRAM", "CRISIS_STABILIZATION_UNIT", "CRISIS_LINE", "COURT_LEGAL_SYSTEM", "COMMUNITY_MENTAL_HEALTH", "SNF_LTACH", "SCHOOL_COUNSELOR", "PEER_SUPPORT", "SELF_REFERRAL", "OTHER"]);
+const REFERRAL_STATUSES = new Set(["RECEIVED", "ADMITTED", "DECLINED", "PENDING", "DUPLICATE"]);
+const HOSPITAL_TYPES = new Set(["EMERGENCY_DEPARTMENT", "INPATIENT_MEDICAL", "PRIMARY_CARE", "OUTPATIENT_PSYCHIATRY", "IOP_PHP", "CRISIS_STABILIZATION_UNIT", "CRISIS_LINE", "COURT_LEGAL", "COMMUNITY_MENTAL_HEALTH", "SCHOOL_COUNSELOR", "PEER_SUPPORT", "SNF_LTACH", "SELF_REFERRAL", "OTHER"]);
+const ACTIVITY_TYPES = new Set(["CALL", "EMAIL", "NOTE", "MEETING", "LUNCH", "TASK", "PROPOSAL_SENT", "CONTRACT_SENT", "DEMO_COMPLETED", "SITE_VISIT", "CONFERENCE", "FOLLOW_UP", "IN_SERVICE", "FACILITY_TOUR", "CE_PRESENTATION", "CRISIS_CONSULT", "LUNCH_AND_LEARN", "COMMUNITY_EVENT", "REFERRAL_RECEIVED", "DISCHARGE_PLANNING"]);
+
+function normalizeEnum(value: unknown): string | null {
+  return typeof value === "string" && value.trim() ? value.trim().toUpperCase() : null;
+}
+
+function assertEnum(value: unknown, allowed: Set<string>, fieldName: string) {
+  const normalized = normalizeEnum(value);
+  if (!normalized || !allowed.has(normalized)) {
+    throw new Error(`Invalid ${fieldName}`);
+  }
+  return normalized;
+}
+
+async function assertExists(kind: "hospital" | "rep" | "referralSource" | "lead" | "opportunity" | "contact", id?: string | null) {
+  if (!id) return;
+  const exists =
+    kind === "hospital" ? await prisma.hospital.findUnique({ where: { id }, select: { id: true } }) :
+    kind === "rep" ? await prisma.rep.findUnique({ where: { id }, select: { id: true } }) :
+    kind === "referralSource" ? await prisma.referralSource.findUnique({ where: { id }, select: { id: true } }) :
+    kind === "lead" ? await prisma.lead.findUnique({ where: { id }, select: { id: true } }) :
+    kind === "opportunity" ? await prisma.opportunity.findUnique({ where: { id }, select: { id: true } }) :
+    await prisma.contact.findUnique({ where: { id }, select: { id: true } });
+
+  if (!exists) throw new Error(`Referenced ${kind} was not found`);
+}
+
 function only<T extends Record<string, unknown>>(input: Record<string, unknown> | undefined, keys: (keyof T)[]): T {
   const out: Record<string, unknown> = {};
   for (const key of keys) {
@@ -100,6 +134,8 @@ export async function POST(req: NextRequest) {
         };
         const data = only<ReferralCreate>(body.data, ["referralSourceId", "patientInitials", "admissionDate", "dischargeDate", "serviceLine", "externalId", "status", "notes"]);
         if (!data.referralSourceId) return NextResponse.json({ error: "referralSourceId is required" }, { status: 400 });
+        await assertExists("referralSource", data.referralSourceId);
+        const status = data.status ? assertEnum(data.status, REFERRAL_STATUSES, "referral status") : "RECEIVED";
         const created = await prisma.referral.create({
           data: {
             referralSourceId: data.referralSourceId,
@@ -108,7 +144,7 @@ export async function POST(req: NextRequest) {
             dischargeDate: data.dischargeDate ? new Date(data.dischargeDate) : null,
             serviceLine: data.serviceLine ?? null,
             externalId: data.externalId ?? null,
-            status: ((data.status ?? "RECEIVED").toUpperCase()) as never,
+            status: status as never,
             notes: data.notes ?? null,
           },
         });
@@ -128,6 +164,7 @@ export async function POST(req: NextRequest) {
         };
         const data = only<ReferralUpdate>(body.data, ["patientInitials", "admissionDate", "dischargeDate", "serviceLine", "status", "notes"]);
         const before = await prisma.referral.findUnique({ where: { id: body.targetId } });
+        if (!before) return NextResponse.json({ error: "Referral not found" }, { status: 404 });
         const updated = await prisma.referral.update({
           where: { id: body.targetId },
           data: {
@@ -135,7 +172,7 @@ export async function POST(req: NextRequest) {
             ...(data.admissionDate !== undefined ? { admissionDate: data.admissionDate ? new Date(data.admissionDate) : null } : {}),
             ...(data.dischargeDate !== undefined ? { dischargeDate: data.dischargeDate ? new Date(data.dischargeDate) : null } : {}),
             ...(data.serviceLine !== undefined ? { serviceLine: data.serviceLine } : {}),
-            ...(data.status !== undefined ? { status: data.status.toUpperCase() as never } : {}),
+            ...(data.status !== undefined ? { status: assertEnum(data.status, REFERRAL_STATUSES, "referral status") as never } : {}),
             ...(data.notes !== undefined ? { notes: data.notes } : {}),
           },
         });
@@ -154,10 +191,11 @@ export async function POST(req: NextRequest) {
       case "create_referral_source": {
         const data = only<Record<string, unknown>>(body.data, ["name", "type", "specialty", "practiceName", "npi", "contactName", "email", "phone", "address", "city", "state", "zip", "assignedRepId", "monthlyGoal", "notes"]);
         if (!data.name) return NextResponse.json({ error: "name is required" }, { status: 400 });
+        await assertExists("rep", (data.assignedRepId as string | undefined) ?? null);
         const created = await prisma.referralSource.create({
           data: {
             name: String(data.name),
-            type: (String(data.type ?? "OTHER").toUpperCase()) as never,
+            type: assertEnum(data.type ?? "OTHER", REFERRAL_SOURCE_TYPES, "referral source type") as never,
             specialty: (data.specialty as string | undefined) ?? null,
             practiceName: (data.practiceName as string | undefined) ?? null,
             npi: (data.npi as string | undefined) ?? null,
@@ -181,11 +219,13 @@ export async function POST(req: NextRequest) {
         if (!body.targetId) return NextResponse.json({ error: "targetId is required" }, { status: 400 });
         const data = only<Record<string, unknown>>(body.data, ["name", "type", "specialty", "practiceName", "npi", "contactName", "email", "phone", "address", "city", "state", "zip", "assignedRepId", "monthlyGoal", "notes", "active"]);
         const before = await prisma.referralSource.findUnique({ where: { id: body.targetId } });
+        if (!before) return NextResponse.json({ error: "Referral source not found" }, { status: 404 });
+        await assertExists("rep", (data.assignedRepId as string | undefined) ?? null);
         const updated = await prisma.referralSource.update({
           where: { id: body.targetId },
           data: {
             ...(data.name !== undefined ? { name: String(data.name) } : {}),
-            ...(data.type !== undefined ? { type: String(data.type).toUpperCase() as never } : {}),
+            ...(data.type !== undefined ? { type: assertEnum(data.type, REFERRAL_SOURCE_TYPES, "referral source type") as never } : {}),
             ...(data.specialty !== undefined ? { specialty: data.specialty as string | null } : {}),
             ...(data.practiceName !== undefined ? { practiceName: data.practiceName as string | null } : {}),
             ...(data.npi !== undefined ? { npi: data.npi as string | null } : {}),
@@ -217,11 +257,12 @@ export async function POST(req: NextRequest) {
       case "create_lead": {
         const data = only<Record<string, unknown>>(body.data, ["hospitalName", "systemName", "hospitalType", "bedCount", "state", "city", "contactName", "contactEmail", "contactPhone", "contactTitle", "serviceInterest", "estimatedValue", "notes", "status", "source", "priority", "nextFollowUp", "assignedRepId"]);
         if (!data.hospitalName) return NextResponse.json({ error: "hospitalName is required" }, { status: 400 });
+        await assertExists("rep", (data.assignedRepId as string | undefined) ?? null);
         const created = await prisma.lead.create({
           data: {
             hospitalName: String(data.hospitalName),
             systemName: (data.systemName as string | undefined) ?? null,
-            hospitalType: (data.hospitalType as string | undefined) ? (data.hospitalType as string) as never : null,
+            hospitalType: data.hospitalType ? assertEnum(data.hospitalType, HOSPITAL_TYPES, "hospital type") as never : null,
             bedCount: data.bedCount ? Number(data.bedCount) : null,
             state: (data.state as string | undefined) ?? null,
             city: (data.city as string | undefined) ?? null,
@@ -232,8 +273,8 @@ export async function POST(req: NextRequest) {
             serviceInterest: (data.serviceInterest as string | undefined) ?? null,
             estimatedValue: data.estimatedValue ? Number(data.estimatedValue) : null,
             notes: (data.notes as string | undefined) ?? null,
-            status: String(data.status ?? "NEW").toUpperCase() as never,
-            source: String(data.source ?? "OTHER").toUpperCase() as never,
+            status: assertEnum(data.status ?? "NEW", LEAD_STATUSES, "lead status") as never,
+            source: assertEnum(data.source ?? "OTHER", LEAD_SOURCES, "lead source") as never,
             priority: String(data.priority ?? "MEDIUM").toUpperCase() as never,
             nextFollowUp: data.nextFollowUp ? new Date(String(data.nextFollowUp)) : null,
             assignedRepId: (data.assignedRepId as string | undefined) ?? null,
@@ -247,12 +288,14 @@ export async function POST(req: NextRequest) {
         if (!body.targetId) return NextResponse.json({ error: "targetId is required" }, { status: 400 });
         const data = only<Record<string, unknown>>(body.data, ["hospitalName", "systemName", "hospitalType", "bedCount", "state", "city", "contactName", "contactEmail", "contactPhone", "contactTitle", "serviceInterest", "estimatedValue", "notes", "status", "source", "priority", "nextFollowUp", "assignedRepId"]);
         const before = await prisma.lead.findUnique({ where: { id: body.targetId } });
+        if (!before) return NextResponse.json({ error: "Lead not found" }, { status: 404 });
+        await assertExists("rep", (data.assignedRepId as string | undefined) ?? null);
         const updated = await prisma.lead.update({
           where: { id: body.targetId },
           data: {
             ...(data.hospitalName !== undefined ? { hospitalName: String(data.hospitalName) } : {}),
             ...(data.systemName !== undefined ? { systemName: data.systemName as string | null } : {}),
-            ...(data.hospitalType !== undefined ? { hospitalType: data.hospitalType as string | null } : {}),
+            ...(data.hospitalType !== undefined ? { hospitalType: data.hospitalType ? assertEnum(data.hospitalType, HOSPITAL_TYPES, "hospital type") as never : null } : {}),
             ...(data.bedCount !== undefined ? { bedCount: data.bedCount ? Number(data.bedCount) : null } : {}),
             ...(data.state !== undefined ? { state: data.state as string | null } : {}),
             ...(data.city !== undefined ? { city: data.city as string | null } : {}),
@@ -263,8 +306,8 @@ export async function POST(req: NextRequest) {
             ...(data.serviceInterest !== undefined ? { serviceInterest: data.serviceInterest as string | null } : {}),
             ...(data.estimatedValue !== undefined ? { estimatedValue: data.estimatedValue ? Number(data.estimatedValue) : null } : {}),
             ...(data.notes !== undefined ? { notes: data.notes as string | null } : {}),
-            ...(data.status !== undefined ? { status: String(data.status).toUpperCase() as never } : {}),
-            ...(data.source !== undefined ? { source: String(data.source).toUpperCase() as never } : {}),
+            ...(data.status !== undefined ? { status: assertEnum(data.status, LEAD_STATUSES, "lead status") as never } : {}),
+            ...(data.source !== undefined ? { source: assertEnum(data.source, LEAD_SOURCES, "lead source") as never } : {}),
             ...(data.priority !== undefined ? { priority: String(data.priority).toUpperCase() as never } : {}),
             ...(data.nextFollowUp !== undefined ? { nextFollowUp: data.nextFollowUp ? new Date(String(data.nextFollowUp)) : null } : {}),
             ...(data.assignedRepId !== undefined ? { assignedRepId: data.assignedRepId as string | null } : {}),
@@ -285,13 +328,15 @@ export async function POST(req: NextRequest) {
       case "create_opportunity": {
         const data = only<Record<string, unknown>>(body.data, ["title", "hospitalId", "assignedRepId", "stage", "serviceLine", "value", "closeDate", "priority", "description", "notes"]);
         if (!data.title || !data.hospitalId) return NextResponse.json({ error: "title and hospitalId are required" }, { status: 400 });
+        await assertExists("hospital", String(data.hospitalId));
+        await assertExists("rep", (data.assignedRepId as string | undefined) ?? null);
         const created = await prisma.opportunity.create({
           data: {
             title: String(data.title),
             hospitalId: String(data.hospitalId),
             assignedRepId: (data.assignedRepId as string | undefined) ?? null,
-            stage: String(data.stage ?? "INQUIRY").toUpperCase() as never,
-            serviceLine: String(data.serviceLine ?? "OTHER").toUpperCase() as never,
+            stage: assertEnum(data.stage ?? "INQUIRY", OPPORTUNITY_STAGES, "opportunity stage") as never,
+            serviceLine: assertEnum(data.serviceLine ?? "OTHER", SERVICE_LINES, "service line") as never,
             value: data.value ? Number(data.value) : null,
             closeDate: data.closeDate ? new Date(String(data.closeDate)) : null,
             priority: String(data.priority ?? "MEDIUM").toUpperCase() as never,
@@ -307,14 +352,17 @@ export async function POST(req: NextRequest) {
         if (!body.targetId) return NextResponse.json({ error: "targetId is required" }, { status: 400 });
         const data = only<Record<string, unknown>>(body.data, ["title", "hospitalId", "assignedRepId", "stage", "serviceLine", "value", "closeDate", "priority", "description", "notes"]);
         const before = await prisma.opportunity.findUnique({ where: { id: body.targetId } });
+        if (!before) return NextResponse.json({ error: "Opportunity not found" }, { status: 404 });
+        await assertExists("hospital", (data.hospitalId as string | undefined) ?? null);
+        await assertExists("rep", (data.assignedRepId as string | undefined) ?? null);
         const updated = await prisma.opportunity.update({
           where: { id: body.targetId },
           data: {
             ...(data.title !== undefined ? { title: String(data.title) } : {}),
             ...(data.hospitalId !== undefined ? { hospitalId: String(data.hospitalId) } : {}),
             ...(data.assignedRepId !== undefined ? { assignedRepId: data.assignedRepId as string | null } : {}),
-            ...(data.stage !== undefined ? { stage: String(data.stage).toUpperCase() as never } : {}),
-            ...(data.serviceLine !== undefined ? { serviceLine: String(data.serviceLine).toUpperCase() as never } : {}),
+            ...(data.stage !== undefined ? { stage: assertEnum(data.stage, OPPORTUNITY_STAGES, "opportunity stage") as never } : {}),
+            ...(data.serviceLine !== undefined ? { serviceLine: assertEnum(data.serviceLine, SERVICE_LINES, "service line") as never } : {}),
             ...(data.value !== undefined ? { value: data.value ? Number(data.value) : null } : {}),
             ...(data.closeDate !== undefined ? { closeDate: data.closeDate ? new Date(String(data.closeDate)) : null } : {}),
             ...(data.priority !== undefined ? { priority: String(data.priority).toUpperCase() as never } : {}),
@@ -338,9 +386,17 @@ export async function POST(req: NextRequest) {
         const data = only<Record<string, unknown>>(body.data, ["type", "title", "subject", "notes", "leadId", "hospitalId", "referralSourceId", "opportunityId", "contactId", "scheduledAt", "completedAt"]);
         if (!data.type) return NextResponse.json({ error: "type is required" }, { status: 400 });
         const title = (data.title as string | undefined) ?? (data.subject as string | undefined) ?? "AI Logged Activity";
+        await assertExists("lead", (data.leadId as string | undefined) ?? null);
+        await assertExists("hospital", (data.hospitalId as string | undefined) ?? null);
+        await assertExists("referralSource", (data.referralSourceId as string | undefined) ?? null);
+        await assertExists("opportunity", (data.opportunityId as string | undefined) ?? null);
+        await assertExists("contact", (data.contactId as string | undefined) ?? null);
+        if (!data.leadId && !data.hospitalId && !data.referralSourceId && !data.opportunityId && !data.contactId) {
+          return NextResponse.json({ error: "Activity must be linked to at least one CRM record" }, { status: 400 });
+        }
         const created = await prisma.activity.create({
           data: {
-            type: String(data.type).toUpperCase() as never,
+            type: assertEnum(data.type, ACTIVITY_TYPES, "activity type") as never,
             title,
             notes: (data.notes as string | undefined) ?? null,
             leadId: (data.leadId as string | undefined) ?? null,

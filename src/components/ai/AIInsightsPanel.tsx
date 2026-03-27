@@ -18,6 +18,8 @@ const SUGGESTIONS: Record<string, { label: string; prompt: string }[]> = {
     { label: "Rep activity gaps",        prompt: "Which of my reps have the lowest visit and call activity this week? What should I do about it?" },
     { label: "Territory coverage gaps",  prompt: "Are there geographic areas or facility types in our territory with no active referral relationships? How should we address them?" },
     { label: "Leadership summary",       prompt: "Draft a concise weekly performance update I can share with leadership — referral volume, pipeline stage distribution, and key wins." },
+    { label: "Court referral strategy",  prompt: "Where are we underdeveloped on court-ordered treatment relationships, and what outreach strategy should we use with probation, judges, and legal liaisons?" },
+    { label: "Low census recovery",      prompt: "If census is soft this week, which referral channels should we press hardest right now and what outreach should happen in the next 72 hours?" },
   ],
   rep: [
     { label: "Who to visit today",       prompt: "Based on my referral source relationships, which facilities should I prioritize visiting today and why?" },
@@ -26,6 +28,8 @@ const SUGGESTIONS: Record<string, { label: string; prompt: string }[]> = {
     { label: "Write a visit note",       prompt: "Help me write a professional facility visit note I can log after meeting with a referral source today." },
     { label: "Prep for a cold call",     prompt: "What should I know and say when cold-calling a hospital ED social worker to introduce Destiny Springs for the first time?" },
     { label: "Relationship best practices", prompt: "What are the most effective strategies for building lasting referral relationships with ED social workers and crisis counselors?" },
+    { label: "Detox referral pitch",     prompt: "Help me tailor a short pitch for a referral source that regularly sees detox and dual-diagnosis patients who may need Destiny Springs." },
+    { label: "Re-engage a quiet ED",     prompt: "An emergency department I used to hear from has gone quiet. Give me a practical re-engagement plan for the next two touches." },
   ],
   account: [
     { label: "Engagement status",        prompt: "Can you summarize the current engagement status and what stage we're at?" },
@@ -34,6 +38,7 @@ const SUGGESTIONS: Record<string, { label: string; prompt: string }[]> = {
     { label: "Contract questions",       prompt: "What should I look for when reviewing my current contract terms?" },
     { label: "Service questions",        prompt: "What services are currently active on my account?" },
     { label: "Escalation help",          prompt: "How do I escalate an issue or concern with my account rep?" },
+    { label: "Placement readiness",      prompt: "What information should I prepare before sending a behavioral health placement referral so the process moves faster?" },
   ],
 };
 
