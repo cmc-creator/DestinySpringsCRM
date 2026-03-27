@@ -1109,7 +1109,7 @@ async function importMarketingBudget(rows: Record<string, unknown>[], dryRun = f
       const rows = await prisma.$queryRaw<Array<{ id: string }>>(
         Prisma.sql`
           SELECT id
-          FROM marketing_budgets
+          FROM public.marketing_budgets
           WHERE hospital_id = ${hospital.id}
             AND LOWER(item) = LOWER(${resolvedItem})
             AND ${periodCondition}
@@ -1137,7 +1137,7 @@ async function importMarketingBudget(rows: Record<string, unknown>[], dryRun = f
 
           await prisma.$executeRaw(
             Prisma.sql`
-              UPDATE marketing_budgets
+              UPDATE public.marketing_budgets
               SET ${Prisma.join(updates, ", ")}
               WHERE id = ${existingBudget.id}
             `,
@@ -1157,7 +1157,7 @@ async function importMarketingBudget(rows: Record<string, unknown>[], dryRun = f
         if (!dryRun) {
           await prisma.$executeRaw(
             Prisma.sql`
-              INSERT INTO marketing_budgets (
+              INSERT INTO public.marketing_budgets (
                 id,
                 item,
                 point_of_contact,
