@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
@@ -350,7 +350,7 @@ export function Sidebar({ role, userName, userEmail }: SidebarProps) {
               if (e.key === "Escape") { setSearchQuery(""); setSearchResults(null); (e.target as HTMLInputElement).blur(); }
             }}
             onBlur={() => setTimeout(() => setSearchResults(null), 160)}
-            placeholder="SearchΓÇª  ΓîÿK"
+            placeholder="Search (Ctrl+K)"
             style={{
               width: "100%", boxSizing: "border-box",
               background: "rgba(255,255,255,0.04)",
