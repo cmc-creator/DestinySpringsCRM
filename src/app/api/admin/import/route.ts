@@ -977,6 +977,7 @@ function mapActivityType(s: string) {
 }
 
 // ─── route handler ─────────────────────────────────────────────────────────────
+// Supports: accounts, contacts, activities, leads, marketingbudget
 
 export async function POST(req: NextRequest) {
   const session = await auth();
