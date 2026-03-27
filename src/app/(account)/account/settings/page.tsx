@@ -1,5 +1,5 @@
-import SettingsClient from "@/components/settings/SettingsClient";
+import { redirect } from "next/navigation";
 
 export default function AccountSettingsPage() {
-  return <SettingsClient />;
+  redirect("/me");
 }

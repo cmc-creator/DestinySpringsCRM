@@ -894,12 +894,13 @@ function TwoFactorToggle() {
 }
 
 /*  Main component  */
-export default function SettingsClient() {
+export default function SettingsClient({ personalMode = false }: { personalMode?: boolean }) {
   const { data: session } = useSession();
   const isAdmin = session?.user?.role === "ADMIN";
   const isProduction = process.env.NODE_ENV === "production";
   const roleLabel = session?.user?.role === "REP" ? "Rep" : session?.user?.role === "ACCOUNT" ? "Account" : "Admin";
   const isAccountRole = session?.user?.role === "ACCOUNT";
+  const showPersonalHeading = personalMode || isAccountRole;
   const [activeTheme, setActiveTheme]     = useState("luxury");
   const [orgName, setOrgName]             = useState("Destiny Springs Healthcare");
   const [supportEmail, setSupportEmail]   = useState("intake@destinysprings.com");
@@ -1125,8 +1126,8 @@ export default function SettingsClient() {
     <div style={{ maxWidth: 740, paddingBottom: 40 }}>
       <div style={{ marginBottom: 32 }}>
         <p style={{ color: "var(--nyx-accent)", opacity: 0.55, fontSize: "0.68rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 4 }}>CONFIGURATION</p>
-        <h1 style={{ fontSize: "1.9rem", fontWeight: 900, color: "var(--nyx-text)", letterSpacing: "-0.025em" }}>{isAccountRole ? "My Account" : "Settings"}</h1>
-        <p style={{ color: "var(--nyx-text-muted)", fontSize: "0.875rem", marginTop: 5 }}>{isAccountRole ? "Personal preferences, security, and account-level settings" : "Appearance, organization, notifications, and developer tools"}</p>
+        <h1 style={{ fontSize: "1.9rem", fontWeight: 900, color: "var(--nyx-text)", letterSpacing: "-0.025em" }}>{showPersonalHeading ? "My Account" : "Settings"}</h1>
+        <p style={{ color: "var(--nyx-text-muted)", fontSize: "0.875rem", marginTop: 5 }}>{showPersonalHeading ? "Personal preferences, notifications, AI behavior, and account security" : "Appearance, organization, notifications, and developer tools"}</p>
       </div>
 
       {/*  THEMES  */}
@@ -1247,7 +1248,7 @@ export default function SettingsClient() {
           )}
         </div>
       </Section>
-      <Section title="Organization">
+      {!personalMode && <Section title="Organization">
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>
           <div>
             <label style={{ fontSize: "0.72rem", color: "var(--nyx-text-muted)", display: "block", marginBottom: 4 }}>ORG / BRAND NAME</label>
@@ -1258,7 +1259,7 @@ export default function SettingsClient() {
             <input style={inp} type="email" value={supportEmail} onChange={e => setSupportEmail(e.target.value)} />
           </div>
         </div>
-      </Section>
+      </Section>}
 
       {/*  NOTIFICATIONS  */}
       <Section title="Notifications">
@@ -1452,7 +1453,7 @@ export default function SettingsClient() {
       </Section>
 
       {/*  DEV TOOLS  */}
-      <Section title="Developer Tools">
+      {!personalMode && <Section title="Developer Tools">
         {/* Admin-only warning banner */}
         <div style={{ background: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.30)", borderRadius: 9, padding: "12px 16px", marginBottom: 16, display: "flex", alignItems: "flex-start", gap: 10 }}>
           <span style={{ fontSize: "1.1rem", lineHeight: "1.3", flexShrink: 0 }}>⚠️</span>
@@ -1523,7 +1524,7 @@ export default function SettingsClient() {
             {devMsg}
           </div>
         )}
-      </Section>
+      </Section>}
 
       {/* Save bar */}
       <div style={{
