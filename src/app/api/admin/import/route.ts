@@ -862,7 +862,7 @@ async function importMarketingBudget(rows: Record<string, unknown>[], dryRun = f
     // Detect duplicates by item + hospitalId + periodMonth
     let existingBudget = null;
     if (duplicateMode === "update") {
-      existingBudget = await prisma.marketingBudget.findFirst({
+      existingBudget = await (prisma as any).marketingBudget.findFirst({
         where: {
           hospitalId: hospital.id,
           item: { equals: item, mode: "insensitive" },
@@ -874,7 +874,7 @@ async function importMarketingBudget(rows: Record<string, unknown>[], dryRun = f
     if (existingBudget && duplicateMode === "update") {
       try {
         if (!dryRun) {
-          await prisma.marketingBudget.update({
+          await (prisma as any).marketingBudget.update({
             where: { id: existingBudget.id },
             data: {
               marketingMeals: new Prisma.Decimal(marketingMeals),
@@ -899,7 +899,7 @@ async function importMarketingBudget(rows: Record<string, unknown>[], dryRun = f
     } else {
       try {
         if (!dryRun) {
-          await prisma.marketingBudget.create({
+          await (prisma as any).marketingBudget.create({
             data: {
               item,
               hospitalId: hospital.id,
