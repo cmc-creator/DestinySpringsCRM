@@ -129,6 +129,17 @@ export default async function AdminDashboard() {
       repTerritories={repTerritories}
       expiredDocs={serializedExpired}
       soonDocs={serializedSoon}
+      aegisSummary={{
+        windowLabel: "Last 7 days",
+        replies: 0,
+        proposals: 0,
+        applied: 0,
+        dismissed: 0,
+        helpful: 0,
+        notHelpful: 0,
+        topIntent: null,
+        lastActivityAt: null,
+      }}
     />
   );
 }
