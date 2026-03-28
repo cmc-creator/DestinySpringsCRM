@@ -921,6 +921,7 @@ export default function SettingsClient({ personalMode = false }: { personalMode?
   const [profileForm, setProfileForm] = useState({
     fullName: "",
     email: "",
+    avatar: "",
     title: "",
     phone: "",
     city: "",
@@ -1009,6 +1010,7 @@ export default function SettingsClient({ personalMode = false }: { personalMode?
         return response.json() as Promise<{ profile?: {
           fullName?: string;
           email?: string;
+          avatar?: string;
           title?: string;
           phone?: string;
           city?: string;
@@ -1023,6 +1025,7 @@ export default function SettingsClient({ personalMode = false }: { personalMode?
         setProfileForm({
           fullName: profile?.fullName ?? "",
           email: profile?.email ?? "",
+          avatar: profile?.avatar ?? "",
           title: profile?.title ?? "",
           phone: profile?.phone ?? "",
           city: profile?.city ?? "",
@@ -1248,6 +1251,7 @@ export default function SettingsClient({ personalMode = false }: { personalMode?
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           fullName: profileForm.fullName,
+          avatar: profileForm.avatar || null,
           title: profileForm.title,
           phone: profileForm.phone,
           city: profileForm.city,
@@ -1267,6 +1271,35 @@ export default function SettingsClient({ personalMode = false }: { personalMode?
     } finally {
       setProfileSaving(false);
     }
+  }
+
+  async function selectAvatarFile(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setProfileError("Please choose an image file.");
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      setProfileError("Image must be 2MB or smaller.");
+      return;
+    }
+
+    const dataUrl = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result ?? ""));
+      reader.onerror = () => reject(new Error("read_failed"));
+      reader.readAsDataURL(file);
+    }).catch(() => "");
+
+    if (!dataUrl || !dataUrl.startsWith("data:image/")) {
+      setProfileError("Could not load selected image.");
+      return;
+    }
+
+    setProfileError("");
+    setProfileSuccess("");
+    setProfileForm((current) => ({ ...current, avatar: dataUrl }));
   }
 
   const curTheme = THEMES.find(t => t.key === activeTheme) ?? THEMES[0];
@@ -1289,6 +1322,61 @@ export default function SettingsClient({ personalMode = false }: { personalMode?
           ) : (
             <>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>
+                <div style={{ gridColumn: "1 / -1", display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
+                  <div
+                    style={{
+                      width: 64,
+                      height: 64,
+                      borderRadius: "50%",
+                      border: "1px solid var(--nyx-border)",
+                      background: "rgba(0,0,0,0.25)",
+                      backgroundImage: profileForm.avatar ? `url(${profileForm.avatar})` : "none",
+                      backgroundSize: "cover",
+                      backgroundPosition: "center",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      color: "var(--nyx-text-muted)",
+                      fontSize: "0.9rem",
+                      fontWeight: 700,
+                    }}
+                  >
+                    {!profileForm.avatar ? (profileForm.fullName?.trim()?.charAt(0)?.toUpperCase() || "?") : ""}
+                  </div>
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+                    <label
+                      style={{
+                        background: "var(--nyx-accent-dim)",
+                        border: "1px solid var(--nyx-accent-str)",
+                        borderRadius: 8,
+                        padding: "8px 12px",
+                        color: "var(--nyx-accent)",
+                        fontSize: "0.76rem",
+                        fontWeight: 700,
+                        cursor: "pointer",
+                      }}
+                    >
+                      Upload Photo
+                      <input type="file" accept="image/*" onChange={selectAvatarFile} style={{ display: "none" }} />
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setProfileForm((current) => ({ ...current, avatar: "" }))}
+                      style={{
+                        background: "rgba(239,68,68,0.08)",
+                        border: "1px solid rgba(239,68,68,0.2)",
+                        borderRadius: 8,
+                        padding: "8px 12px",
+                        color: "#fca5a5",
+                        fontSize: "0.76rem",
+                        fontWeight: 700,
+                        cursor: "pointer",
+                      }}
+                    >
+                      Remove Photo
+                    </button>
+                  </div>
+                </div>
                 <div>
                   <label style={{ fontSize: "0.72rem", color: "var(--nyx-text-muted)", display: "block", marginBottom: 4 }}>FULL NAME</label>
                   <input style={inp} value={profileForm.fullName} onChange={(event) => setProfileForm((current) => ({ ...current, fullName: event.target.value }))} />

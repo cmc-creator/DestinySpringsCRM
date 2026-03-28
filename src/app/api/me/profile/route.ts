@@ -9,6 +9,7 @@ type ProfileBody = {
   city?: string;
   state?: string;
   bio?: string;
+  avatar?: string | null;
 };
 
 function clean(value: unknown, max = 120) {
@@ -16,6 +17,20 @@ function clean(value: unknown, max = 120) {
   const trimmed = value.trim();
   if (!trimmed) return null;
   return trimmed.slice(0, max);
+}
+
+function cleanAvatar(value: unknown): string | null {
+  if (value === null) return null;
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  if ((trimmed.startsWith("https://") || trimmed.startsWith("http://")) && trimmed.length <= 500) {
+    return trimmed;
+  }
+  if (trimmed.startsWith("data:image/") && trimmed.length <= 350000) {
+    return trimmed;
+  }
+  return null;
 }
 
 export async function GET() {
@@ -29,6 +44,7 @@ export async function GET() {
       role: true,
       name: true,
       email: true,
+      image: true,
       rep: {
         select: {
           title: true,
@@ -60,6 +76,7 @@ export async function GET() {
     city: user.rep?.city ?? "",
     state: user.rep?.state ?? "",
     bio: user.rep?.bio ?? "",
+    avatar: user.image ?? "",
   };
 
   return NextResponse.json({ profile });
@@ -78,13 +95,18 @@ export async function PUT(req: Request) {
   const city = clean(body.city, 80);
   const state = clean(body.state, 80);
   const bio = clean(body.bio, 500);
+  const hasAvatarField = Object.prototype.hasOwnProperty.call(body, "avatar");
+  const avatar = hasAvatarField ? cleanAvatar(body.avatar) : undefined;
 
   const existing = await prisma.user.findUnique({ where: { id: session.user.id }, select: { role: true, rep: { select: { id: true } }, hospital: { select: { id: true } } } });
   if (!existing) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
   await prisma.user.update({
     where: { id: session.user.id },
-    data: { name: fullName },
+    data: {
+      name: fullName,
+      ...(hasAvatarField ? { image: avatar } : {}),
+    },
   });
 
   if (existing.role === "REP" && existing.rep?.id) {
