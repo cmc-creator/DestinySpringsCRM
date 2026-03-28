@@ -214,6 +214,33 @@ function mapRow(
   return row;
 }
 
+async function logSyncRun(
+  user: { id: string; email?: string | null; name?: string | null },
+  status: "SUCCESS" | "FAILED",
+  detail: string,
+  counts?: { totalRows?: number; updated?: number; created?: number; skipped?: number; errors?: number },
+) {
+  try {
+    await prisma.auditLog.create({
+      data: {
+        userId: user.id,
+        userEmail: user.email ?? null,
+        userName: user.name ?? null,
+        action: "SYNC",
+        resource: "AdmissionsReferralsSync",
+        diff: {
+          syncType: "DISCHARGE",
+          status,
+          detail,
+          ...(counts ?? {}),
+        },
+      },
+    });
+  } catch {
+    // non-fatal telemetry failure
+  }
+}
+
 // ── POST /api/referrals/discharge/sync ────────────────────────────────────────
 export async function POST(_req: NextRequest) {
   const session = await auth();
@@ -225,6 +252,7 @@ export async function POST(_req: NextRequest) {
   try { token = await getSharePointToken(); } catch { token = null; }
 
   if (!token) {
+    await logSyncRun(session.user, "FAILED", "No Microsoft token available");
     return NextResponse.json(
       { error: "No Microsoft 365 connection found. Go to Admin → Integrations → Microsoft 365 and connect your account." },
       { status: 424 },
@@ -237,6 +265,7 @@ export async function POST(_req: NextRequest) {
     const siteData = await graphGet(token, `https://graph.microsoft.com/v1.0/sites/${SP_HOST}:/${SP_SITE}`);
     siteId = siteData.id as string;
   } catch (e) {
+    await logSyncRun(session.user, "FAILED", `SharePoint site lookup failed: ${e instanceof Error ? e.message : String(e)}`);
     return NextResponse.json(
       { error: `Could not reach SharePoint site: ${e instanceof Error ? e.message : e}` },
       { status: 502 },
@@ -251,9 +280,13 @@ export async function POST(_req: NextRequest) {
       `https://graph.microsoft.com/v1.0/sites/${siteId}/drive/items/${SP_FILE_ID}/workbook/worksheets`,
     );
     const sheets = sheetsData.value as Array<{ name: string }>;
-    if (!sheets?.length) return NextResponse.json({ error: "No worksheets found" }, { status: 422 });
+    if (!sheets?.length) {
+      await logSyncRun(session.user, "FAILED", "Workbook contains no worksheets");
+      return NextResponse.json({ error: "No worksheets found" }, { status: 422 });
+    }
     worksheetName = sheets[0].name;
   } catch (e) {
+    await logSyncRun(session.user, "FAILED", `Workbook open failed: ${e instanceof Error ? e.message : String(e)}`);
     return NextResponse.json(
       { error: `Could not open workbook: ${e instanceof Error ? e.message : e}` },
       { status: 502 },
@@ -269,6 +302,7 @@ export async function POST(_req: NextRequest) {
     );
     values = (rangeData.values ?? []) as (string | number | boolean | null)[][];
   } catch (e) {
+    await logSyncRun(session.user, "FAILED", `Worksheet read failed: ${e instanceof Error ? e.message : String(e)}`);
     return NextResponse.json(
       { error: `Could not read worksheet: ${e instanceof Error ? e.message : e}` },
       { status: 502 },
@@ -276,6 +310,7 @@ export async function POST(_req: NextRequest) {
   }
 
   if (values.length < 2) {
+    await logSyncRun(session.user, "SUCCESS", "No data rows found", { totalRows: 0, updated: 0, created: 0, skipped: 0, errors: 0 });
     return NextResponse.json({ worksheet: worksheetName, totalRows: 0, updated: 0, created: 0, skipped: 0, errors: 0 });
   }
 
@@ -394,6 +429,14 @@ export async function POST(_req: NextRequest) {
       errorLog.push({ row: i + 2, error: e instanceof Error ? e.message : "Unknown error" });
     }
   }
+
+  await logSyncRun(session.user, errors > 0 ? "FAILED" : "SUCCESS", "Discharge sync completed", {
+    totalRows: dataRows.length,
+    updated,
+    created,
+    skipped,
+    errors,
+  });
 
   return NextResponse.json({
     worksheet: worksheetName,

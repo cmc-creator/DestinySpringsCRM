@@ -284,6 +284,9 @@ Referrals are formal admissions referral records linking a sending facility/prov
 - Track discharge handoff destination (Referred Out To) for post-discharge network visibility.
 - Filter by destination, export to CSV, and review top destination leaderboard from the Admissions Referrals ledger.
 - Missing discharge destinations are flagged for operational follow-up.
+- Weekly destination trend view (last 8 weeks) shows whether handoff quality is improving.
+- Sync Health panel shows latest Bedboard and Discharge sync status (healthy/stale/failed).
+- SLA Alerts panel highlights stale syncs and missing destination records.
 - View referral trend reports in Analytics.
 
 ---

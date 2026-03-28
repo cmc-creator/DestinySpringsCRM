@@ -199,6 +199,33 @@ function mapRow(
   return row;
 }
 
+async function logSyncRun(
+  user: { id: string; email?: string | null; name?: string | null },
+  status: "SUCCESS" | "FAILED",
+  detail: string,
+  counts?: { totalRows?: number; imported?: number; skipped?: number; errors?: number },
+) {
+  try {
+    await prisma.auditLog.create({
+      data: {
+        userId: user.id,
+        userEmail: user.email ?? null,
+        userName: user.name ?? null,
+        action: "SYNC",
+        resource: "AdmissionsReferralsSync",
+        diff: {
+          syncType: "BEDBOARD",
+          status,
+          detail,
+          ...(counts ?? {}),
+        },
+      },
+    });
+  } catch {
+    // non-fatal telemetry failure
+  }
+}
+
 // ── POST /api/referrals/intake/m365/sync ──────────────────────────────────────
 export async function POST(_req: NextRequest) {
   const session = await auth();
@@ -215,6 +242,7 @@ export async function POST(_req: NextRequest) {
   }
 
   if (!token) {
+    await logSyncRun(session.user, "FAILED", "No Microsoft token available");
     return NextResponse.json(
       {
         error:
@@ -233,6 +261,7 @@ export async function POST(_req: NextRequest) {
     );
     siteId = siteData.id as string;
   } catch (e) {
+    await logSyncRun(session.user, "FAILED", `SharePoint site lookup failed: ${e instanceof Error ? e.message : String(e)}`);
     return NextResponse.json(
       { error: `Could not reach SharePoint site: ${e instanceof Error ? e.message : e}` },
       { status: 502 },
@@ -248,10 +277,12 @@ export async function POST(_req: NextRequest) {
     );
     const sheets = sheetsData.value as Array<{ id: string; name: string }>;
     if (!sheets || sheets.length === 0) {
+      await logSyncRun(session.user, "FAILED", "Workbook contains no worksheets");
       return NextResponse.json({ error: "No worksheets found in workbook" }, { status: 422 });
     }
     worksheetName = sheets[0].name;
   } catch (e) {
+    await logSyncRun(session.user, "FAILED", `Workbook open failed: ${e instanceof Error ? e.message : String(e)}`);
     return NextResponse.json(
       {
         error: `Could not open workbook. If the file is open in Excel, close it and try again. Detail: ${e instanceof Error ? e.message : e}`,
@@ -269,6 +300,7 @@ export async function POST(_req: NextRequest) {
     );
     values = (rangeData.values ?? []) as (string | number | boolean | null)[][];
   } catch (e) {
+    await logSyncRun(session.user, "FAILED", `Worksheet read failed: ${e instanceof Error ? e.message : String(e)}`);
     return NextResponse.json(
       { error: `Could not read worksheet data: ${e instanceof Error ? e.message : e}` },
       { status: 502 },
@@ -276,6 +308,7 @@ export async function POST(_req: NextRequest) {
   }
 
   if (values.length < 2) {
+    await logSyncRun(session.user, "SUCCESS", "No data rows found", { totalRows: 0, imported: 0, skipped: 0, errors: 0 });
     return NextResponse.json({
       worksheet: worksheetName,
       totalRows: 0,
@@ -359,6 +392,13 @@ export async function POST(_req: NextRequest) {
       errorLog.push({ row: i + 2, error: e instanceof Error ? e.message : "Unknown error" });
     }
   }
+
+  await logSyncRun(session.user, errors > 0 ? "FAILED" : "SUCCESS", "Bedboard sync completed", {
+    totalRows: dataRows.length,
+    imported,
+    skipped,
+    errors,
+  });
 
   return NextResponse.json({
     worksheet: worksheetName,

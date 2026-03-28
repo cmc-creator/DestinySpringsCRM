@@ -24,6 +24,27 @@ type Referral = {
   referralSource:{ id:string; name:string; type:string; specialty?:string };
 };
 
+type SyncHealthEntry = {
+  syncType: "BEDBOARD" | "DISCHARGE";
+  status: "SUCCESS" | "FAILED";
+  detail?: string;
+  createdAt: string;
+  ageHours: number;
+  stale: boolean;
+  totalRows?: number;
+  imported?: number;
+  updated?: number;
+  created?: number;
+  skipped?: number;
+  errors?: number;
+};
+
+type SyncHealthResponse = {
+  bedboard: SyncHealthEntry | null;
+  discharge: SyncHealthEntry | null;
+  recentFailures: SyncHealthEntry[];
+};
+
 export default function ReferralsPage() {
   const [referrals, setReferrals] = useState<Referral[]>([]);
   const [loading, setLoading]     = useState(true);
@@ -34,6 +55,7 @@ export default function ReferralsPage() {
   const [toDate,   setToDate]     = useState("");
   const [status,   setStatus]     = useState("");
   const [destinationFilter, setDestinationFilter] = useState("");
+  const [syncHealth, setSyncHealth] = useState<SyncHealthResponse | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -41,8 +63,12 @@ export default function ReferralsPage() {
     if (fromDate) params.set("from", fromDate);
     if (toDate)   params.set("to",   toDate);
     if (status)   params.set("status", status);
-    const res = await fetch(`/api/referrals?${params.toString()}`);
-    if (res.ok) setReferrals(await res.json());
+    const [referralsRes, healthRes] = await Promise.all([
+      fetch(`/api/referrals?${params.toString()}`),
+      fetch("/api/referrals/sync-health"),
+    ]);
+    if (referralsRes.ok) setReferrals(await referralsRes.json());
+    if (healthRes.ok) setSyncHealth(await healthRes.json());
     setLoading(false);
   }, [fromDate, toDate, status]);
 
@@ -134,6 +160,43 @@ export default function ReferralsPage() {
   const topDestinations = Object.entries(byDestination)
     .sort((a, b) => b[1] - a[1])
     .slice(0, 5);
+
+  const startOfWeek = (date: Date) => {
+    const utc = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+    const day = utc.getUTCDay();
+    const diff = day === 0 ? -6 : 1 - day;
+    utc.setUTCDate(utc.getUTCDate() + diff);
+    return utc;
+  };
+
+  const weeklyDestinationTrends = (() => {
+    const now = new Date();
+    const thisWeek = startOfWeek(now);
+    const weeks = Array.from({ length: 8 }).map((_, idx) => {
+      const week = new Date(thisWeek);
+      week.setUTCDate(week.getUTCDate() - (7 * (7 - idx)));
+      return week;
+    });
+
+    const trendMap = new Map<string, number>();
+    for (const weekStart of weeks) {
+      trendMap.set(weekStart.toISOString().slice(0, 10), 0);
+    }
+
+    for (const referral of filteredReferrals) {
+      if (!referral.dischargeDestination?.trim()) continue;
+      if (!referral.dischargeDate) continue;
+      const dischargeDate = new Date(referral.dischargeDate);
+      if (isNaN(dischargeDate.getTime())) continue;
+      const key = startOfWeek(dischargeDate).toISOString().slice(0, 10);
+      if (!trendMap.has(key)) continue;
+      trendMap.set(key, (trendMap.get(key) ?? 0) + 1);
+    }
+
+    return Array.from(trendMap.entries()).map(([weekStart, count]) => ({ weekStart, count }));
+  })();
+
+  const maxWeeklyTrend = Math.max(1, ...weeklyDestinationTrends.map((week) => week.count));
 
   function exportCsv() {
     const headers = [
@@ -306,6 +369,87 @@ export default function ReferralsPage() {
             ))}
           </div>
         )}
+      </div>
+
+      {/* Weekly trend */}
+      <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:12, padding:"14px 16px", marginBottom:16 }}>
+        <div style={{ fontSize:"0.68rem", fontWeight:700, color:C.dim, letterSpacing:"0.1em", textTransform:"uppercase", marginBottom:8 }}>
+          Weekly Destination Trend (Last 8 Weeks)
+        </div>
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(110px,1fr))", gap:8 }}>
+          {weeklyDestinationTrends.map((week) => {
+            const height = Math.max(8, Math.round((week.count / maxWeeklyTrend) * 56));
+            const weekLabel = new Date(`${week.weekStart}T00:00:00.000Z`).toLocaleDateString("en-US", { month:"short", day:"numeric" });
+            return (
+              <div key={week.weekStart} style={{ border:`1px solid ${C.border}`, borderRadius:8, padding:"8px 10px" }}>
+                <div style={{ color:C.muted, fontSize:"0.7rem", marginBottom:6 }}>{weekLabel}</div>
+                <div style={{ height:56, display:"flex", alignItems:"flex-end" }}>
+                  <div style={{ width:"100%", height, borderRadius:6, background:"rgba(59,130,246,0.35)", border:"1px solid rgba(59,130,246,0.5)" }} />
+                </div>
+                <div style={{ color:C.cyan, fontSize:"0.8rem", fontWeight:700, marginTop:6 }}>{week.count}</div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Sync health and SLA alerts */}
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(300px,1fr))", gap:12, marginBottom:16 }}>
+        <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:12, padding:"14px 16px" }}>
+          <div style={{ fontSize:"0.68rem", fontWeight:700, color:C.dim, letterSpacing:"0.1em", textTransform:"uppercase", marginBottom:8 }}>
+            Sync Health
+          </div>
+          {syncHealth ? (
+            <div style={{ display:"grid", gap:8 }}>
+              {[
+                { label: "Bedboard", entry: syncHealth.bedboard },
+                { label: "Discharge", entry: syncHealth.discharge },
+              ].map(({ label, entry }) => (
+                <div key={label} style={{ border:`1px solid ${C.border}`, borderRadius:8, padding:"8px 10px" }}>
+                  <div style={{ display:"flex", justifyContent:"space-between", gap:8, marginBottom:4 }}>
+                    <span style={{ color:C.text, fontSize:"0.82rem", fontWeight:700 }}>{label}</span>
+                    <span style={{ color: !entry ? C.muted : entry.status === "FAILED" || entry.stale ? "#f87171" : "#86efac", fontSize:"0.75rem", fontWeight:700 }}>
+                      {!entry ? "No runs" : entry.status === "FAILED" ? "FAILED" : entry.stale ? "STALE" : "HEALTHY"}
+                    </span>
+                  </div>
+                  <div style={{ color:C.muted, fontSize:"0.76rem" }}>
+                    {!entry ? "No sync telemetry recorded yet." : `Last run ${new Date(entry.createdAt).toLocaleString()} · ${Math.floor(entry.ageHours)}h ago`}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div style={{ color:C.muted, fontSize:"0.82rem" }}>Loading sync health…</div>
+          )}
+        </div>
+
+        <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:12, padding:"14px 16px" }}>
+          <div style={{ fontSize:"0.68rem", fontWeight:700, color:C.dim, letterSpacing:"0.1em", textTransform:"uppercase", marginBottom:8 }}>
+            SLA Alerts
+          </div>
+          <div style={{ display:"grid", gap:8 }}>
+            {missingDestination > 0 && (
+              <div style={{ border:"1px solid rgba(239,68,68,0.3)", background:"rgba(239,68,68,0.08)", borderRadius:8, padding:"8px 10px", color:"#fca5a5", fontSize:"0.78rem", fontWeight:600 }}>
+                {missingDestination} discharged referral{missingDestination === 1 ? "" : "s"} missing destination.
+              </div>
+            )}
+            {syncHealth?.bedboard?.stale && (
+              <div style={{ border:"1px solid rgba(245,158,11,0.35)", background:"rgba(245,158,11,0.1)", borderRadius:8, padding:"8px 10px", color:"#fcd34d", fontSize:"0.78rem", fontWeight:600 }}>
+                Bedboard sync is stale ({Math.floor(syncHealth.bedboard.ageHours)}h since last run).
+              </div>
+            )}
+            {syncHealth?.discharge?.stale && (
+              <div style={{ border:"1px solid rgba(245,158,11,0.35)", background:"rgba(245,158,11,0.1)", borderRadius:8, padding:"8px 10px", color:"#fcd34d", fontSize:"0.78rem", fontWeight:600 }}>
+                Discharge sync is stale ({Math.floor(syncHealth.discharge.ageHours)}h since last run).
+              </div>
+            )}
+            {!missingDestination && !syncHealth?.bedboard?.stale && !syncHealth?.discharge?.stale && (
+              <div style={{ border:"1px solid rgba(16,185,129,0.35)", background:"rgba(16,185,129,0.1)", borderRadius:8, padding:"8px 10px", color:"#86efac", fontSize:"0.78rem", fontWeight:600 }}>
+                All SLA checks are healthy.
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Table */}
