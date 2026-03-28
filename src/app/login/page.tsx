@@ -69,7 +69,8 @@ function LoginForm() {
     setLoading(true);
     setError("");
     try {
-      const result = await signIn("credentials", { email, password, redirect: false });
+      const normalizedEmail = email.toLowerCase().trim();
+      const result = await signIn("credentials", { email: normalizedEmail, password, redirect: false });
       if (result?.error) {
         setError(mapLoginError(result.error));
         return;

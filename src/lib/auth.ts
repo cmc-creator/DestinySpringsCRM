@@ -19,10 +19,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           return null;
         }
 
+        const normalizedEmail = String(credentials.email).toLowerCase().trim();
+        const providedPassword = String(credentials.password);
+
         let user;
         try {
-          user = await prisma.user.findUnique({
-            where: { email: credentials.email as string },
+          user = await prisma.user.findFirst({
+            where: { email: { equals: normalizedEmail, mode: "insensitive" } },
             include: {
               rep: { select: { status: true } },
               hospital: { select: { status: true } },
@@ -34,26 +37,30 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         }
 
         if (!user || !user.password) {
+          console.warn("[auth] credentials rejected: user not found or missing password", { email: normalizedEmail });
           return null;
         }
 
         if (user.role === "REP" && user.rep?.status !== "ACTIVE") {
+          console.warn("[auth] credentials rejected: REP not active", { email: normalizedEmail, repStatus: user.rep?.status ?? null });
           return null;
         }
 
         if (user.role === "ACCOUNT" && user.hospital?.status !== "ACTIVE") {
+          console.warn("[auth] credentials rejected: ACCOUNT hospital not active", { email: normalizedEmail, hospitalStatus: user.hospital?.status ?? null });
           return null;
         }
 
         let isValid = false;
         try {
-          isValid = await bcrypt.compare(credentials.password as string, user.password);
+          isValid = await bcrypt.compare(providedPassword, user.password);
         } catch (err) {
           console.error("[auth] bcrypt error:", err);
           return null;
         }
 
         if (!isValid) {
+          console.warn("[auth] credentials rejected: password mismatch", { email: normalizedEmail });
           return null;
         }
 
