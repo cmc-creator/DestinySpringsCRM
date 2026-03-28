@@ -89,8 +89,8 @@ export default function ReferralsPage() {
     <div>
       {/* Header */}
       <div style={{ marginBottom:28 }}>
-        <p style={{ color:C.cyan, fontSize:"0.7rem", fontWeight:700, letterSpacing:"0.14em", textTransform:"uppercase", marginBottom:4 }}>Referral Tracking</p>
-        <h1 style={{ fontSize:"1.8rem", fontWeight:900, color:C.text }}>Referral Attribution Ledger</h1>
+        <p style={{ color:C.cyan, fontSize:"0.7rem", fontWeight:700, letterSpacing:"0.14em", textTransform:"uppercase", marginBottom:4 }}>Admissions Referrals</p>
+        <h1 style={{ fontSize:"1.8rem", fontWeight:900, color:C.text }}>Admissions Referrals Ledger</h1>
         <p style={{ color:C.muted, fontSize:"0.875rem", marginTop:4 }}>Track who referred each admission from the daily bedboard and EHR feeds.</p>
         <div style={{ display:"flex", gap:10, flexWrap:"wrap", marginTop:12 }}>
           <button
@@ -178,7 +178,7 @@ export default function ReferralsPage() {
               )}
               {!loading && referrals.length === 0 && (
                 <tr><td colSpan={8} style={{ padding:"48px", textAlign:"center", color:C.muted }}>
-                  No referral attribution records yet. Sync the daily bedboard (M365) or import from MedWorxs.
+                  No admissions referral records yet. Sync the daily bedboard (M365) or import from MedWorxs.
                 </td></tr>
               )}
               {referrals.map((r) => (

@@ -111,7 +111,7 @@ async function resolveOrCreateSource(row: M365Row): Promise<string | null> {
       npi: row.sourceNpi ?? null,
       type: "OTHER",
       specialty: row.sourceType ?? null,
-      notes: "Auto-created from Microsoft 365 daily bedboard sync",
+      notes: "Auto-created from Microsoft 365 admissions referrals sync",
     },
     select: { id: true },
   });

@@ -277,7 +277,7 @@ Track facility partnership contracts and e-signature status.
 
 ### Referrals
 
-Referrals are formal referral-attribution records linking a sending facility/provider to an admission.
+Referrals are formal admissions referral records linking a sending facility/provider to an admission.
 
 - Each referral is linked to: sending hospital, referral source (provider/CM), rep, and opportunity.
 - Track referral date, response time, outcome (converted / not converted).
@@ -540,7 +540,7 @@ Pre-built integration connectors available for configuration.
 | **MedWorxs** | Clinical operations data sync |
 | **Paycom** | HR/payroll data for rep commission calculations |
 | **Monday.com** | Project management sync for admissions teams |
-| **Microsoft 365 Daily Bedboard** | Daily bedboard sync from M365 Excel/SharePoint to referral attribution records |
+| **Microsoft 365 Admissions Referrals** | Daily bedboard sync from M365 Excel/SharePoint to admissions referral records |
 | **Discharge Sync** | Automated discharge date capture from EHR |
 | **Email Tracking** | Track email open/click rates for rep outreach |
 | **E-Signature** | DocuSign / SignNow for contract e-signatures |
@@ -931,10 +931,10 @@ Themes use CSS custom properties (`--nyx-*` tokens) — the entire UI responds t
 - Project management board sync.
 - New opportunities can auto-create Monday.com items.
 
-### Microsoft 365 Daily Bedboard
+### Microsoft 365 Admissions Referrals
 - Sync the Destiny Springs daily bedboard from M365 Excel/SharePoint.
-- Extract and track referral attribution (who referred each admission) in the Referrals ledger.
-- Configured in **Integrations → Microsoft 365 Daily Bedboard Sync**.
+- Extract and track admissions referrals (who referred each admission) in the Referrals ledger.
+- Configured in **Integrations → Microsoft 365 Admissions Referrals Sync**.
 
 ### Discharge Sync
 - Automated discharge date capture from EHR systems.
