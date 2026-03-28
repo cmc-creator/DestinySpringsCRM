@@ -137,7 +137,7 @@ const ADMIN_NAV: NavGroup[] = [
   {
     group: "Intake", tint: "purple",
     items: [
-      { href: "/admin/inquiry",    label: "Pre-Assessment Inbox" },
+      { href: "/admin/inquiry",    label: "Admissions Intake Inbox" },
       { href: "/admin/resources",  label: "Resource Library" },
     ],
   },
@@ -179,7 +179,7 @@ const REP_NAV: NavGroup[] = [
   {
     group: "Intake", tint: "purple",
     items: [
-      { href: "/rep/inquiry",   label: "Pre-Assessment" },
+      { href: "/rep/inquiry",   label: "Admissions Intake" },
       { href: "/rep/resources", label: "Resource Library" },
     ],
   },

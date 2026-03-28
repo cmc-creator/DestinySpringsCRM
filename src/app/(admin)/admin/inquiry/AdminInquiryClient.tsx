@@ -89,8 +89,8 @@ export default function AdminInquiryClient() {
       {/* Header */}
       <div style={{ marginBottom: 28 }}>
         <p style={{ color: C.lbl, fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 4 }}>ADMIN</p>
-        <h1 style={{ fontSize: "1.8rem", fontWeight: 900, color: C.text }}>Pre-Assessment Inbox</h1>
-        <p style={{ color: C.muted, fontSize: "0.875rem", marginTop: 4 }}>Review and action patient pre-assessments submitted by reps</p>
+        <h1 style={{ fontSize: "1.8rem", fontWeight: 900, color: C.text }}>Admissions Intake Inbox</h1>
+        <p style={{ color: C.muted, fontSize: "0.875rem", marginTop: 4 }}>Review and action patient pre-assessments submitted by reps (not user account onboarding)</p>
       </div>
 
       {/* Filter */}
