@@ -918,6 +918,20 @@ export default function SettingsClient({ personalMode = false }: { personalMode?
   const [bgLoading, setBgLoading]       = useState(false);
   const [bgSelections, setBgSelections] = useState<Record<string, string>>({});
   const [bgTile, setBgTile]             = useState(false);
+  const [profileForm, setProfileForm] = useState({
+    fullName: "",
+    email: "",
+    title: "",
+    phone: "",
+    city: "",
+    state: "",
+    bio: "",
+    organizationName: "",
+  });
+  const [profileLoading, setProfileLoading] = useState(false);
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profileError, setProfileError] = useState("");
+  const [profileSuccess, setProfileSuccess] = useState("");
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -984,6 +998,52 @@ export default function SettingsClient({ personalMode = false }: { personalMode?
       .then(r => r.json()).then(setBgAssets).catch(() => setBgAssets([]))
       .finally(() => setBgLoading(false));
   }, [activeTheme, bgTab]);
+
+  useEffect(() => {
+    if (!showPersonalHeading) return;
+    let active = true;
+    setProfileLoading(true);
+    fetch("/api/me/profile")
+      .then(async (response) => {
+        if (!response.ok) throw new Error("Could not load profile");
+        return response.json() as Promise<{ profile?: {
+          fullName?: string;
+          email?: string;
+          title?: string;
+          phone?: string;
+          city?: string;
+          state?: string;
+          bio?: string;
+          organizationName?: string;
+        } }>;
+      })
+      .then((data) => {
+        if (!active) return;
+        const profile = data.profile;
+        setProfileForm({
+          fullName: profile?.fullName ?? "",
+          email: profile?.email ?? "",
+          title: profile?.title ?? "",
+          phone: profile?.phone ?? "",
+          city: profile?.city ?? "",
+          state: profile?.state ?? "",
+          bio: profile?.bio ?? "",
+          organizationName: profile?.organizationName ?? "",
+        });
+        setProfileError("");
+      })
+      .catch(() => {
+        if (!active) return;
+        setProfileError("Could not load profile details right now.");
+      })
+      .finally(() => {
+        if (active) setProfileLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [showPersonalHeading]);
 
   function selectTheme(key: string) {
     setActiveTheme(key);
@@ -1173,6 +1233,42 @@ export default function SettingsClient({ personalMode = false }: { personalMode?
     }
   }
 
+  async function saveProfile() {
+    setProfileError("");
+    setProfileSuccess("");
+    if (!profileForm.fullName.trim()) {
+      setProfileError("Full name is required.");
+      return;
+    }
+
+    setProfileSaving(true);
+    try {
+      const response = await fetch("/api/me/profile", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fullName: profileForm.fullName,
+          title: profileForm.title,
+          phone: profileForm.phone,
+          city: profileForm.city,
+          state: profileForm.state,
+          bio: profileForm.bio,
+        }),
+      });
+      const data = (await response.json().catch(() => ({}))) as { error?: string };
+      if (!response.ok) {
+        setProfileError(data.error ?? "Could not save profile right now.");
+        return;
+      }
+
+      setProfileSuccess("Profile updated successfully.");
+    } catch {
+      setProfileError("Network error while saving profile.");
+    } finally {
+      setProfileSaving(false);
+    }
+  }
+
   const curTheme = THEMES.find(t => t.key === activeTheme) ?? THEMES[0];
 
   return (
@@ -1182,6 +1278,75 @@ export default function SettingsClient({ personalMode = false }: { personalMode?
         <h1 style={{ fontSize: "1.9rem", fontWeight: 900, color: "var(--nyx-text)", letterSpacing: "-0.025em" }}>{showPersonalHeading ? "My Account" : "Settings"}</h1>
         <p style={{ color: "var(--nyx-text-muted)", fontSize: "0.875rem", marginTop: 5 }}>{showPersonalHeading ? "Personal preferences, notifications, AI behavior, and account security" : "Appearance, organization, notifications, and developer tools"}</p>
       </div>
+
+      {showPersonalHeading && (
+        <Section title="Profile">
+          <p style={{ fontSize: "0.78rem", color: "var(--nyx-text-muted)", marginBottom: 12, lineHeight: 1.6 }}>
+            Manage your personal account details used across the platform.
+          </p>
+          {profileLoading ? (
+            <div style={{ fontSize: "0.78rem", color: "var(--nyx-text-muted)" }}>Loading profile…</div>
+          ) : (
+            <>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>
+                <div>
+                  <label style={{ fontSize: "0.72rem", color: "var(--nyx-text-muted)", display: "block", marginBottom: 4 }}>FULL NAME</label>
+                  <input style={inp} value={profileForm.fullName} onChange={(event) => setProfileForm((current) => ({ ...current, fullName: event.target.value }))} />
+                </div>
+                <div>
+                  <label style={{ fontSize: "0.72rem", color: "var(--nyx-text-muted)", display: "block", marginBottom: 4 }}>EMAIL</label>
+                  <input style={{ ...inp, opacity: 0.72 }} value={profileForm.email} disabled />
+                </div>
+                {profileForm.organizationName ? (
+                  <div>
+                    <label style={{ fontSize: "0.72rem", color: "var(--nyx-text-muted)", display: "block", marginBottom: 4 }}>ORGANIZATION</label>
+                    <input style={{ ...inp, opacity: 0.72 }} value={profileForm.organizationName} disabled />
+                  </div>
+                ) : null}
+                <div>
+                  <label style={{ fontSize: "0.72rem", color: "var(--nyx-text-muted)", display: "block", marginBottom: 4 }}>TITLE</label>
+                  <input style={inp} value={profileForm.title} onChange={(event) => setProfileForm((current) => ({ ...current, title: event.target.value }))} />
+                </div>
+                <div>
+                  <label style={{ fontSize: "0.72rem", color: "var(--nyx-text-muted)", display: "block", marginBottom: 4 }}>PHONE</label>
+                  <input style={inp} value={profileForm.phone} onChange={(event) => setProfileForm((current) => ({ ...current, phone: event.target.value }))} />
+                </div>
+                {session?.user?.role === "REP" && (
+                  <>
+                    <div>
+                      <label style={{ fontSize: "0.72rem", color: "var(--nyx-text-muted)", display: "block", marginBottom: 4 }}>CITY</label>
+                      <input style={inp} value={profileForm.city} onChange={(event) => setProfileForm((current) => ({ ...current, city: event.target.value }))} />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: "0.72rem", color: "var(--nyx-text-muted)", display: "block", marginBottom: 4 }}>STATE</label>
+                      <input style={inp} value={profileForm.state} onChange={(event) => setProfileForm((current) => ({ ...current, state: event.target.value }))} />
+                    </div>
+                    <div style={{ gridColumn: "1 / -1" }}>
+                      <label style={{ fontSize: "0.72rem", color: "var(--nyx-text-muted)", display: "block", marginBottom: 4 }}>BIO</label>
+                      <textarea style={{ ...inp, minHeight: 84, resize: "vertical" }} value={profileForm.bio} onChange={(event) => setProfileForm((current) => ({ ...current, bio: event.target.value }))} />
+                    </div>
+                  </>
+                )}
+              </div>
+              {(profileError || profileSuccess) && (
+                <div style={{ marginTop: 10, fontSize: "0.78rem", color: profileError ? "#f87171" : "#34d399" }}>
+                  {profileError || profileSuccess}
+                </div>
+              )}
+              <div style={{ marginTop: 14 }}>
+                <button
+                  type="button"
+                  onClick={saveProfile}
+                  disabled={profileSaving}
+                  style={{ background: "var(--nyx-accent)", border: "1px solid transparent", borderRadius: 8, padding: "10px 18px", color: "#fff", cursor: profileSaving ? "not-allowed" : "pointer", fontSize: "0.82rem", fontWeight: 700, opacity: profileSaving ? 0.75 : 1 }}
+                >
+                  {profileSaving ? "Saving..." : "Save Profile"}
+                </button>
+              </div>
+            </>
+          )}
+        </Section>
+      )}
 
       {/*  THEMES  */}
       <Section title="Appearance &mdash; Theme">

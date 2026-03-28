@@ -143,6 +143,7 @@ const ADMIN_NAV: NavGroup[] = [
   {
     group: "Settings", tint: "red",
     items: [
+      { href: "/me",                 label: "My Account" },
       { href: "/admin/users",        label: "User Accounts" },
       { href: "/admin/import",       label: "Import Data" },
       { href: "/admin/integrations", label: "Integrations" },
@@ -185,6 +186,7 @@ const REP_NAV: NavGroup[] = [
     group: "Files", tint: "cyan",
     items: [
       { href: "/rep/documents", label: "Documents" },
+      { href: "/me",            label: "My Account" },
     ],
   },
 ];
@@ -195,6 +197,7 @@ const ACCOUNT_NAV: NavGroup[] = [
     items: [
       { href: "/account/dashboard",    label: "Dashboard" },
       { href: "/account/engagements",  label: "Engagements" },
+      { href: "/me",                    label: "My Account" },
     ],
   },
 ];
