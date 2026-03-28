@@ -1524,8 +1524,14 @@ export default function SettingsClient({ personalMode = false }: { personalMode?
               </button>
               {bgAssets.length === 0 ? (
                 <div style={{ fontSize: "0.75rem", color: "var(--nyx-text-muted)", padding: "20px 10px", lineHeight: 1.7, alignSelf: "center" }}>
-                  No images yet, drop images into{" "}
-                  <code style={{ fontFamily: "monospace", fontSize: "0.68rem" }}>public/themes/{activeTheme}/{bgTab}/</code>
+                  {isAdmin ? (
+                    <>
+                      No images yet, drop images into{" "}
+                      <code style={{ fontFamily: "monospace", fontSize: "0.68rem" }}>public/themes/{activeTheme}/{bgTab}/</code>
+                    </>
+                  ) : (
+                    "No images available for this theme section yet."
+                  )}
                 </div>
               ) : bgAssets.map(url => {
                 const isSelected = bgSelections[`destinysprings-bg-${activeTheme}-${bgTab}`] === url;
