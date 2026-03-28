@@ -182,7 +182,7 @@ export default function DischargeSyncPage() {
         <ol style={{ margin: 0, paddingLeft: 18, color: MUTED, fontSize: "0.82rem", lineHeight: 1.9 }}>
           <li>Each row must have a discharge date — rows without one are skipped</li>
           <li>Matches existing referral records first by Record ID, then by patient initials + admission date</li>
-          <li>If a match is found, updates the discharge date on that record</li>
+          <li>If a match is found, updates the discharge date and referred-out destination on that record</li>
           <li>If no match, creates a new referral record with the discharge date set</li>
           <li>Duplicates (same source + initials + discharge day) are skipped</li>
           <li>No existing records are deleted</li>
@@ -200,6 +200,7 @@ export default function DischargeSyncPage() {
             ["Facility / Source / Referring Facility", "Referral source"],
             ["NPI / Facility NPI", "Source NPI"],
             ["Program / Service Line / LOC", "Service line"],
+            ["Referred Out To / Discharge Destination / Placement", "Where the patient was referred after discharge"],
             ["ID / Record ID / MRN / Patient ID", "External ID (best match key)"],
             ["Notes / Comments", "Notes"],
           ].map(([col, desc]) => (

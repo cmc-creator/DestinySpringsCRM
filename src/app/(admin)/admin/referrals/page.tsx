@@ -20,7 +20,7 @@ const STATUS_TEXT: Record<string, string> = {
 
 type Referral = {
   id:string; status:string; patientInitials?:string; admissionDate?:string;
-  dischargeDate?:string; serviceLine?:string; externalId?:string; createdAt:string;
+  dischargeDate?:string; dischargeDestination?:string; serviceLine?:string; externalId?:string; createdAt:string;
   referralSource:{ id:string; name:string; type:string; specialty?:string };
 };
 
@@ -28,6 +28,7 @@ export default function ReferralsPage() {
   const [referrals, setReferrals] = useState<Referral[]>([]);
   const [loading, setLoading]     = useState(true);
   const [syncingBedboard, setSyncingBedboard] = useState(false);
+  const [syncingDischarge, setSyncingDischarge] = useState(false);
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
   const [fromDate, setFromDate]   = useState("");
   const [toDate,   setToDate]     = useState("");
@@ -62,6 +63,25 @@ export default function ReferralsPage() {
       setSyncMessage("Network error while syncing bedboard");
     } finally {
       setSyncingBedboard(false);
+    }
+  }
+
+  async function syncDischargeNow() {
+    setSyncingDischarge(true);
+    setSyncMessage(null);
+    try {
+      const res = await fetch("/api/referrals/discharge/sync", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) {
+        setSyncMessage(data?.error ? String(data.error) : "Discharge sync failed");
+      } else {
+        setSyncMessage(`Discharge synced: ${data.updated ?? 0} updated, ${data.created ?? 0} created, ${data.skipped ?? 0} skipped, ${data.errors ?? 0} errors`);
+        await load();
+      }
+    } catch {
+      setSyncMessage("Network error while syncing discharge sheet");
+    } finally {
+      setSyncingDischarge(false);
     }
   }
 
@@ -103,6 +123,16 @@ export default function ReferralsPage() {
           >
             {syncingBedboard ? "Syncing Bedboard…" : "Sync Daily Bedboard (M365)"}
           </button>
+          <button
+            onClick={syncDischargeNow}
+            disabled={syncingDischarge}
+            style={{
+              background:"rgba(16,185,129,0.12)", border:"1px solid rgba(16,185,129,0.35)", borderRadius:8,
+              padding:"8px 14px", color:"#86efac", cursor: syncingDischarge ? "not-allowed" : "pointer", fontSize:"0.8rem", fontWeight:700,
+            }}
+          >
+            {syncingDischarge ? "Syncing Discharge…" : "Sync Discharge Sheet (M365)"}
+          </button>
           <a
             href="/admin/integrations/m365-intake"
             style={{
@@ -111,6 +141,15 @@ export default function ReferralsPage() {
             }}
           >
             Open Bedboard Integration
+          </a>
+          <a
+            href="/admin/integrations/discharge-sync"
+            style={{
+              background:"rgba(255,255,255,0.04)", border:`1px solid ${C.border}`, borderRadius:8,
+              padding:"8px 14px", color:C.muted, textDecoration:"none", fontSize:"0.8rem", fontWeight:700,
+            }}
+          >
+            Open Discharge Integration
           </a>
         </div>
         {syncMessage && <p style={{ color:C.muted, fontSize:"0.78rem", marginTop:8 }}>{syncMessage}</p>}
@@ -167,17 +206,17 @@ export default function ReferralsPage() {
           <table style={{ width:"100%", borderCollapse:"collapse" }}>
             <thead>
               <tr style={{ borderBottom:`1px solid ${C.border}` }}>
-                {["Referring Source","Type","Patient","Service Line","Admitted","Discharged","Encounter #","Status"].map((h) => (
+                {["Referring Source","Type","Patient","Service Line","Admitted","Discharged","Referred Out To","Encounter #","Status"].map((h) => (
                   <th key={h} style={{ padding:"12px 14px", textAlign:"left", fontSize:"0.65rem", fontWeight:700, color:C.dim, letterSpacing:"0.1em", textTransform:"uppercase", whiteSpace:"nowrap" }}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {loading && (
-                <tr><td colSpan={8} style={{ padding:"32px", textAlign:"center", color:C.muted }}>Loading…</td></tr>
+                <tr><td colSpan={9} style={{ padding:"32px", textAlign:"center", color:C.muted }}>Loading…</td></tr>
               )}
               {!loading && referrals.length === 0 && (
-                <tr><td colSpan={8} style={{ padding:"48px", textAlign:"center", color:C.muted }}>
+                <tr><td colSpan={9} style={{ padding:"48px", textAlign:"center", color:C.muted }}>
                   No admissions referral records yet. Sync the daily bedboard (M365) or import from MedWorxs.
                 </td></tr>
               )}
@@ -196,6 +235,7 @@ export default function ReferralsPage() {
                   <td style={{ padding:"12px 14px", fontSize:"0.82rem", color:C.muted }}>{r.serviceLine ?? "-"}</td>
                   <td style={{ padding:"12px 14px", fontSize:"0.82rem", color:C.muted, whiteSpace:"nowrap" }}>{fmt(r.admissionDate)}</td>
                   <td style={{ padding:"12px 14px", fontSize:"0.82rem", color:C.muted, whiteSpace:"nowrap" }}>{fmt(r.dischargeDate)}</td>
+                  <td style={{ padding:"12px 14px", fontSize:"0.82rem", color:C.muted }}>{r.dischargeDestination ?? "-"}</td>
                   <td style={{ padding:"12px 14px", fontSize:"0.75rem", color:C.dim, fontFamily:"monospace" }}>{r.externalId ?? "-"}</td>
                   <td style={{ padding:"12px 14px" }}>
                     <span style={{ background: STATUS_COLORS[r.status] ?? "transparent", borderRadius:999, padding:"3px 10px", fontSize:"0.65rem", fontWeight:700, color: STATUS_TEXT[r.status] ?? C.muted, letterSpacing:"0.08em" }}>

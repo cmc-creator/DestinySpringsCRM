@@ -541,7 +541,7 @@ Pre-built integration connectors available for configuration.
 | **Paycom** | HR/payroll data for rep commission calculations |
 | **Monday.com** | Project management sync for admissions teams |
 | **Microsoft 365 Admissions Referrals** | Daily bedboard sync from M365 Excel/SharePoint to admissions referral records |
-| **Discharge Sync** | Automated discharge date capture from EHR |
+| **Discharge Sync** | Automated discharge date and referred-out destination capture from M365 discharge sheet |
 | **Email Tracking** | Track email open/click rates for rep outreach |
 | **E-Signature** | DocuSign / SignNow for contract e-signatures |
 | **Data Migration** | One-time migration tools for legacy CRM data |
@@ -838,6 +838,7 @@ Voice dictation is powered by the **Web Speech API** (Chrome and Edge only).
    - **Rep** (assigned business development rep)
    - **Opportunity** (link to a pending or active opportunity if one exists)
    - **Referral date**
+   - **Referred Out To** (for discharged patients, where applicable)
 4. Save. The referral appears in the dashboard referral feed.
 5. As the opportunity progresses, the referral outcome updates automatically.
 
@@ -937,7 +938,8 @@ Themes use CSS custom properties (`--nyx-*` tokens) — the entire UI responds t
 - Configured in **Integrations → Microsoft 365 Admissions Referrals Sync**.
 
 ### Discharge Sync
-- Automated discharge date capture from EHR systems.
+- Automated discharge date and referred-out destination capture from the M365 discharge sheet.
+- Destination fields such as “Referred Out To”, “Discharge Destination”, or “Placement” are mapped into the Admissions Referrals ledger.
 - Triggered by EHR webhook or scheduled sync.
 
 ### Email Tracking

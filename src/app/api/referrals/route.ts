@@ -4,6 +4,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
+function extractDischargeDestination(notes?: string | null): string | null {
+  if (!notes) return null;
+  const match = notes.match(/Referred Out To:\s*(.+)$/im);
+  return match?.[1]?.trim() || null;
+}
+
 export async function GET(req: NextRequest) {
   const session = await auth();
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -33,7 +39,12 @@ export async function GET(req: NextRequest) {
     orderBy: { createdAt: "desc" },
   });
 
-  return NextResponse.json(referrals);
+  const normalized = referrals.map((referral) => ({
+    ...referral,
+    dischargeDestination: extractDischargeDestination(referral.notes),
+  }));
+
+  return NextResponse.json(normalized);
 }
 
 export async function POST(req: NextRequest) {

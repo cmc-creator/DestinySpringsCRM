@@ -14,6 +14,7 @@ type DischargeRow = {
   patientInitials?: string;
   admissionDate?:  string;
   dischargeDate?:  string;
+  dischargeDestination?: string;
   sourceName?:     string;
   sourceNpi?:      string;
   serviceLine?:    string;
@@ -38,6 +39,17 @@ const HEADER_MAP: Record<string, keyof DischargeRow> = {
   "date of discharge":   "dischargeDate",
   "dod":                 "dischargeDate",
   "discharged":          "dischargeDate",
+  // Discharge referral destination
+  "referred out to":     "dischargeDestination",
+  "referred to":         "dischargeDestination",
+  "discharge destination":"dischargeDestination",
+  "destination":         "dischargeDestination",
+  "placement":           "dischargeDestination",
+  "aftercare placement": "dischargeDestination",
+  "step down":           "dischargeDestination",
+  "step-down":           "dischargeDestination",
+  "discharge to":        "dischargeDestination",
+  "next level of care":  "dischargeDestination",
   // Admission date
   "admit date":          "admissionDate",
   "admission date":      "admissionDate",
@@ -83,6 +95,26 @@ function toIsoDay(input?: string): string {
   const d = new Date(str);
   if (isNaN(d.getTime())) return "";
   return d.toISOString().slice(0, 10);
+}
+
+function mergeNotes(existing?: string | null, incoming?: string | null): string {
+  const left = (existing ?? "").trim();
+  const right = (incoming ?? "").trim();
+  if (!left) return right;
+  if (!right) return left;
+  if (left.toLowerCase() === right.toLowerCase()) return left;
+  return `${left}\n${right}`;
+}
+
+function withDischargeDestinationTag(baseNotes: string, destination?: string | null): string {
+  const cleanDestination = (destination ?? "").trim();
+  const withoutTag = baseNotes
+    .replace(/(?:\r?\n)?Referred Out To:\s*.*$/im, "")
+    .trim();
+  if (!cleanDestination) return withoutTag;
+  return withoutTag
+    ? `${withoutTag}\nReferred Out To: ${cleanDestination}`
+    : `Referred Out To: ${cleanDestination}`;
 }
 
 async function resolveSource(row: DischargeRow): Promise<string | null> {
@@ -281,7 +313,7 @@ export async function POST(_req: NextRequest) {
         if (sourceId) {
           const match = await prisma.referral.findUnique({
             where: { referralSourceId_externalId: { referralSourceId: sourceId, externalId: row.externalId } },
-            select: { id: true, dischargeDate: true },
+            select: { id: true, dischargeDate: true, notes: true },
           });
           if (match) existingId = match.id;
         }
@@ -301,17 +333,22 @@ export async function POST(_req: NextRequest) {
         }
         const match = await prisma.referral.findFirst({
           where: whereClause as never,
-          select: { id: true, dischargeDate: true },
+          select: { id: true, dischargeDate: true, notes: true },
           orderBy: { createdAt: "desc" },
         });
         if (match) existingId = match.id;
       }
 
       if (existingId) {
+        const existing = await prisma.referral.findUnique({ where: { id: existingId }, select: { notes: true } });
+        const combinedNotes = withDischargeDestinationTag(
+          mergeNotes(existing?.notes ?? null, row.notes ?? null),
+          row.dischargeDestination,
+        );
         // Update discharge date on the existing record
         await prisma.referral.update({
           where: { id: existingId },
-          data:  { dischargeDate, notes: row.notes ?? undefined },
+          data:  { dischargeDate, notes: combinedNotes || undefined },
         });
         updated++;
       } else {
@@ -337,6 +374,7 @@ export async function POST(_req: NextRequest) {
         });
         if (dupe) { skipped++; continue; }
 
+        const combinedNotes = withDischargeDestinationTag(row.notes ?? "", row.dischargeDestination);
         await prisma.referral.create({
           data: {
             referralSourceId,
@@ -346,7 +384,7 @@ export async function POST(_req: NextRequest) {
             serviceLine:     row.serviceLine ?? null,
             externalId:      row.externalId ?? null,
             status:          "ADMITTED" as never,
-            notes:           row.notes ?? null,
+            notes:           combinedNotes || null,
           },
         });
         created++;
