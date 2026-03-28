@@ -24,6 +24,7 @@ const ROLE_TEXT: Record<string, string> = {
 
 export default function AdminUsersPage() {
   const [users, setUsers]         = useState<UserRow[]>([]);
+  const [roleFilter, setRoleFilter] = useState<"ALL" | "ADMIN" | "REP" | "ACCOUNT">("ALL");
   const [loading, setLoading]     = useState(true);
   const [error, setError]         = useState("");
   const [showForm, setShowForm]   = useState(false);
@@ -148,8 +149,14 @@ export default function AdminUsersPage() {
   }
 
   function toggleSelectAll() {
-    if (users.length === 0) return;
-    setSelectedIds((current) => current.length === users.length ? [] : users.map((user) => user.id));
+    if (visibleUsers.length === 0) return;
+    setSelectedIds((current) => {
+      if (allVisibleSelected) {
+        return current.filter((id) => !visibleUsers.some((user) => user.id === id));
+      }
+      const visibleIds = visibleUsers.map((user) => user.id);
+      return [...new Set([...current, ...visibleIds])];
+    });
   }
 
   async function removeSelectedUsers() {
@@ -193,7 +200,8 @@ export default function AdminUsersPage() {
       : false;
   }
 
-  const allSelected = users.length > 0 && selectedIds.length === users.length;
+  const visibleUsers = roleFilter === "ALL" ? users : users.filter((user) => user.role === roleFilter);
+  const allVisibleSelected = visibleUsers.length > 0 && visibleUsers.every((user) => selectedIds.includes(user.id));
 
   const inputStyle: React.CSSProperties = {
     width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(201,168,76,0.25)",
@@ -222,13 +230,41 @@ export default function AdminUsersPage() {
             Create and manage login accounts for your team. Self-signups stay pending until you approve them.
           </p>
         </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+          {(["ALL", "REP", "ACCOUNT", "ADMIN"] as const).map((role) => {
+            const active = roleFilter === role;
+            return (
+              <button
+                key={role}
+                type="button"
+                onClick={() => setRoleFilter(role)}
+                style={{
+                  background: active ? "rgba(201,168,76,0.16)" : "rgba(255,255,255,0.04)",
+                  color: active ? "#c9a84c" : "rgba(237,228,207,0.65)",
+                  fontWeight: active ? 800 : 700,
+                  fontSize: "0.75rem",
+                  border: `1px solid ${active ? "rgba(201,168,76,0.38)" : "rgba(255,255,255,0.12)"}`,
+                  borderRadius: 999,
+                  padding: "7px 12px",
+                  cursor: "pointer",
+                  letterSpacing: "0.04em",
+                }}
+              >
+                {role}
+              </button>
+            );
+          })}
+          <span style={{ fontSize: "0.72rem", color: "rgba(237,228,207,0.45)", marginLeft: 4 }}>
+            Showing {visibleUsers.length} of {users.length}
+          </span>
+        </div>
         <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
           <button
             onClick={toggleSelectAll}
-            disabled={users.length === 0}
-            style={{ background: "rgba(255,255,255,0.05)", color: "rgba(237,228,207,0.72)", fontWeight: 700, fontSize: "0.82rem", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 10, padding: "10px 14px", cursor: users.length === 0 ? "not-allowed" : "pointer", opacity: users.length === 0 ? 0.7 : 1 }}
+            disabled={visibleUsers.length === 0}
+            style={{ background: "rgba(255,255,255,0.05)", color: "rgba(237,228,207,0.72)", fontWeight: 700, fontSize: "0.82rem", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 10, padding: "10px 14px", cursor: visibleUsers.length === 0 ? "not-allowed" : "pointer", opacity: visibleUsers.length === 0 ? 0.7 : 1 }}
           >
-            {allSelected ? "Clear Selection" : "Select All"}
+            {allVisibleSelected ? "Clear Selection" : "Select All"}
           </button>
           <button
             onClick={removeSelectedUsers}
@@ -307,9 +343,11 @@ export default function AdminUsersPage() {
         <div style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: 10, padding: 20, color: "#fca5a5" }}>{error}</div>
       ) : users.length === 0 ? (
         <div style={{ textAlign: "center", padding: 48, color: "rgba(237,228,207,0.35)", fontSize: "0.9rem" }}>No accounts yet. Create one above.</div>
+      ) : visibleUsers.length === 0 ? (
+        <div style={{ textAlign: "center", padding: 48, color: "rgba(237,228,207,0.35)", fontSize: "0.9rem" }}>No accounts match the current role filter.</div>
       ) : (
         <div style={{ display: "grid", gap: 10 }}>
-          {users.map((u) => (
+          {visibleUsers.map((u) => (
             <div key={u.id} style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(201,168,76,0.12)", borderRadius: 12, padding: "14px 18px", display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
               <input
                 type="checkbox"
