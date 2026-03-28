@@ -30,6 +30,7 @@ export default function AdminUsersPage() {
   const [deleting, setDeleting]   = useState<string | null>(null);
   const [approving, setApproving] = useState<string | null>(null);
   const [resetting, setResetting] = useState<string | null>(null);
+  const [pruning, setPruning]     = useState(false);
   const [toast, setToast]         = useState("");
 
   // Form state
@@ -139,6 +140,44 @@ export default function AdminUsersPage() {
     }
   }
 
+  async function pruneUsersToThree() {
+    const raw = prompt(
+      "Enter the ONLY emails to keep (comma-separated). Example:\nccooper@destinysprings.com, shawn@destinysprings.com, melissa@destinysprings.com"
+    );
+    if (!raw) return;
+
+    const keepEmails = raw
+      .split(",")
+      .map((email) => email.toLowerCase().trim())
+      .filter(Boolean);
+
+    if (keepEmails.length < 3) {
+      showToast("Please enter all three emails to keep.");
+      return;
+    }
+
+    if (!confirm(`This will delete ALL other user accounts and keep only:\n\n${keepEmails.join("\n")}\n\nContinue?`)) {
+      return;
+    }
+
+    setPruning(true);
+    try {
+      const res = await fetch("/api/admin/users/prune", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ keepEmails }),
+      });
+      const data = await res.json() as { deletedCount?: number; failedCount?: number; error?: string };
+      if (!res.ok) throw new Error(data.error ?? "Prune failed");
+      showToast(`✓ User cleanup complete. Deleted ${data.deletedCount ?? 0} account(s).${(data.failedCount ?? 0) > 0 ? ` ${data.failedCount} failed.` : ""}`);
+      await loadUsers();
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : "Prune failed");
+    } finally {
+      setPruning(false);
+    }
+  }
+
   function getApprovalStatus(user: UserRow) {
     if (user.role === "REP") return user.rep?.status ?? null;
     if (user.role === "ACCOUNT") return user.hospital?.status ?? null;
@@ -185,6 +224,13 @@ export default function AdminUsersPage() {
           style={{ background: "#c9a84c", color: "#100805", fontWeight: 800, fontSize: "0.85rem", border: "none", borderRadius: 10, padding: "11px 18px", cursor: "pointer" }}
         >
           + Add Account
+        </button>
+        <button
+          onClick={pruneUsersToThree}
+          disabled={pruning}
+          style={{ background: "rgba(239,68,68,0.14)", color: "#fca5a5", fontWeight: 800, fontSize: "0.85rem", border: "1px solid rgba(239,68,68,0.35)", borderRadius: 10, padding: "11px 18px", cursor: pruning ? "not-allowed" : "pointer", opacity: pruning ? 0.7 : 1 }}
+        >
+          {pruning ? "Cleaning…" : "Prune to 3 Accounts"}
         </button>
       </div>
 
