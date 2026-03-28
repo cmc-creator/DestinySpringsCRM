@@ -64,6 +64,26 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           return null;
         }
 
+        try {
+          await prisma.auditLog.create({
+            data: {
+              userId: user.id,
+              userEmail: user.email,
+              userName: user.name ?? undefined,
+              action: "LOGIN_SUCCESS",
+              resource: "User",
+              resourceId: user.id,
+              diff: {
+                _meta: {
+                  source: "AUTH_CREDENTIALS",
+                },
+              },
+            },
+          });
+        } catch (err) {
+          console.warn("[auth] failed to write login audit event", err);
+        }
+
         return { id: user.id, email: user.email, name: user.name, role: user.role, organizationId: user.organizationId ?? null };
       },
     }),
