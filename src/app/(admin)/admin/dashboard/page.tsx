@@ -9,8 +9,8 @@ export default async function AdminDashboard() {
   let hospitalCount = 0;
   let leadCount = 0;
   let openOpps = 0;
-  let closedWon = 0;
-  let pendingInvoices = 0;
+  let closedAdmissions = 0;
+  let stalledOpps = 0;
   let recentActivities: { id: string; title: string; notes: string | null; createdAt: Date; hospital: { hospitalName: string } | null; rep: { user: { name: string | null } } | null }[] = [];
   let recentOpps: { id: string; title: string; stage: string; value: Prisma.Decimal | null; hospital: { hospitalName: string }; assignedRep: { user: { name: string | null } } | null }[] = [];
   let mapReps: { id: string; licensedStates: string[] | null; user: { name: string | null; email: string }; territories: { state: string }[] }[] = [];
@@ -19,15 +19,20 @@ export default async function AdminDashboard() {
 
   try {
     [
-      repCount, hospitalCount, leadCount, openOpps, closedWon,
-      pendingInvoices, recentActivities, recentOpps, mapReps, mapHospitalsRaw
+      repCount, hospitalCount, leadCount, openOpps, closedAdmissions,
+      stalledOpps, recentActivities, recentOpps, mapReps, mapHospitalsRaw
     ] = await Promise.all([
       prisma.rep.count({ where: { status: "ACTIVE" } }),
       prisma.hospital.count({ where: { status: { not: "CHURNED" } } }),
       prisma.lead.count({ where: { status: { in: ["NEW", "CONTACTED", "QUALIFIED"] } } }),
       prisma.opportunity.count({ where: { stage: { notIn: ["DISCHARGED", "DECLINED"] } } }),
       prisma.opportunity.count({ where: { stage: "DISCHARGED" } }),
-      prisma.invoice.count({ where: { status: { in: ["SENT", "OVERDUE"] } } }),
+      prisma.opportunity.count({
+        where: {
+          stage: { notIn: ["DISCHARGED", "DECLINED"] },
+          updatedAt: { lte: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000) },
+        },
+      }),
       prisma.activity.findMany({ take: 8, orderBy: { createdAt: "desc" }, include: { hospital: { select: { hospitalName: true } }, rep: { include: { user: { select: { name: true } } } } } }),
       prisma.opportunity.findMany({ take: 6, orderBy: { createdAt: "desc" }, include: { hospital: { select: { hospitalName: true } }, assignedRep: { include: { user: { select: { name: true } } } } } }),
       prisma.rep.findMany({ where: { status: "ACTIVE" }, include: { user: { select: { name: true, email: true } }, territories: true } }),
@@ -80,8 +85,8 @@ export default async function AdminDashboard() {
     { id: "hospitals",     label: "Active Clients",      value: hospitalCount,   icon: "hospitals",     href: "/admin/hospitals" },
     { id: "leads",         label: "Open Leads",         value: leadCount,       icon: "leads",         href: "/admin/leads" },
     { id: "opportunities", label: "Open Opportunities", value: openOpps,        icon: "opportunities", href: "/admin/opportunities" },
-    { id: "won",           label: "Discharged",          value: closedWon,       icon: "won",           href: "/admin/opportunities" },
-    { id: "invoices",      label: "Pending Invoices",   value: pendingInvoices, icon: "invoices",      href: "/admin/invoices" },
+    { id: "won",           label: "Admissions Closed",  value: closedAdmissions, icon: "won",          href: "/admin/opportunities" },
+    { id: "invoices",      label: "Stalled Opps (10d)", value: stalledOpps,      icon: "invoices",     href: "/admin/opportunities" },
   ];
 
   const serializedActivities = recentActivities.map((a) => ({
