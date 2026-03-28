@@ -34,6 +34,48 @@ function dt(value: string | null) {
   return new Date(value).toLocaleString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" });
 }
 
+function exportRowsToCsv(rows: RepPerf[]) {
+  const headers = [
+    "Rep Name",
+    "Email",
+    "Status",
+    "Title",
+    "Opportunities",
+    "Activities",
+    "Last Activity",
+    "Last Login",
+    "30d Logins",
+    "Paid",
+    "Pending",
+  ];
+
+  const body = rows.map((row) => [
+    row.name,
+    row.email,
+    row.status,
+    row.title ?? "",
+    String(row.opportunities),
+    String(row.activities),
+    dt(row.lastActivityAt),
+    dt(row.lastLoginAt),
+    String(row.loginCount30d),
+    String(row.totalPaid),
+    String(row.totalPending),
+  ]);
+
+  const csv = [headers, ...body]
+    .map((line) => line.map((value) => `"${String(value).replace(/"/g, '""')}"`).join(","))
+    .join("\n");
+
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `rep-performance-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 export default function RepPerformancePage() {
   const [rows, setRows] = useState<RepPerf[]>([]);
   const [loading, setLoading] = useState(true);
@@ -152,6 +194,24 @@ export default function RepPerformancePage() {
           <option value="INACTIVE">Inactive</option>
           <option value="SUSPENDED">Suspended</option>
         </select>
+        <button
+          type="button"
+          onClick={() => exportRowsToCsv(filtered)}
+          disabled={filtered.length === 0}
+          style={{
+            background: "rgba(52,211,153,0.08)",
+            border: "1px solid rgba(52,211,153,0.2)",
+            borderRadius: 8,
+            padding: "8px 12px",
+            color: "#34d399",
+            cursor: filtered.length === 0 ? "not-allowed" : "pointer",
+            fontSize: "0.82rem",
+            fontWeight: 700,
+            opacity: filtered.length === 0 ? 0.6 : 1,
+          }}
+        >
+          Export CSV
+        </button>
       </div>
 
       <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, overflowX: "auto" }}>
