@@ -27,6 +27,8 @@ type Referral = {
 export default function ReferralsPage() {
   const [referrals, setReferrals] = useState<Referral[]>([]);
   const [loading, setLoading]     = useState(true);
+  const [syncingBedboard, setSyncingBedboard] = useState(false);
+  const [syncMessage, setSyncMessage] = useState<string | null>(null);
   const [fromDate, setFromDate]   = useState("");
   const [toDate,   setToDate]     = useState("");
   const [status,   setStatus]     = useState("");
@@ -43,6 +45,25 @@ export default function ReferralsPage() {
   }, [fromDate, toDate, status]);
 
   useEffect(() => { load(); }, [load]);
+
+  async function syncBedboardNow() {
+    setSyncingBedboard(true);
+    setSyncMessage(null);
+    try {
+      const res = await fetch("/api/referrals/intake/m365/sync", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) {
+        setSyncMessage(data?.error ? String(data.error) : "Bedboard sync failed");
+      } else {
+        setSyncMessage(`Bedboard synced: ${data.imported ?? 0} imported, ${data.skipped ?? 0} skipped, ${data.errors ?? 0} errors`);
+        await load();
+      }
+    } catch {
+      setSyncMessage("Network error while syncing bedboard");
+    } finally {
+      setSyncingBedboard(false);
+    }
+  }
 
   const fmt = (d?: string) => {
     if (!d) return "-";
@@ -69,8 +90,30 @@ export default function ReferralsPage() {
       {/* Header */}
       <div style={{ marginBottom:28 }}>
         <p style={{ color:C.cyan, fontSize:"0.7rem", fontWeight:700, letterSpacing:"0.14em", textTransform:"uppercase", marginBottom:4 }}>Referral Tracking</p>
-        <h1 style={{ fontSize:"1.8rem", fontWeight:900, color:C.text }}>Referrals Received</h1>
-        <p style={{ color:C.muted, fontSize:"0.875rem", marginTop:4 }}>All patient referrals received from your tracked sources.</p>
+        <h1 style={{ fontSize:"1.8rem", fontWeight:900, color:C.text }}>Referral Attribution Ledger</h1>
+        <p style={{ color:C.muted, fontSize:"0.875rem", marginTop:4 }}>Track who referred each admission from the daily bedboard and EHR feeds.</p>
+        <div style={{ display:"flex", gap:10, flexWrap:"wrap", marginTop:12 }}>
+          <button
+            onClick={syncBedboardNow}
+            disabled={syncingBedboard}
+            style={{
+              background:"rgba(59,130,246,0.12)", border:"1px solid rgba(59,130,246,0.35)", borderRadius:8,
+              padding:"8px 14px", color:"#93c5fd", cursor: syncingBedboard ? "not-allowed" : "pointer", fontSize:"0.8rem", fontWeight:700,
+            }}
+          >
+            {syncingBedboard ? "Syncing Bedboard…" : "Sync Daily Bedboard (M365)"}
+          </button>
+          <a
+            href="/admin/integrations/m365-intake"
+            style={{
+              background:"rgba(255,255,255,0.04)", border:`1px solid ${C.border}`, borderRadius:8,
+              padding:"8px 14px", color:C.muted, textDecoration:"none", fontSize:"0.8rem", fontWeight:700,
+            }}
+          >
+            Open Bedboard Integration
+          </a>
+        </div>
+        {syncMessage && <p style={{ color:C.muted, fontSize:"0.78rem", marginTop:8 }}>{syncMessage}</p>}
       </div>
 
       {/* Summary cards */}
@@ -135,7 +178,7 @@ export default function ReferralsPage() {
               )}
               {!loading && referrals.length === 0 && (
                 <tr><td colSpan={8} style={{ padding:"48px", textAlign:"center", color:C.muted }}>
-                  No referrals yet. Import a MedWorxs CSV or configure the HL7 listener.
+                  No referral attribution records yet. Sync the daily bedboard (M365) or import from MedWorxs.
                 </td></tr>
               )}
               {referrals.map((r) => (

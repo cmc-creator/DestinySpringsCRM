@@ -58,7 +58,7 @@ async function resolveOrCreateSource(row: M365Row) {
       npi: row.sourceNpi ?? null,
       type: "OTHER",
       specialty: row.sourceType ?? null,
-      notes: "Auto-created from Microsoft 365 intake sync",
+      notes: "Auto-created from Microsoft 365 daily bedboard sync",
     },
     select: { id: true },
   });
@@ -68,7 +68,7 @@ async function resolveOrCreateSource(row: M365Row) {
 
 export async function GET() {
   return NextResponse.json({
-    service: "m365-referral-intake",
+    service: "m365-referral-bedboard",
     ok: true,
     requiresHeader: "x-intake-key",
     requiresEnv: "M365_INTAKE_WEBHOOK_KEY",

@@ -80,9 +80,9 @@ const featuredIntegrations = [
     ),
   },
   {
-    name: "Microsoft 365 Intake Sync",
+    name: "Microsoft 365 Daily Bedboard Sync",
     badges: [{ label: "SETUP REQUIRED", color: "#f59e0b" }, { label: "REFERRALS", color: "#60a5fa" }],
-    desc: "Sync intake spreadsheet rows from Microsoft 365 into referrals so leadership and BD can see incoming patients, source channels, and referral attribution in real time.",
+    desc: "Sync daily bedboard spreadsheet rows from Microsoft 365 into referrals so leadership and BD can track referral attribution (who sent each admission) in real time.",
     href: "/admin/integrations/m365-intake",
     icon: (
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">

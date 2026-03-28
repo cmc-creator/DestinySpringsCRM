@@ -1,7 +1,7 @@
 # Destiny Springs Healthcare CRM — User Guide
 
 > **NyxAegis Platform** · Behavioral Health Admission & Referral Management
-> Version: Current · Last updated: 2025
+> Version: Current · Last updated: 2026
 
 ---
 
@@ -277,7 +277,7 @@ Track facility partnership contracts and e-signature status.
 
 ### Referrals
 
-Referrals are formal patient-referral records linking a sending facility/provider to an admission opportunity.
+Referrals are formal referral-attribution records linking a sending facility/provider to an admission.
 
 - Each referral is linked to: sending hospital, referral source (provider/CM), rep, and opportunity.
 - Track referral date, response time, outcome (converted / not converted).
@@ -540,7 +540,7 @@ Pre-built integration connectors available for configuration.
 | **MedWorxs** | Clinical operations data sync |
 | **Paycom** | HR/payroll data for rep commission calculations |
 | **Monday.com** | Project management sync for admissions teams |
-| **Microsoft 365 Intake** | Intake form sync from M365 Forms |
+| **Microsoft 365 Daily Bedboard** | Daily bedboard sync from M365 Excel/SharePoint to referral attribution records |
 | **Discharge Sync** | Automated discharge date capture from EHR |
 | **Email Tracking** | Track email open/click rates for rep outreach |
 | **E-Signature** | DocuSign / SignNow for contract e-signatures |
@@ -931,9 +931,10 @@ Themes use CSS custom properties (`--nyx-*` tokens) — the entire UI responds t
 - Project management board sync.
 - New opportunities can auto-create Monday.com items.
 
-### Microsoft 365 Intake
-- Sync intake forms submitted via Microsoft Forms or Power Automate.
-- Configured in **Integrations → M365 Intake**.
+### Microsoft 365 Daily Bedboard
+- Sync the Destiny Springs daily bedboard from M365 Excel/SharePoint.
+- Extract and track referral attribution (who referred each admission) in the Referrals ledger.
+- Configured in **Integrations → Microsoft 365 Daily Bedboard Sync**.
 
 ### Discharge Sync
 - Automated discharge date capture from EHR systems.

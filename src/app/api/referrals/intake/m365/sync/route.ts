@@ -111,7 +111,7 @@ async function resolveOrCreateSource(row: M365Row): Promise<string | null> {
       npi: row.sourceNpi ?? null,
       type: "OTHER",
       specialty: row.sourceType ?? null,
-      notes: "Auto-created from Microsoft 365 intake sync",
+      notes: "Auto-created from Microsoft 365 daily bedboard sync",
     },
     select: { id: true },
   });
@@ -373,7 +373,7 @@ export async function POST(_req: NextRequest) {
 // GET returns config info (for admin page to confirm which file is targeted)
 export async function GET() {
   return NextResponse.json({
-    service:   "m365-sharepoint-direct-sync",
+    service:   "m365-bedboard-sharepoint-sync",
     site:      `https://${SP_HOST}/${SP_SITE}`,
     fileId:    SP_FILE_ID,
     fileUrl:   `https://${SP_HOST}/sites/Intake/_layouts/15/Doc2.aspx?action=edit&sourcedoc={${SP_FILE_ID}}`,

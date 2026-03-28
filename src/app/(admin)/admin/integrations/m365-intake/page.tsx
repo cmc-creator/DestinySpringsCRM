@@ -69,12 +69,12 @@ export default function M365IntakeIntegrationPage() {
           </div>
           <div>
             <p style={{ color: "var(--nyx-accent-label)", fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 2 }}>INTEGRATION</p>
-            <h1 style={{ fontSize: "1.8rem", fontWeight: 900, color: TEXT }}>Microsoft 365 Intake Sync</h1>
+            <h1 style={{ fontSize: "1.8rem", fontWeight: 900, color: TEXT }}>Microsoft 365 Daily Bedboard Sync</h1>
           </div>
         </div>
         <p style={{ color: MUTED, fontSize: "0.9rem", maxWidth: 780, lineHeight: 1.6 }}>
-          Directly reads the Destiny Springs intake spreadsheet from SharePoint via Microsoft Graph API.
-          New rows are imported as referrals. Duplicates are automatically skipped.
+          Directly reads the Destiny Springs daily bedboard spreadsheet from SharePoint via Microsoft Graph API.
+          New rows are imported as referral attribution records. Duplicates are automatically skipped.
         </p>
       </div>
 
@@ -124,7 +124,7 @@ export default function M365IntakeIntegrationPage() {
               transition: "background 0.15s",
             }}
           >
-            {syncing ? "Syncing…" : "Sync Intake Sheet"}
+            {syncing ? "Syncing…" : "Sync Daily Bedboard"}
           </button>
         </div>
 
@@ -190,8 +190,8 @@ export default function M365IntakeIntegrationPage() {
       <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 14, padding: 22 }}>
         <h2 style={{ fontSize: "0.98rem", color: TEXT, fontWeight: 800, marginBottom: 12 }}>What Syncs</h2>
         <ul style={{ margin: 0, paddingLeft: 18, color: MUTED, fontSize: "0.82rem", lineHeight: 1.8 }}>
-          <li>Who is coming in: patient initials, admission date, service line</li>
-          <li>From where: facility name and/or NPI matched to a Referral Source record</li>
+          <li>Admission context: patient initials, admission date, service line</li>
+          <li>Referral attribution: facility/source name and/or NPI matched to a Referral Source record</li>
           <li>New sources auto-created if no match found by NPI or name</li>
           <li>Deduplication: Record ID match first, then initials + source + same-day fallback</li>
           <li>No existing records are modified or deleted</li>

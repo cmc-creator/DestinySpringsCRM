@@ -85,7 +85,7 @@ export default function DischargeSyncPage() {
           <div>
             <h2 style={{ fontSize: "0.98rem", color: TEXT, fontWeight: 800, marginBottom: 4 }}>Microsoft 365 Authorization</h2>
             <p style={{ fontSize: "0.8rem", color: MUTED, maxWidth: 560 }}>
-              Both this sync and the Intake sync share the same Microsoft 365 account.
+              Both this sync and the Daily Bedboard sync share the same Microsoft 365 account.
               Connect once and both will work. You&apos;ll need to re-authorize if permissions were recently updated.
             </p>
           </div>
