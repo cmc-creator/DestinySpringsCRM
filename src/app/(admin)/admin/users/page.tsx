@@ -29,6 +29,7 @@ export default function AdminUsersPage() {
   const [showForm, setShowForm]   = useState(false);
   const [deleting, setDeleting]   = useState<string | null>(null);
   const [approving, setApproving] = useState<string | null>(null);
+  const [resetting, setResetting] = useState<string | null>(null);
   const [toast, setToast]         = useState("");
 
   // Form state
@@ -110,6 +111,31 @@ export default function AdminUsersPage() {
       showToast(e instanceof Error ? e.message : "Approval failed");
     } finally {
       setApproving(null);
+    }
+  }
+
+  async function resetPassword(id: string, name: string | null) {
+    const nextPassword = prompt(`Enter a new temporary password for ${name ?? "this user"} (min 8 characters):`);
+    if (!nextPassword) return;
+    if (nextPassword.length < 8) {
+      showToast("Password must be at least 8 characters.");
+      return;
+    }
+
+    setResetting(id);
+    try {
+      const res = await fetch(`/api/admin/users?id=${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: nextPassword }),
+      });
+      const data = await res.json() as { ok?: boolean; error?: string };
+      if (!res.ok) throw new Error(data.error ?? "Password reset failed");
+      showToast(`✓ Password reset for ${name ?? "user"}`);
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : "Password reset failed");
+    } finally {
+      setResetting(null);
     }
   }
 
@@ -266,6 +292,14 @@ export default function AdminUsersPage() {
                   {approving === u.id ? "…" : "Approve"}
                 </button>
               )}
+
+              <button
+                onClick={() => resetPassword(u.id, u.name)}
+                disabled={resetting === u.id}
+                style={{ background: "rgba(96,165,250,0.10)", border: "1px solid rgba(96,165,250,0.25)", borderRadius: 8, color: "#93c5fd", fontWeight: 700, fontSize: "0.75rem", padding: "6px 12px", cursor: "pointer", flexShrink: 0 }}
+              >
+                {resetting === u.id ? "…" : "Reset Password"}
+              </button>
 
               {/* Delete */}
               <button

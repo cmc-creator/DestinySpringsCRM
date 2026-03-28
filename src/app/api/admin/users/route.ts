@@ -171,3 +171,29 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: "Failed to approve user" }, { status: 500 });
   }
 }
+
+// PUT /api/admin/users?id=xxx — reset user password
+export async function PUT(req: NextRequest) {
+  const session = await auth();
+  if (!session || session.user.role !== "ADMIN") {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const id = req.nextUrl.searchParams.get("id");
+  if (!id) return NextResponse.json({ error: "id is required" }, { status: 400 });
+
+  try {
+    const { password } = (await req.json()) as { password?: string };
+    if (!password || password.length < 8) {
+      return NextResponse.json({ error: "Password must be at least 8 characters" }, { status: 400 });
+    }
+
+    const hashed = await bcrypt.hash(password, 10);
+    await prisma.user.update({ where: { id }, data: { password: hashed } });
+
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    console.error("[admin/users PUT]", err);
+    return NextResponse.json({ error: "Failed to reset password" }, { status: 500 });
+  }
+}
