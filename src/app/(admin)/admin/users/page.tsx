@@ -30,7 +30,8 @@ export default function AdminUsersPage() {
   const [deleting, setDeleting]   = useState<string | null>(null);
   const [approving, setApproving] = useState<string | null>(null);
   const [resetting, setResetting] = useState<string | null>(null);
-  const [pruning, setPruning]     = useState(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
   const [toast, setToast]         = useState("");
 
   // Form state
@@ -51,7 +52,9 @@ export default function AdminUsersPage() {
       const res = await fetch("/api/admin/users");
       const data = await res.json() as { users?: UserRow[]; error?: string };
       if (!res.ok) throw new Error(data.error ?? "Failed to load");
-      setUsers(data.users ?? []);
+      const nextUsers = data.users ?? [];
+      setUsers(nextUsers);
+      setSelectedIds((current) => current.filter((id) => nextUsers.some((user) => user.id === id)));
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load users");
     } finally {
@@ -140,41 +143,39 @@ export default function AdminUsersPage() {
     }
   }
 
-  async function pruneUsersToThree() {
-    const raw = prompt(
-      "Enter the ONLY emails to keep (comma-separated). Example:\nccooper@destinysprings.com, shawn@destinysprings.com, melissa@destinysprings.com"
-    );
-    if (!raw) return;
+  function toggleUserSelection(id: string) {
+    setSelectedIds((current) => current.includes(id) ? current.filter((value) => value !== id) : [...current, id]);
+  }
 
-    const keepEmails = raw
-      .split(",")
-      .map((email) => email.toLowerCase().trim())
-      .filter(Boolean);
+  function toggleSelectAll() {
+    if (users.length === 0) return;
+    setSelectedIds((current) => current.length === users.length ? [] : users.map((user) => user.id));
+  }
 
-    if (keepEmails.length < 3) {
-      showToast("Please enter all three emails to keep.");
-      return;
-    }
+  async function removeSelectedUsers() {
+    if (selectedIds.length === 0) return;
+    if (!confirm(`Delete ${selectedIds.length} selected account(s)? This cannot be undone.`)) return;
 
-    if (!confirm(`This will delete ALL other user accounts and keep only:\n\n${keepEmails.join("\n")}\n\nContinue?`)) {
-      return;
-    }
-
-    setPruning(true);
+    setBulkDeleting(true);
     try {
-      const res = await fetch("/api/admin/users/prune", {
+      const res = await fetch("/api/admin/users/bulk-delete", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ keepEmails }),
+        body: JSON.stringify({ ids: selectedIds }),
       });
-      const data = await res.json() as { deletedCount?: number; failedCount?: number; error?: string };
-      if (!res.ok) throw new Error(data.error ?? "Prune failed");
-      showToast(`✓ User cleanup complete. Deleted ${data.deletedCount ?? 0} account(s).${(data.failedCount ?? 0) > 0 ? ` ${data.failedCount} failed.` : ""}`);
+      const data = await res.json() as {
+        deletedCount?: number;
+        failedCount?: number;
+        skippedCount?: number;
+        error?: string;
+      };
+      if (!res.ok) throw new Error(data.error ?? "Bulk delete failed");
+      showToast(`✓ Removed ${data.deletedCount ?? 0} account(s).${(data.skippedCount ?? 0) > 0 ? ` ${data.skippedCount} skipped.` : ""}${(data.failedCount ?? 0) > 0 ? ` ${data.failedCount} failed.` : ""}`);
       await loadUsers();
     } catch (e) {
-      showToast(e instanceof Error ? e.message : "Prune failed");
+      showToast(e instanceof Error ? e.message : "Bulk delete failed");
     } finally {
-      setPruning(false);
+      setBulkDeleting(false);
     }
   }
 
@@ -191,6 +192,8 @@ export default function AdminUsersPage() {
       ? user.hospital?.status === "PROSPECT"
       : false;
   }
+
+  const allSelected = users.length > 0 && selectedIds.length === users.length;
 
   const inputStyle: React.CSSProperties = {
     width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(201,168,76,0.25)",
@@ -219,19 +222,28 @@ export default function AdminUsersPage() {
             Create and manage login accounts for your team. Self-signups stay pending until you approve them.
           </p>
         </div>
-        <button
-          onClick={() => { setShowForm(true); setFormError(""); }}
-          style={{ background: "#c9a84c", color: "#100805", fontWeight: 800, fontSize: "0.85rem", border: "none", borderRadius: 10, padding: "11px 18px", cursor: "pointer" }}
-        >
-          + Add Account
-        </button>
-        <button
-          onClick={pruneUsersToThree}
-          disabled={pruning}
-          style={{ background: "rgba(239,68,68,0.14)", color: "#fca5a5", fontWeight: 800, fontSize: "0.85rem", border: "1px solid rgba(239,68,68,0.35)", borderRadius: 10, padding: "11px 18px", cursor: pruning ? "not-allowed" : "pointer", opacity: pruning ? 0.7 : 1 }}
-        >
-          {pruning ? "Cleaning…" : "Prune to 3 Accounts"}
-        </button>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+          <button
+            onClick={toggleSelectAll}
+            disabled={users.length === 0}
+            style={{ background: "rgba(255,255,255,0.05)", color: "rgba(237,228,207,0.72)", fontWeight: 700, fontSize: "0.82rem", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 10, padding: "10px 14px", cursor: users.length === 0 ? "not-allowed" : "pointer", opacity: users.length === 0 ? 0.7 : 1 }}
+          >
+            {allSelected ? "Clear Selection" : "Select All"}
+          </button>
+          <button
+            onClick={removeSelectedUsers}
+            disabled={selectedIds.length === 0 || bulkDeleting}
+            style={{ background: "rgba(239,68,68,0.14)", color: "#fca5a5", fontWeight: 800, fontSize: "0.85rem", border: "1px solid rgba(239,68,68,0.35)", borderRadius: 10, padding: "11px 18px", cursor: selectedIds.length === 0 || bulkDeleting ? "not-allowed" : "pointer", opacity: selectedIds.length === 0 || bulkDeleting ? 0.7 : 1 }}
+          >
+            {bulkDeleting ? "Removing…" : `Remove Selected (${selectedIds.length})`}
+          </button>
+          <button
+            onClick={() => { setShowForm(true); setFormError(""); }}
+            style={{ background: "#c9a84c", color: "#100805", fontWeight: 800, fontSize: "0.85rem", border: "none", borderRadius: 10, padding: "11px 18px", cursor: "pointer" }}
+          >
+            + Add Account
+          </button>
+        </div>
       </div>
 
       {/* Create form */}
@@ -299,6 +311,14 @@ export default function AdminUsersPage() {
         <div style={{ display: "grid", gap: 10 }}>
           {users.map((u) => (
             <div key={u.id} style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(201,168,76,0.12)", borderRadius: 12, padding: "14px 18px", display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
+              <input
+                type="checkbox"
+                checked={selectedIds.includes(u.id)}
+                onChange={() => toggleUserSelection(u.id)}
+                aria-label={`Select ${u.name ?? u.email}`}
+                style={{ width: 16, height: 16, cursor: "pointer", accentColor: "#c9a84c", flexShrink: 0 }}
+              />
+
               {/* Avatar */}
               <div style={{ width: 40, height: 40, borderRadius: "50%", background: "rgba(201,168,76,0.15)", border: "1px solid rgba(201,168,76,0.3)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1rem", fontWeight: 800, color: "#c9a84c", flexShrink: 0 }}>
                 {u.name ? u.name.charAt(0).toUpperCase() : u.email.charAt(0).toUpperCase()}
