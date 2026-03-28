@@ -918,6 +918,12 @@ export default function SettingsClient({ personalMode = false }: { personalMode?
   const [bgLoading, setBgLoading]       = useState(false);
   const [bgSelections, setBgSelections] = useState<Record<string, string>>({});
   const [bgTile, setBgTile]             = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordSaving, setPasswordSaving] = useState(false);
+  const [passwordError, setPasswordError] = useState("");
+  const [passwordSuccess, setPasswordSuccess] = useState("");
 
   useEffect(() => {
     const stored = typeof window !== "undefined" ? localStorage.getItem("destinysprings-theme") ?? "luxury" : "luxury";
@@ -1118,6 +1124,53 @@ export default function SettingsClient({ personalMode = false }: { personalMode?
       setDevMsg(d.message ?? (r.ok ? "Done." : "Error."));
     } catch { setDevMsg("Network error."); }
     finally { setDevLoading(null); }
+  }
+
+  async function updatePassword() {
+    setPasswordError("");
+    setPasswordSuccess("");
+
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      setPasswordError("Please complete all password fields.");
+      return;
+    }
+
+    if (newPassword.length < 8) {
+      setPasswordError("New password must be at least 8 characters.");
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setPasswordError("New password and confirmation do not match.");
+      return;
+    }
+
+    setPasswordSaving(true);
+    try {
+      const response = await fetch("/api/preferences/password", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          currentPassword,
+          newPassword,
+          confirmPassword,
+        }),
+      });
+      const data = (await response.json().catch(() => ({}))) as { error?: string; message?: string };
+      if (!response.ok) {
+        setPasswordError(data.error ?? "Could not update password right now.");
+        return;
+      }
+
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      setPasswordSuccess(data.message ?? "Password updated successfully.");
+    } catch {
+      setPasswordError("Network error while updating password.");
+    } finally {
+      setPasswordSaving(false);
+    }
   }
 
   const curTheme = THEMES.find(t => t.key === activeTheme) ?? THEMES[0];
@@ -1451,6 +1504,77 @@ export default function SettingsClient({ personalMode = false }: { personalMode?
           <span style={{ fontSize: "0.72rem", color: "var(--nyx-text-muted)" }}>Managed by NextAuth</span>
         </SettingRow>
       </Section>
+
+      {personalMode && (
+        <Section title="Change Password">
+          <p style={{ fontSize: "0.78rem", color: "var(--nyx-text-muted)", marginBottom: 14, lineHeight: 1.6 }}>
+            Update your account password. You must enter your current password to confirm this change.
+          </p>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>
+            <div>
+              <label style={{ fontSize: "0.72rem", color: "var(--nyx-text-muted)", display: "block", marginBottom: 4 }}>CURRENT PASSWORD</label>
+              <input
+                type="password"
+                autoComplete="current-password"
+                style={inp}
+                value={currentPassword}
+                onChange={(event) => setCurrentPassword(event.target.value)}
+              />
+            </div>
+            <div>
+              <label style={{ fontSize: "0.72rem", color: "var(--nyx-text-muted)", display: "block", marginBottom: 4 }}>NEW PASSWORD</label>
+              <input
+                type="password"
+                autoComplete="new-password"
+                style={inp}
+                value={newPassword}
+                onChange={(event) => setNewPassword(event.target.value)}
+              />
+            </div>
+            <div>
+              <label style={{ fontSize: "0.72rem", color: "var(--nyx-text-muted)", display: "block", marginBottom: 4 }}>CONFIRM NEW PASSWORD</label>
+              <input
+                type="password"
+                autoComplete="new-password"
+                style={inp}
+                value={confirmPassword}
+                onChange={(event) => setConfirmPassword(event.target.value)}
+              />
+            </div>
+          </div>
+          {(passwordError || passwordSuccess) && (
+            <div
+              style={{
+                marginTop: 12,
+                fontSize: "0.78rem",
+                color: passwordError ? "#f87171" : "#34d399",
+              }}
+            >
+              {passwordError || passwordSuccess}
+            </div>
+          )}
+          <div style={{ marginTop: 14 }}>
+            <button
+              type="button"
+              onClick={updatePassword}
+              disabled={passwordSaving}
+              style={{
+                background: "var(--nyx-accent)",
+                border: "1px solid transparent",
+                borderRadius: 8,
+                padding: "10px 18px",
+                color: "#fff",
+                cursor: passwordSaving ? "not-allowed" : "pointer",
+                fontSize: "0.82rem",
+                fontWeight: 700,
+                opacity: passwordSaving ? 0.75 : 1,
+              }}
+            >
+              {passwordSaving ? "Updating..." : "Update Password"}
+            </button>
+          </div>
+        </Section>
+      )}
 
       {/*  DEV TOOLS  */}
       {!personalMode && <Section title="Developer Tools">
