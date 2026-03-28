@@ -281,6 +281,9 @@ Referrals are formal admissions referral records linking a sending facility/prov
 
 - Each referral is linked to: sending hospital, referral source (provider/CM), rep, and opportunity.
 - Track referral date, response time, outcome (converted / not converted).
+- Track discharge handoff destination (Referred Out To) for post-discharge network visibility.
+- Filter by destination, export to CSV, and review top destination leaderboard from the Admissions Referrals ledger.
+- Missing discharge destinations are flagged for operational follow-up.
 - View referral trend reports in Analytics.
 
 ---
@@ -841,6 +844,8 @@ Voice dictation is powered by the **Web Speech API** (Chrome and Edge only).
    - **Referred Out To** (for discharged patients, where applicable)
 4. Save. The referral appears in the dashboard referral feed.
 5. As the opportunity progresses, the referral outcome updates automatically.
+6. Use filters for status, date range, and **Referred Out To** to isolate destination trends.
+7. Use **Export CSV** to share destination and referral attribution data with leadership/finance.
 
 ---
 

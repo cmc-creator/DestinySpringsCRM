@@ -33,6 +33,7 @@ export default function ReferralsPage() {
   const [fromDate, setFromDate]   = useState("");
   const [toDate,   setToDate]     = useState("");
   const [status,   setStatus]     = useState("");
+  const [destinationFilter, setDestinationFilter] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -90,20 +91,87 @@ export default function ReferralsPage() {
     return new Date(d).toLocaleDateString("en-US", { month:"short", day:"numeric", year:"numeric" });
   };
 
+  const isMissingDischargeDestination = (referral: Referral) => {
+    const discharged = !!referral.dischargeDate;
+    const hasDestination = !!(referral.dischargeDestination && referral.dischargeDestination.trim());
+    return discharged && !hasDestination;
+  };
+
+  const destinationOptions = Array.from(new Set(
+    referrals
+      .map((referral) => referral.dischargeDestination?.trim())
+      .filter((destination): destination is string => !!destination),
+  )).sort((a, b) => a.localeCompare(b));
+
+  const filteredReferrals = referrals.filter((referral) => {
+    if (!destinationFilter) return true;
+    if (destinationFilter === "__MISSING__") return isMissingDischargeDestination(referral);
+    return (referral.dischargeDestination ?? "").trim() === destinationFilter;
+  });
+
   // Summary stats
-  const total    = referrals.length;
-  const admitted = referrals.filter((r) => r.status === "ADMITTED").length;
-  const pending  = referrals.filter((r) => r.status === "PENDING" || r.status === "RECEIVED").length;
+  const total    = filteredReferrals.length;
+  const admitted = filteredReferrals.filter((r) => r.status === "ADMITTED").length;
+  const pending  = filteredReferrals.filter((r) => r.status === "PENDING" || r.status === "RECEIVED").length;
+  const missingDestination = filteredReferrals.filter((referral) => isMissingDischargeDestination(referral)).length;
 
   // Group by source for quick summary
   const bySource: Record<string, number> = {};
-  for (const r of referrals) {
-    const key = r.referralSource.name;
+  for (const referral of filteredReferrals) {
+    const key = referral.referralSource.name;
     bySource[key] = (bySource[key] ?? 0) + 1;
   }
   const topSources = Object.entries(bySource)
     .sort((a, b) => b[1] - a[1])
     .slice(0, 5);
+
+  const byDestination: Record<string, number> = {};
+  for (const referral of filteredReferrals) {
+    const key = (referral.dischargeDestination ?? "").trim();
+    if (!key) continue;
+    byDestination[key] = (byDestination[key] ?? 0) + 1;
+  }
+  const topDestinations = Object.entries(byDestination)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5);
+
+  function exportCsv() {
+    const headers = [
+      "Referring Source",
+      "Source Type",
+      "Patient",
+      "Service Line",
+      "Admitted",
+      "Discharged",
+      "Referred Out To",
+      "Encounter #",
+      "Status",
+    ];
+
+    const rows = filteredReferrals.map((referral) => [
+      referral.referralSource.name ?? "",
+      referral.referralSource.type ?? "",
+      referral.patientInitials ?? "",
+      referral.serviceLine ?? "",
+      referral.admissionDate ? new Date(referral.admissionDate).toISOString().slice(0, 10) : "",
+      referral.dischargeDate ? new Date(referral.dischargeDate).toISOString().slice(0, 10) : "",
+      referral.dischargeDestination ?? "",
+      referral.externalId ?? "",
+      referral.status ?? "",
+    ]);
+
+    const csv = [headers, ...rows]
+      .map((row) => row.map((value) => `"${String(value).replaceAll('"', '""')}"`).join(","))
+      .join("\n");
+
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `admissions-referrals-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
 
   return (
     <div>
@@ -151,6 +219,15 @@ export default function ReferralsPage() {
           >
             Open Discharge Integration
           </a>
+          <button
+            onClick={exportCsv}
+            style={{
+              background:"rgba(255,255,255,0.04)", border:`1px solid ${C.border}`, borderRadius:8,
+              padding:"8px 14px", color:C.muted, cursor:"pointer", fontSize:"0.8rem", fontWeight:700,
+            }}
+          >
+            Export CSV
+          </button>
         </div>
         {syncMessage && <p style={{ color:C.muted, fontSize:"0.78rem", marginTop:8 }}>{syncMessage}</p>}
       </div>
@@ -161,6 +238,7 @@ export default function ReferralsPage() {
           { label:"Total Referrals", value:total,    color:C.cyan },
           { label:"Admitted",        value:admitted, color:C.emerald },
           { label:"In Progress",     value:pending,  color:C.amber },
+          { label:"Missing Destination", value:missingDestination, color:"#f87171" },
           { label:"Top Source",      value:topSources[0]?.[0]?.split(" ").slice(-1)[0] ?? "-", color:"#a78bfa" },
         ].map((s) => (
           <div key={s.label} style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:12, padding:"18px 16px" }}>
@@ -192,11 +270,41 @@ export default function ReferralsPage() {
             ))}
           </select>
         </div>
-        {(fromDate || toDate || status) && (
-          <button onClick={() => { setFromDate(""); setToDate(""); setStatus(""); }}
+        <div>
+          <label style={{ display:"block", fontSize:"0.65rem", color:C.dim, marginBottom:4, fontWeight:700, letterSpacing:"0.08em" }}>REFERRED OUT TO</label>
+          <select value={destinationFilter} onChange={(e) => setDestinationFilter(e.target.value)}
+            style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:8, padding:"8px 12px", color:C.text, fontSize:"0.82rem", outline:"none", minWidth:220 }}>
+            <option value="">All</option>
+            <option value="__MISSING__">Missing destination only</option>
+            {destinationOptions.map((destination) => (
+              <option key={destination} value={destination}>{destination}</option>
+            ))}
+          </select>
+        </div>
+        {(fromDate || toDate || status || destinationFilter) && (
+          <button onClick={() => { setFromDate(""); setToDate(""); setStatus(""); setDestinationFilter(""); }}
             style={{ background:"rgba(255,255,255,0.04)", border:`1px solid ${C.border}`, borderRadius:8, padding:"8px 14px", color:C.muted, cursor:"pointer", fontSize:"0.8rem", fontWeight:600, marginTop:16 }}>
             Clear
           </button>
+        )}
+      </div>
+
+      {/* Destination leaderboard */}
+      <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:12, padding:"14px 16px", marginBottom:16 }}>
+        <div style={{ fontSize:"0.68rem", fontWeight:700, color:C.dim, letterSpacing:"0.1em", textTransform:"uppercase", marginBottom:8 }}>
+          Top Referred Out Destinations
+        </div>
+        {topDestinations.length === 0 ? (
+          <div style={{ color:C.muted, fontSize:"0.82rem" }}>No discharge destinations captured yet.</div>
+        ) : (
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(240px,1fr))", gap:8 }}>
+            {topDestinations.map(([destination, count]) => (
+              <div key={destination} style={{ border:`1px solid ${C.border}`, borderRadius:8, padding:"8px 10px", display:"flex", justifyContent:"space-between", gap:10 }}>
+                <span style={{ color:C.text, fontSize:"0.82rem", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{destination}</span>
+                <span style={{ color:C.cyan, fontSize:"0.82rem", fontWeight:700 }}>{count}</span>
+              </div>
+            ))}
+          </div>
         )}
       </div>
 
@@ -215,13 +323,13 @@ export default function ReferralsPage() {
               {loading && (
                 <tr><td colSpan={9} style={{ padding:"32px", textAlign:"center", color:C.muted }}>Loading…</td></tr>
               )}
-              {!loading && referrals.length === 0 && (
+              {!loading && filteredReferrals.length === 0 && (
                 <tr><td colSpan={9} style={{ padding:"48px", textAlign:"center", color:C.muted }}>
                   No admissions referral records yet. Sync the daily bedboard (M365) or import from MedWorxs.
                 </td></tr>
               )}
-              {referrals.map((r) => (
-                <tr key={r.id} style={{ borderBottom:`1px solid var(--nyx-accent-dim)` }}>
+              {filteredReferrals.map((r) => (
+                <tr key={r.id} style={{ borderBottom:`1px solid var(--nyx-accent-dim)`, background: isMissingDischargeDestination(r) ? "rgba(239,68,68,0.06)" : "transparent" }}>
                   <td style={{ padding:"12px 14px" }}>
                     <div style={{ fontWeight:700, fontSize:"0.875rem", color:C.text }}>{r.referralSource.name}</div>
                     {r.referralSource.specialty && <div style={{ fontSize:"0.7rem", color:C.muted }}>{r.referralSource.specialty}</div>}
@@ -235,7 +343,9 @@ export default function ReferralsPage() {
                   <td style={{ padding:"12px 14px", fontSize:"0.82rem", color:C.muted }}>{r.serviceLine ?? "-"}</td>
                   <td style={{ padding:"12px 14px", fontSize:"0.82rem", color:C.muted, whiteSpace:"nowrap" }}>{fmt(r.admissionDate)}</td>
                   <td style={{ padding:"12px 14px", fontSize:"0.82rem", color:C.muted, whiteSpace:"nowrap" }}>{fmt(r.dischargeDate)}</td>
-                  <td style={{ padding:"12px 14px", fontSize:"0.82rem", color:C.muted }}>{r.dischargeDestination ?? "-"}</td>
+                  <td style={{ padding:"12px 14px", fontSize:"0.82rem", color:C.muted }}>
+                    {r.dischargeDestination ?? (isMissingDischargeDestination(r) ? "Missing" : "-")}
+                  </td>
                   <td style={{ padding:"12px 14px", fontSize:"0.75rem", color:C.dim, fontFamily:"monospace" }}>{r.externalId ?? "-"}</td>
                   <td style={{ padding:"12px 14px" }}>
                     <span style={{ background: STATUS_COLORS[r.status] ?? "transparent", borderRadius:999, padding:"3px 10px", fontSize:"0.65rem", fontWeight:700, color: STATUS_TEXT[r.status] ?? C.muted, letterSpacing:"0.08em" }}>
