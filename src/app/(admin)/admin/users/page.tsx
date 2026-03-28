@@ -25,6 +25,7 @@ const ROLE_TEXT: Record<string, string> = {
 export default function AdminUsersPage() {
   const [users, setUsers]         = useState<UserRow[]>([]);
   const [roleFilter, setRoleFilter] = useState<"ALL" | "ADMIN" | "REP" | "ACCOUNT">("ALL");
+  const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading]     = useState(true);
   const [error, setError]         = useState("");
   const [showForm, setShowForm]   = useState(false);
@@ -200,7 +201,14 @@ export default function AdminUsersPage() {
       : false;
   }
 
-  const visibleUsers = roleFilter === "ALL" ? users : users.filter((user) => user.role === roleFilter);
+  const normalizedQuery = searchQuery.toLowerCase().trim();
+  const roleFilteredUsers = roleFilter === "ALL" ? users : users.filter((user) => user.role === roleFilter);
+  const visibleUsers = normalizedQuery
+    ? roleFilteredUsers.filter((user) => {
+        const haystack = `${user.name ?? ""} ${user.email}`.toLowerCase();
+        return haystack.includes(normalizedQuery);
+      })
+    : roleFilteredUsers;
   const allVisibleSelected = visibleUsers.length > 0 && visibleUsers.every((user) => selectedIds.includes(user.id));
 
   const inputStyle: React.CSSProperties = {
@@ -231,6 +239,22 @@ export default function AdminUsersPage() {
           </p>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
+            placeholder="Search name or email"
+            style={{
+              background: "rgba(255,255,255,0.05)",
+              color: "#ede4cf",
+              border: "1px solid rgba(255,255,255,0.12)",
+              borderRadius: 999,
+              padding: "8px 12px",
+              minWidth: 220,
+              fontSize: "0.78rem",
+              outline: "none",
+            }}
+          />
           {(["ALL", "REP", "ACCOUNT", "ADMIN"] as const).map((role) => {
             const active = roleFilter === role;
             return (
@@ -344,7 +368,9 @@ export default function AdminUsersPage() {
       ) : users.length === 0 ? (
         <div style={{ textAlign: "center", padding: 48, color: "rgba(237,228,207,0.35)", fontSize: "0.9rem" }}>No accounts yet. Create one above.</div>
       ) : visibleUsers.length === 0 ? (
-        <div style={{ textAlign: "center", padding: 48, color: "rgba(237,228,207,0.35)", fontSize: "0.9rem" }}>No accounts match the current role filter.</div>
+        <div style={{ textAlign: "center", padding: 48, color: "rgba(237,228,207,0.35)", fontSize: "0.9rem" }}>
+          No accounts match your current filters.
+        </div>
       ) : (
         <div style={{ display: "grid", gap: 10 }}>
           {visibleUsers.map((u) => (
