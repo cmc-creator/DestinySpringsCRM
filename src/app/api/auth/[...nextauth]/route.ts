@@ -8,7 +8,7 @@ export const GET = handlers.GET;
 
 export async function POST(req: NextRequest) {
 	const identity = getRequestIdentity(req);
-	const ipLimit = checkRateLimit({
+	const ipLimit = await checkRateLimit({
 		namespace: "auth-login-ip",
 		key: identity,
 		limit: 15,
@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
 		const email = typeof rawEmail === "string" ? rawEmail.toLowerCase().trim() : "";
 
 		if (email) {
-			const emailLimit = checkRateLimit({
+			const emailLimit = await checkRateLimit({
 				namespace: "auth-login-email",
 				key: `${email}|${identity}`,
 				limit: 8,

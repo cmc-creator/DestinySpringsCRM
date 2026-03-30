@@ -19,7 +19,7 @@ const MIN_PASSWORD_LENGTH = 8;
 export async function POST(req: NextRequest) {
   try {
     const requestIdentity = getRequestIdentity(req);
-    const identityLimit = checkRateLimit({
+    const identityLimit = await checkRateLimit({
       namespace: "signup-ip",
       key: requestIdentity,
       limit: 10,
@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid email address" }, { status: 400 });
     }
 
-    const emailIdentityLimit = checkRateLimit({
+    const emailIdentityLimit = await checkRateLimit({
       namespace: "signup-email",
       key: `${email.toLowerCase().trim()}|${requestIdentity}`,
       limit: 5,
