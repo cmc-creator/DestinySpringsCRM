@@ -63,6 +63,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
           UPDATE "organizations"
           SET "seatLimit" = COALESCE("seatLimit", 0) + ${seatQty}
           WHERE "id" = ${organizationId}
+            AND COALESCE("subscriptionStatus", '') <> 'trialing'
         `;
       }
     }

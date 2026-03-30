@@ -239,6 +239,7 @@ export default function HospitalsClient({ initialHospitals }: { initialHospitals
   const [hospitals, setHospitals] = useState<Hospital[]>(initialHospitals);
   const [modal, setModal] = useState<Hospital | "add" | null>(null);
   const [activityHospital, setActivityHospital] = useState<Hospital | null>(null);
+  const [grantingTrialSeatId, setGrantingTrialSeatId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState<string>("ALL");
   const [filterStatus, setFilterStatus] = useState<string>("ALL");
@@ -272,6 +273,32 @@ export default function HospitalsClient({ initialHospitals }: { initialHospitals
     }
     setModal(null);
     await load();
+  }
+
+  async function handleGrantTrialSeat(hospital: Hospital) {
+    const reason = window.prompt(`Grant one extra trial seat to ${hospital.hospitalName}. Reason for audit log:`);
+    if (reason === null) return;
+
+    setGrantingTrialSeatId(hospital.id);
+    try {
+      const res = await fetch(`/api/hospitals/${hospital.id}/trial-seat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reason: reason.trim() || "Manual admin trial seat override" }),
+      });
+
+      const payload = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(payload?.error ?? res.statusText);
+      }
+
+      await load(search || undefined);
+      window.alert(`Trial seat granted. New seat limit: ${payload.seatLimit ?? "updated"}`);
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : "Failed to grant trial seat");
+    } finally {
+      setGrantingTrialSeatId(null);
+    }
   }
 
   const inp2: React.CSSProperties = { background: C.input, border: `1px solid ${C.border}`, borderRadius: 7, padding: "8px 12px", color: C.text, fontSize: "0.875rem", outline: "none", width: 300 };
@@ -363,6 +390,15 @@ export default function HospitalsClient({ initialHospitals }: { initialHospitals
                   <td style={{ padding: "14px 16px", fontSize: "0.85rem", color: C.muted, textAlign: "center" }}>{h._count?.contacts ?? 0}</td>
                   <td style={{ padding: "14px 16px", fontSize: "0.8rem", color: C.muted, whiteSpace: "nowrap" }}>{fmtDate(h.createdAt)}</td>
                   <td style={{ padding: "14px 8px" }}>
+                    {h.isPriorityPartner && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); void handleGrantTrialSeat(h); }}
+                        disabled={grantingTrialSeatId === h.id}
+                        style={{ background: "rgba(251,191,36,0.12)", border: "1px solid rgba(251,191,36,0.3)", borderRadius: 6, padding: "4px 10px", color: "#fbbf24", cursor: grantingTrialSeatId === h.id ? "not-allowed" : "pointer", fontSize: "0.7rem", fontWeight: 700, whiteSpace: "nowrap", marginRight: 8, opacity: grantingTrialSeatId === h.id ? 0.7 : 1 }}
+                      >
+                        {grantingTrialSeatId === h.id ? "Granting..." : "+1 Trial Seat"}
+                      </button>
+                    )}
                     <button
                       onClick={(e) => { e.stopPropagation(); setActivityHospital(h); }}
                       style={{ background: "var(--nyx-accent-dim)", border: "1px solid var(--nyx-accent-str)", borderRadius: 6, padding: "4px 10px", color: "var(--nyx-accent)", cursor: "pointer", fontSize: "0.7rem", fontWeight: 700, whiteSpace: "nowrap" }}

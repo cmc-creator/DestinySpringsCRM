@@ -68,6 +68,7 @@ export async function POST(req: NextRequest) {
             UPDATE "organizations"
             SET "seatLimit" = COALESCE("seatLimit", 0) + ${seatQty}
             WHERE "id" = ${organizationId}
+              AND COALESCE("subscriptionStatus", '') <> 'trialing'
           `;
         }
       }
