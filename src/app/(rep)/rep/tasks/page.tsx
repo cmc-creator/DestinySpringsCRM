@@ -137,7 +137,7 @@ export default function RepTasksPage() {
   const done       = tasks.filter((t) => t.status === "DONE");
   const cancelled  = tasks.filter((t) => t.status === "CANCELLED");
 
-  const columns: { label: string; status: TaskStatus; items: Task[] }[] = [
+  const _columns: { label: string; status: TaskStatus; items: Task[] }[] = [
     { label: "Open",        status: "OPEN",        items: open },
     { label: "In Progress", status: "IN_PROGRESS", items: inProgress },
     { label: "Done",        status: "DONE",        items: done },

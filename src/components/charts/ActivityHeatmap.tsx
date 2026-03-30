@@ -2,7 +2,7 @@
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const CYAN = "var(--nyx-accent)";
-const TEXT = "var(--nyx-text)";
+const _TEXT = "var(--nyx-text)";
 const TEXT_MUTED = "var(--nyx-text-muted)";
 
 export type HeatmapDay = { date: string; count: number };
