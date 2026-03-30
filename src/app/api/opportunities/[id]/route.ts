@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { sendOpportunityAssignedEmail, sendAdmissionEmail } from "@/lib/email";
 
 export const maxDuration = 30;
 
@@ -22,10 +23,26 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     data,
     include: {
       hospital: { select: { hospitalName: true } },
-      assignedRep: { include: { user: { select: { name: true } } } },
+      assignedRep: { include: { user: { select: { name: true, email: true } } } },
     },
   });
 
+  // Email: rep newly assigned to this opportunity
+  if (
+    data.assignedRepId &&
+    data.assignedRepId !== before.assignedRepId &&
+    opp.assignedRep?.user?.email
+  ) {
+    await sendOpportunityAssignedEmail({
+      to: opp.assignedRep.user.email,
+      name: opp.assignedRep.user.name ?? "",
+      oppTitle: opp.title,
+      hospitalName: opp.hospital?.hospitalName ?? "",
+      stage: opp.stage,
+    });
+  }
+
+  // Bell notification + email: stage moved to ADMITTED
   if (opp.assignedRepId && before.stage !== "ADMITTED" && opp.stage === "ADMITTED") {
     await prisma.notification.create({
       data: {
@@ -37,6 +54,15 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         read: false,
       },
     }).catch(() => {});
+
+    if (opp.assignedRep?.user?.email) {
+      await sendAdmissionEmail({
+        to: opp.assignedRep.user.email,
+        name: opp.assignedRep.user.name ?? "",
+        oppTitle: opp.title,
+        hospitalName: opp.hospital?.hospitalName ?? "",
+      });
+    }
   }
 
   return NextResponse.json(opp);

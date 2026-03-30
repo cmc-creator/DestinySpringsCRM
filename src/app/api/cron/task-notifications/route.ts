@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { timingSafeEqual } from "crypto";
 import { prisma } from "@/lib/prisma";
+import { sendTaskDueSoonEmail, sendTaskOverdueEmail } from "@/lib/email";
 
 export const maxDuration = 30;
 
@@ -40,7 +41,7 @@ export async function GET(req: NextRequest) {
       OR: [{ repId: { not: null } }, { createdByUserId: { not: null } }],
     },
     include: {
-      rep: { include: { user: { select: { id: true } } } },
+      rep: { include: { user: { select: { id: true, email: true, name: true } } } },
     },
   });
 
@@ -52,9 +53,22 @@ export async function GET(req: NextRequest) {
       OR: [{ repId: { not: null } }, { createdByUserId: { not: null } }],
     },
     include: {
-      rep: { include: { user: { select: { id: true } } } },
+      rep: { include: { user: { select: { id: true, email: true, name: true } } } },
     },
   });
+
+  // Batch-fetch users for tasks that only have createdByUserId (no rep)
+  const creatorIds = [
+    ...dueSoon.filter(t => !t.rep).map(t => t.createdByUserId),
+    ...overdue.filter(t => !t.rep).map(t => t.createdByUserId),
+  ].filter(Boolean) as string[];
+  const creators = creatorIds.length
+    ? await prisma.user.findMany({
+        where: { id: { in: creatorIds } },
+        select: { id: true, email: true, name: true },
+      })
+    : [];
+  const creatorMap = Object.fromEntries(creators.map(u => [u.id, u]));
 
   const fmt = (d: Date | null) =>
     d ? d.toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "today";
@@ -74,6 +88,18 @@ export async function GET(req: NextRequest) {
       },
     });
     created++;
+
+    // Also email the user
+    const userEmail = task.rep?.user?.email ?? creatorMap[task.createdByUserId ?? ""]?.email;
+    const userName = task.rep?.user?.name ?? creatorMap[task.createdByUserId ?? ""]?.name ?? "";
+    if (userEmail) {
+      await sendTaskDueSoonEmail({
+        to: userEmail,
+        name: userName,
+        taskTitle: task.title,
+        dueDate: fmt(task.dueAt),
+      });
+    }
   }
 
   for (const task of overdue) {
@@ -89,6 +115,18 @@ export async function GET(req: NextRequest) {
       },
     });
     created++;
+
+    // Also email the user
+    const userEmail = task.rep?.user?.email ?? creatorMap[task.createdByUserId ?? ""]?.email;
+    const userName = task.rep?.user?.name ?? creatorMap[task.createdByUserId ?? ""]?.name ?? "";
+    if (userEmail) {
+      await sendTaskOverdueEmail({
+        to: userEmail,
+        name: userName,
+        taskTitle: task.title,
+        dueDate: fmt(task.dueAt),
+      });
+    }
   }
 
   return NextResponse.json({

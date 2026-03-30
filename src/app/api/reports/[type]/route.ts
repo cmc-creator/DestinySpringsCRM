@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 function toCsv(rows: Record<string, unknown>[]): string {
@@ -234,6 +235,11 @@ async function getRows(type: string) {
 }
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ type: string }> }) {
+  const session = await auth();
+  if (!session || session.user.role !== "ADMIN") {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const { type } = await params;
   const format = req.nextUrl.searchParams.get("format") ?? "csv";
 
