@@ -29,6 +29,10 @@ type StoredPreferences = {
     focusStatIds?: string[];
     statTargets?: Record<string, number>;
   };
+  onboarding?: {
+    welcomeSeenRoles?: string[];
+    walkthroughCompletedRoles?: string[];
+  };
   territory?: {
     defaultViewId?: string;
     savedViews?: Array<{ id: string; label: string; repFilter: string }>;
@@ -101,6 +105,26 @@ function sanitizePreferences(input: unknown): StoredPreferences {
     };
   }
 
+  if (value.onboarding !== undefined) {
+    const onboarding = toObject(value.onboarding);
+    next.onboarding = {
+      welcomeSeenRoles: Array.isArray(onboarding.welcomeSeenRoles)
+        ? onboarding.welcomeSeenRoles
+            .filter((item): item is string => typeof item === "string")
+            .map((item) => item.toUpperCase())
+            .filter((item) => item === "ADMIN" || item === "REP" || item === "ACCOUNT")
+            .slice(0, 3)
+        : [],
+      walkthroughCompletedRoles: Array.isArray(onboarding.walkthroughCompletedRoles)
+        ? onboarding.walkthroughCompletedRoles
+            .filter((item): item is string => typeof item === "string")
+            .map((item) => item.toUpperCase())
+            .filter((item) => item === "ADMIN" || item === "REP" || item === "ACCOUNT")
+            .slice(0, 3)
+        : [],
+    };
+  }
+
   if (value.territory !== undefined) {
     const territory = toObject(value.territory);
     const savedViews = Array.isArray(territory.savedViews)
@@ -151,9 +175,17 @@ export async function PUT(req: Request) {
     select: { preferences: true },
   });
 
+  const existingRoot = toObject(existing?.preferences);
+  const incoming = sanitizePreferences(body.preferences);
   const merged = {
-    ...toObject(existing?.preferences),
-    ...sanitizePreferences(body.preferences),
+    ...existingRoot,
+    ...incoming,
+    ...(incoming.ai ? { ai: { ...toObject(existingRoot.ai), ...incoming.ai } } : {}),
+    ...(incoming.automations ? { automations: { ...toObject(existingRoot.automations), ...incoming.automations } } : {}),
+    ...(incoming.alerts ? { alerts: { ...toObject(existingRoot.alerts), ...incoming.alerts } } : {}),
+    ...(incoming.dashboard ? { dashboard: { ...toObject(existingRoot.dashboard), ...incoming.dashboard } } : {}),
+    ...(incoming.onboarding ? { onboarding: { ...toObject(existingRoot.onboarding), ...incoming.onboarding } } : {}),
+    ...(incoming.territory ? { territory: { ...toObject(existingRoot.territory), ...incoming.territory } } : {}),
   };
 
   const updated = await prisma.user.update({

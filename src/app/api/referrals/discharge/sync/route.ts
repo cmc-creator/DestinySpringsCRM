@@ -1,8 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { timingSafeEqual } from "crypto";
 
 export const maxDuration = 90;
+
+function safeCompare(a: string, b: string): boolean {
+  const len = Math.max(a.length, b.length);
+  const bufA = Buffer.alloc(len);
+  const bufB = Buffer.alloc(len);
+  Buffer.from(a).copy(bufA);
+  Buffer.from(b).copy(bufB);
+  return timingSafeEqual(bufA, bufB) && a.length === b.length;
+}
+
+function isCronRequest(req: NextRequest): boolean {
+  const cronSecret = process.env.CRON_SECRET;
+  if (!cronSecret) return false;
+  const authHeader = req.headers.get("authorization") ?? "";
+  return safeCompare(authHeader, `Bearer ${cronSecret}`);
+}
 
 // ── SharePoint file configuration ────────────────────────────────────────────
 const SP_HOST    = process.env.SHAREPOINT_DISCHARGE_HOST      ?? "destinyspringshpt.sharepoint.com";
@@ -242,17 +259,26 @@ async function logSyncRun(
 }
 
 // ── POST /api/referrals/discharge/sync ────────────────────────────────────────
-export async function POST(_req: NextRequest) {
+export async function POST(req: NextRequest) {
+  const cron = isCronRequest(req);
   const session = await auth();
-  if (!session || session.user.role !== "ADMIN") {
+  if (!cron && (!session || session.user.role !== "ADMIN")) {
     return NextResponse.json({ error: "Admin access required" }, { status: 403 });
+  }
+
+  const actor = session?.user ?? await prisma.user.findFirst({
+    where: { role: "ADMIN" },
+    select: { id: true, email: true, name: true },
+  });
+  if (!actor) {
+    return NextResponse.json({ error: "No admin user available for sync logging" }, { status: 500 });
   }
 
   let token: string | null;
   try { token = await getSharePointToken(); } catch { token = null; }
 
   if (!token) {
-    await logSyncRun(session.user, "FAILED", "No Microsoft token available");
+    await logSyncRun(actor, "FAILED", "No Microsoft token available");
     return NextResponse.json(
       { error: "No Microsoft 365 connection found. Go to Admin → Integrations → Microsoft 365 and connect your account." },
       { status: 424 },
@@ -265,7 +291,7 @@ export async function POST(_req: NextRequest) {
     const siteData = await graphGet(token, `https://graph.microsoft.com/v1.0/sites/${SP_HOST}:/${SP_SITE}`);
     siteId = siteData.id as string;
   } catch (e) {
-    await logSyncRun(session.user, "FAILED", `SharePoint site lookup failed: ${e instanceof Error ? e.message : String(e)}`);
+    await logSyncRun(actor, "FAILED", `SharePoint site lookup failed: ${e instanceof Error ? e.message : String(e)}`);
     return NextResponse.json(
       { error: `Could not reach SharePoint site: ${e instanceof Error ? e.message : e}` },
       { status: 502 },
@@ -281,12 +307,12 @@ export async function POST(_req: NextRequest) {
     );
     const sheets = sheetsData.value as Array<{ name: string }>;
     if (!sheets?.length) {
-      await logSyncRun(session.user, "FAILED", "Workbook contains no worksheets");
+      await logSyncRun(actor, "FAILED", "Workbook contains no worksheets");
       return NextResponse.json({ error: "No worksheets found" }, { status: 422 });
     }
     worksheetName = sheets[0].name;
   } catch (e) {
-    await logSyncRun(session.user, "FAILED", `Workbook open failed: ${e instanceof Error ? e.message : String(e)}`);
+    await logSyncRun(actor, "FAILED", `Workbook open failed: ${e instanceof Error ? e.message : String(e)}`);
     return NextResponse.json(
       { error: `Could not open workbook: ${e instanceof Error ? e.message : e}` },
       { status: 502 },
@@ -302,7 +328,7 @@ export async function POST(_req: NextRequest) {
     );
     values = (rangeData.values ?? []) as (string | number | boolean | null)[][];
   } catch (e) {
-    await logSyncRun(session.user, "FAILED", `Worksheet read failed: ${e instanceof Error ? e.message : String(e)}`);
+    await logSyncRun(actor, "FAILED", `Worksheet read failed: ${e instanceof Error ? e.message : String(e)}`);
     return NextResponse.json(
       { error: `Could not read worksheet: ${e instanceof Error ? e.message : e}` },
       { status: 502 },
@@ -310,7 +336,7 @@ export async function POST(_req: NextRequest) {
   }
 
   if (values.length < 2) {
-    await logSyncRun(session.user, "SUCCESS", "No data rows found", { totalRows: 0, updated: 0, created: 0, skipped: 0, errors: 0 });
+    await logSyncRun(actor, "SUCCESS", "No data rows found", { totalRows: 0, updated: 0, created: 0, skipped: 0, errors: 0 });
     return NextResponse.json({ worksheet: worksheetName, totalRows: 0, updated: 0, created: 0, skipped: 0, errors: 0 });
   }
 
@@ -430,7 +456,7 @@ export async function POST(_req: NextRequest) {
     }
   }
 
-  await logSyncRun(session.user, errors > 0 ? "FAILED" : "SUCCESS", "Discharge sync completed", {
+  await logSyncRun(actor, errors > 0 ? "FAILED" : "SUCCESS", "Discharge sync completed", {
     totalRows: dataRows.length,
     updated,
     created,

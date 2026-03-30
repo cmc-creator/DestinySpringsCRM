@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { Sidebar } from "@/components/layout/sidebar";
 import AIChatWidget from "@/components/ai/AIChatWidget";
 import FirstLoginCelebration from "@/components/onboarding/FirstLoginCelebration";
+import OnboardingWalkthrough from "@/components/onboarding/OnboardingWalkthrough";
 
 export const dynamic = "force-dynamic";
 
@@ -18,6 +19,7 @@ export default async function AccountLayout({ children }: { children: React.Reac
         <div className="px-4 pt-14 pb-6 md:p-8 page-enter">{children}</div>
       </main>
       <FirstLoginCelebration role="ACCOUNT" userName={session.user.name} userEmail={session.user.email} />
+      <OnboardingWalkthrough role="ACCOUNT" />
       <AIChatWidget />
     </div>
   );

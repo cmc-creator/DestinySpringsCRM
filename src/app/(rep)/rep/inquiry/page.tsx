@@ -46,8 +46,8 @@ export default async function RepInquiryPage({
     <div>
       <div style={{ marginBottom: 28 }}>
         <p style={{ color: LBL, fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 4 }}>REP PORTAL</p>
-        <h1 style={{ fontSize: "1.8rem", fontWeight: 900, color: TEXT }}>Admissions Intake / Inquiry</h1>
-        <p style={{ color: MUTED, fontSize: "0.875rem", marginTop: 4 }}>Submit a patient pre-assessment for clinical review</p>
+        <h1 style={{ fontSize: "1.8rem", fontWeight: 900, color: TEXT }}>Referral Intake / Inquiry</h1>
+        <p style={{ color: MUTED, fontSize: "0.875rem", marginTop: 4 }}>Submit psychiatric referral pre-assessments for clinical review</p>
       </div>
 
       {/* Tab toggle */}

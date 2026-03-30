@@ -20,7 +20,17 @@ export default async function RepDashboard() {
     id: string; title: string | null; territory: string | null; userId: string;
     user: { name: string | null };
     opportunities: { id: string; title: string; stage: string; value: Prisma.Decimal | null; updatedAt: Date; hospital: { hospitalName: string } }[];
-    activities: { id: string; title: string; type: string; createdAt: Date }[];
+    activities: {
+      id: string;
+      title: string;
+      type: string;
+      notes: string | null;
+      createdAt: Date;
+      hospital: { hospitalName: string; city: string | null; state: string | null } | null;
+      lead: { hospitalName: string; city: string | null; state: string | null } | null;
+      opportunity: { title: string; hospital: { hospitalName: string; city: string | null; state: string | null } } | null;
+      createdByUser: { name: string | null; email: string } | null;
+    }[];
     territories: { id: string }[];
     _count: { opportunities: number; leads: number; territories: number };
   } = null;
@@ -37,7 +47,16 @@ export default async function RepDashboard() {
           orderBy: { updatedAt: "desc" },
           take: 6,
         },
-        activities: { orderBy: { createdAt: "desc" }, take: 5 },
+        activities: {
+          orderBy: { createdAt: "desc" },
+          take: 6,
+          include: {
+            hospital: { select: { hospitalName: true, city: true, state: true } },
+            lead: { select: { hospitalName: true, city: true, state: true } },
+            opportunity: { select: { title: true, hospital: { select: { hospitalName: true, city: true, state: true } } } },
+            createdByUser: { select: { name: true, email: true } },
+          },
+        },
         territories: true,
         _count: { select: { opportunities: true, leads: true, territories: true } },
       },
@@ -194,7 +213,17 @@ export default async function RepDashboard() {
                 <div style={{ width: 5, height: 5, borderRadius: "50%", background: CYAN, marginTop: 6, flexShrink: 0, opacity: 0.6 }} />
                 <div>
                   <div style={{ fontSize: "0.82rem", color: TEXT }}>{act.title}</div>
-                  <div style={{ fontSize: "0.7rem", color: TEXT_MUTED }}>{act.type} · {formatRelativeTime(act.createdAt)}</div>
+                  <div style={{ fontSize: "0.7rem", color: TEXT_MUTED }}>
+                    {(act.createdByUser?.name ?? act.createdByUser?.email ?? rep.user.name ?? "You")} · {act.type.replace(/_/g, " ")} · {formatRelativeTime(act.createdAt)}
+                  </div>
+                  <div style={{ fontSize: "0.7rem", color: TEXT_MUTED, marginTop: 2 }}>
+                    {(act.hospital?.hospitalName ?? act.lead?.hospitalName ?? act.opportunity?.hospital.hospitalName ?? "No facility")}
+                    {(act.hospital?.city || act.hospital?.state || act.lead?.city || act.lead?.state || act.opportunity?.hospital.city || act.opportunity?.hospital.state)
+                      ? ` · ${[act.hospital?.city ?? act.lead?.city ?? act.opportunity?.hospital.city ?? null, act.hospital?.state ?? act.lead?.state ?? act.opportunity?.hospital.state ?? null].filter(Boolean).join(", ")}`
+                      : ""}
+                    {act.opportunity?.title ? ` · ${act.opportunity.title}` : ""}
+                  </div>
+                  {act.notes && <div style={{ fontSize: "0.7rem", color: TEXT_MUTED, marginTop: 2, opacity: 0.85 }}>{act.notes.slice(0, 110)}</div>}
                 </div>
               </div>
             ))}

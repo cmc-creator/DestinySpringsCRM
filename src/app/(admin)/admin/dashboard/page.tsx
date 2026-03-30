@@ -11,7 +11,18 @@ export default async function AdminDashboard() {
   let openOpps = 0;
   let closedAdmissions = 0;
   let stalledOpps = 0;
-  let recentActivities: { id: string; title: string; notes: string | null; createdAt: Date; hospital: { hospitalName: string } | null; rep: { user: { name: string | null } } | null }[] = [];
+  let recentActivities: {
+    id: string;
+    title: string;
+    type: string;
+    notes: string | null;
+    createdAt: Date;
+    hospital: { hospitalName: string; city: string | null; state: string | null } | null;
+    lead: { hospitalName: string; city: string | null; state: string | null } | null;
+    opportunity: { title: string; hospital: { hospitalName: string; city: string | null; state: string | null } } | null;
+    rep: { user: { name: string | null } } | null;
+    createdByUser: { name: string | null; email: string } | null;
+  }[] = [];
   let recentOpps: { id: string; title: string; stage: string; value: Prisma.Decimal | null; hospital: { hospitalName: string }; assignedRep: { user: { name: string | null } } | null }[] = [];
   let mapReps: { id: string; licensedStates: string[] | null; user: { name: string | null; email: string }; territories: { state: string }[] }[] = [];
   let mapHospitalsRaw: { id: string; hospitalName: string; city: string | null; state: string | null; status: string; assignedRepId: string | null }[] = [];
@@ -33,7 +44,27 @@ export default async function AdminDashboard() {
           updatedAt: { lte: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000) },
         },
       }),
-      prisma.activity.findMany({ take: 8, orderBy: { createdAt: "desc" }, include: { hospital: { select: { hospitalName: true } }, rep: { include: { user: { select: { name: true } } } } } }),
+      prisma.activity.findMany({
+        take: 8,
+        orderBy: { createdAt: "desc" },
+        where: {
+          OR: [
+            { repId: { not: null } },
+            { hospitalId: { not: null } },
+            { createdByUserId: { not: null } },
+            { leadId: { not: null } },
+            { opportunityId: { not: null } },
+            { notes: { not: null } },
+          ],
+        },
+        include: {
+          hospital: { select: { hospitalName: true, city: true, state: true } },
+          lead: { select: { hospitalName: true, city: true, state: true } },
+          opportunity: { select: { title: true, hospital: { select: { hospitalName: true, city: true, state: true } } } },
+          rep: { include: { user: { select: { name: true } } } },
+          createdByUser: { select: { name: true, email: true } },
+        },
+      }),
       prisma.opportunity.findMany({ take: 6, orderBy: { createdAt: "desc" }, include: { hospital: { select: { hospitalName: true } }, assignedRep: { include: { user: { select: { name: true } } } } } }),
       prisma.rep.findMany({ where: { status: "ACTIVE" }, include: { user: { select: { name: true, email: true } }, territories: true } }),
       prisma.hospital.findMany({ select: { id: true, hospitalName: true, city: true, state: true, status: true, assignedRepId: true }, orderBy: { hospitalName: "asc" } }),
@@ -92,9 +123,14 @@ export default async function AdminDashboard() {
   const serializedActivities = recentActivities.map((a) => ({
     id: a.id,
     title: a.title,
+    type: a.type,
     notes: a.notes,
     createdAt: a.createdAt.toISOString(),
-    hospitalName: a.hospital?.hospitalName ?? null,
+    hospitalName: a.hospital?.hospitalName ?? a.lead?.hospitalName ?? a.opportunity?.hospital.hospitalName ?? null,
+    locationCity: a.hospital?.city ?? a.lead?.city ?? a.opportunity?.hospital.city ?? null,
+    locationState: a.hospital?.state ?? a.lead?.state ?? a.opportunity?.hospital.state ?? null,
+    whoName: a.createdByUser?.name ?? a.createdByUser?.email ?? null,
+    opportunityTitle: a.opportunity?.title ?? null,
     repName: a.rep?.user.name ?? null,
   }));
 

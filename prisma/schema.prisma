@@ -53,6 +53,8 @@ model User {
   password      String?
   role          Role      @default(ACCOUNT)
   preferences   Json?
+  firstLoginAt  DateTime?
+  onboardedAt   DateTime?
   twoFactorSecret String?
   twoFactorEnabled Boolean @default(false)
   createdAt     DateTime  @default(now())
@@ -165,6 +167,7 @@ model Rep {
   w9Form          W9Form?
   leads           Lead[]
   referralSources ReferralSource[]
+  tasks           Task[]
 
   @@map("reps")
 }
@@ -221,13 +224,18 @@ enum HospitalType {
   EMERGENCY_DEPARTMENT       // Hospital ED — primary referral channel
   INPATIENT_MEDICAL          // Medical inpatient — psych consult referrals
   PRIMARY_CARE               // PCP / family medicine office
+  PHYSICIANS_OFFICE          // Doctor's office / private practice
   OUTPATIENT_PSYCHIATRY      // Outpatient psych / counseling practice
+  OUTPATIENT_PROGRAM         // General outpatient program / clinic
   IOP_PHP                    // IOP / PHP step-up referrals
   CRISIS_STABILIZATION_UNIT  // CSU / mobile crisis
   CRISIS_LINE                // Crisis hotline services
   COURT_LEGAL                // Court-ordered treatment / DCS / probation
   COMMUNITY_MENTAL_HEALTH    // FQHC / community behavioral health
-  SCHOOL_COUNSELOR           // School-based counseling
+  SCHOOL                     // School or educational institution
+  SCHOOL_COUNSELOR           // School-based counseling program
+  FAITH_ORGANIZATION         // Church / faith-based organization
+  VOLUNTEER_ORGANIZATION     // Volunteer / nonprofit community org
   PEER_SUPPORT               // Peer support organizations
   SNF_LTACH                  // Skilled nursing / LTACH
   SELF_REFERRAL              // Patient or family self-referral
@@ -235,9 +243,9 @@ enum HospitalType {
 }
 
 model Hospital {
-  id     String @id @default(cuid())
-  userId String @unique
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     String  @id @default(cuid())
+  userId String? @unique
+  user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   // Identity
   hospitalName   String
@@ -283,6 +291,7 @@ model Hospital {
   contracts     Contract[]
   activities    Activity[]
   leads         Lead[]
+  tasks         Task[]
 
   @@map("hospitals")
 }
@@ -397,6 +406,7 @@ model Lead {
   updatedAt DateTime @updatedAt
 
   activities Activity[]
+  tasks      Task[]
 
   @@map("leads")
 }
@@ -465,6 +475,7 @@ model Opportunity {
   activities Activity[]
   invoices   Invoice[]
   contracts  Contract[]
+  tasks      Task[]
 
   @@map("opportunities")
 }
@@ -759,6 +770,37 @@ model IntegrationToken {
 
   @@unique([userId, provider])
   @@map("integration_tokens")
+}
+
+// ─────────────────────────────────────────
+// LEGAL DOCUMENT E-SIGNATURES
+// ─────────────────────────────────────────
+
+enum LegalDocType {
+  CONFLICT_OF_INTEREST    // COI Disclosure & Recusal Memo
+  IP_OWNERSHIP            // Independent Development & IP Ownership Affidavit
+  NDA                     // Mutual Non-Disclosure Agreement
+  MSLA                    // Master Software License Agreement
+  BAA                     // HIPAA Business Associate Agreement
+  SLA                     // Service Level Agreement
+  AUP                     // Acceptable Use Policy
+  SOLE_SOURCE             // Sole Source Justification
+}
+
+model LegalDocSignature {
+  id          String      @id @default(cuid())
+  docType     LegalDocType
+  signerName  String      // Typed full name
+  signerEmail String
+  signerTitle String?
+  signerRole  String      // "licensor" | "licensee" | "business_associate" | "covered_entity" | "approver" | "acknowledger"
+  ipAddress   String?
+  userAgent   String?
+  signedAt    DateTime    @default(now())
+
+  userId      String?     // If signed while logged in
+
+  @@map("legal_doc_signatures")
 }
 
 // ─────────────────────────────────────────
@@ -1152,3 +1194,68 @@ model PreAssessment {
   @@map("pre_assessments")
 }
 
+
+
+// ------------------------------------------
+// FOLLOW-UP TASKS
+// ------------------------------------------
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum TaskStatus {
+  OPEN
+  IN_PROGRESS
+  DONE
+  CANCELLED
+}
+
+model Task {
+  id    String @id @default(cuid())
+  title String
+  notes String?
+
+  status   TaskStatus   @default(OPEN)
+  priority TaskPriority @default(MEDIUM)
+
+  dueAt       DateTime?
+  completedAt DateTime?
+
+  repId   String?
+  rep     Rep?   @relation(fields: [repId], references: [id])
+
+  hospitalId String?
+  hospital   Hospital? @relation(fields: [hospitalId], references: [id])
+
+  leadId String?
+  lead   Lead?  @relation(fields: [leadId], references: [id])
+
+  opportunityId String?
+  opportunity   Opportunity? @relation(fields: [opportunityId], references: [id])
+
+  createdByUserId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("tasks")
+}
+
+// ------------------------------------------
+// PASSWORD RESET TOKENS
+// ------------------------------------------
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  @@map("password_reset_tokens")
+}

@@ -1,12 +1,15 @@
 ﻿import { prisma } from "@/lib/prisma";
 import AnalyticsCharts from "@/components/charts/AnalyticsCharts";
 import type { OppStageRow, LeadRow, RepRow, MonthRow, HospTypeRow } from "@/components/charts/AnalyticsCharts";
+import ActivityHeatmap from "@/components/charts/ActivityHeatmap";
+import type { HeatmapDay } from "@/components/charts/ActivityHeatmap";
+import InvoiceContractPanel from "@/components/invoices/InvoiceContractPanel";
 
 const TEXT = "var(--nyx-text)";
 const TEXT_MUTED = "var(--nyx-text-muted)";
 
 export default async function AnalyticsPage() {
-  const [oppsByStageRaw, leadsByStatusRaw, repStatsRaw, hospitalStatsRaw, paidInvoices, totalRepsCount, totalHospitalsCount] = await Promise.all([
+const [oppsByStageRaw, leadsByStatusRaw, repStatsRaw, hospitalStatsRaw, paidInvoices, totalRepsCount, totalHospitalsCount, recentActivitiesRaw] = await Promise.all([
     prisma.opportunity.groupBy({ by: ["stage"], _count: { id: true }, _sum: { value: true } }),
     prisma.lead.groupBy({ by: ["status"], _count: { id: true } }),
     prisma.rep.findMany({
@@ -26,6 +29,10 @@ export default async function AnalyticsPage() {
     }),
     prisma.rep.count({ where: { status: "ACTIVE" } }),
     prisma.hospital.count({ where: { status: { not: "CHURNED" } } }),
+    prisma.activity.findMany({
+      where: { createdAt: { gte: new Date(Date.now() - 91 * 24 * 60 * 60 * 1000) } },
+      select: { createdAt: true },
+    }),
   ]);
 
   const oppsByStage: OppStageRow[] = oppsByStageRaw.map(o => ({
@@ -76,6 +83,14 @@ export default async function AnalyticsPage() {
   const winRate   = wonCount + lostCount > 0 ? Math.round((wonCount / (wonCount + lostCount)) * 100) : 0;
   const activeLeads = leadsByStatus.filter(l => ["NEW","CONTACTED","QUALIFIED"].includes(l.status)).reduce((s, l) => s + l.count, 0);
 
+  // Build heatmap data: count activities per calendar day
+  const heatmapMap = new Map<string, number>();
+  for (const act of recentActivitiesRaw) {
+    const iso = act.createdAt.toISOString().slice(0, 10);
+    heatmapMap.set(iso, (heatmapMap.get(iso) ?? 0) + 1);
+  }
+  const heatmapData: HeatmapDay[] = Array.from(heatmapMap.entries()).map(([date, count]) => ({ date, count }));
+
   return (
     <div>
       <div style={{ marginBottom: 28 }}>
@@ -96,6 +111,12 @@ export default async function AnalyticsPage() {
         totalReps={totalRepsCount}
         totalHospitals={totalHospitalsCount}
       />
+      <div style={{ marginTop: 20 }}>
+        <ActivityHeatmap data={heatmapData} weeks={13} />
+      </div>
+      <div style={{ marginTop: 32 }}>
+        <InvoiceContractPanel />
+      </div>
     </div>
   );
 }

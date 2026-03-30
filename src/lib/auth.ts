@@ -65,6 +65,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         }
 
         try {
+          if (!user.firstLoginAt) {
+            await prisma.user.update({
+              where: { id: user.id },
+              data: { firstLoginAt: new Date() },
+            });
+          }
+        } catch (err) {
+          console.warn("[auth] failed to stamp first login", err);
+        }
+
+        try {
           await prisma.auditLog.create({
             data: {
               userId: user.id,

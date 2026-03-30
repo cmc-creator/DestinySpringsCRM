@@ -30,12 +30,9 @@ function roleLabel(role: Role) {
   return "Account";
 }
 
-export default function FirstLoginCelebration({ role, userEmail, userName }: FirstLoginCelebrationProps) {
+export default function FirstLoginCelebration({ role, userEmail: _userEmail, userName }: FirstLoginCelebrationProps) {
   const [open, setOpen] = useState(false);
-  const key = useMemo(() => {
-    const identity = (userEmail || "anonymous").toLowerCase();
-    return `nyx_welcome_seen_v1_${role}_${identity}`;
-  }, [role, userEmail]);
+  const [onboarded, setOnboarded] = useState(false);
 
   const pieces = useMemo<ConfettiPiece[]>(() => {
     return Array.from({ length: 90 }, (_, i) => ({
@@ -51,24 +48,56 @@ export default function FirstLoginCelebration({ role, userEmail, userName }: Fir
   }, []);
 
   useEffect(() => {
-    try {
-      const alreadySeen = localStorage.getItem(key) === "1";
-      if (!alreadySeen) {
-        const t = window.setTimeout(() => setOpen(true), 450);
-        return () => window.clearTimeout(t);
-      }
-    } catch {
-      // ignore storage failures
-    }
-  }, [key]);
+    let active = true;
+    fetch("/api/onboarding")
+      .then(async (response) => {
+        if (!response.ok) return null;
+        return response.json() as Promise<{ shouldShowWelcome?: boolean }>;
+      })
+      .then((data) => {
+        if (!active) return;
+        if (data?.shouldShowWelcome) {
+          void fetch("/api/onboarding", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ markOnboarded: true }),
+          }).catch(() => {
+            // non-fatal
+          });
+          setOnboarded(true);
+          const t = window.setTimeout(() => setOpen(true), 450);
+          return () => window.clearTimeout(t);
+        }
+      })
+      .catch(() => {
+        // non-fatal: fail closed to avoid repeated onboarding on uncertain state
+      });
 
-  const close = () => {
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const markWelcomeSeen = async () => {
     setOpen(false);
-    try {
-      localStorage.setItem(key, "1");
-    } catch {
-      // ignore storage failures
+    if (onboarded) {
+      return;
     }
+    setOnboarded(true);
+    try {
+      await fetch("/api/onboarding", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ markOnboarded: true }),
+      });
+    } catch {
+      // non-fatal
+    }
+  };
+
+  const startWalkthrough = async () => {
+    await markWelcomeSeen();
+    window.dispatchEvent(new CustomEvent("nyx:start-walkthrough", { detail: { role } }));
   };
 
   if (!open) return null;
@@ -134,6 +163,7 @@ export default function FirstLoginCelebration({ role, userEmail, userName }: Fir
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
             <Link
               href="/user-guide"
+              onClick={() => { void markWelcomeSeen(); }}
               style={{
                 textDecoration: "none",
                 background: "var(--nyx-accent)",
@@ -147,7 +177,22 @@ export default function FirstLoginCelebration({ role, userEmail, userName }: Fir
               Open User Guide
             </Link>
             <button
-              onClick={close}
+              onClick={() => { void startWalkthrough(); }}
+              style={{
+                border: "1px solid rgba(201,168,76,0.32)",
+                background: "rgba(201,168,76,0.08)",
+                color: "var(--nyx-text)",
+                fontWeight: 700,
+                borderRadius: 9,
+                padding: "10px 16px",
+                fontSize: "0.9rem",
+                cursor: "pointer",
+              }}
+            >
+              Start Walkthrough
+            </button>
+            <button
+              onClick={() => { void markWelcomeSeen(); }}
               style={{
                 border: "1px solid rgba(201,168,76,0.32)",
                 background: "rgba(255,255,255,0.03)",

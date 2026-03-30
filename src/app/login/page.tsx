@@ -430,6 +430,12 @@ function LoginForm() {
             </button>
           </form>
 
+          <div className="lp-signup" style={{ marginTop: 14 }}>
+            <Link href="/forgot-password" style={{ color: "var(--nyx-accent, #C9A84C)", opacity: 0.8, textDecoration: "none", fontSize: "0.82rem" }}>
+              Forgot your password?
+            </Link>
+          </div>
+
           <div className="lp-signup">
             Don&apos;t have an account?{" "}
             <Link href="/signup">Sign Up</Link>

@@ -11,7 +11,29 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const data = await req.json();
   // Strip undefined keys
   Object.keys(data).forEach((k) => data[k] === undefined && delete data[k]);
-  const lead = await prisma.lead.update({ where: { id }, data, include: { assignedRep: { include: { user: { select: { name: true } } } } } });
+
+  // Snapshot previous assignedRepId to detect assignment changes
+  const prev = await prisma.lead.findUnique({ where: { id }, select: { assignedRepId: true, hospitalName: true } });
+
+  const lead = await prisma.lead.update({ where: { id }, data, include: { assignedRep: { include: { user: { select: { name: true, id: true } } } } } });
+
+  // Fire notification when a rep is newly assigned
+  if (
+    data.assignedRepId &&
+    data.assignedRepId !== prev?.assignedRepId &&
+    lead.assignedRep?.user?.id
+  ) {
+    await prisma.notification.create({
+      data: {
+        userId: lead.assignedRep.user.id,
+        title: "New Lead Assigned",
+        body: prev?.hospitalName ?? "A lead has been assigned to you.",
+        type: "INFO",
+        link: "/rep/leads",
+      },
+    });
+  }
+
   return NextResponse.json(lead);
 }
 

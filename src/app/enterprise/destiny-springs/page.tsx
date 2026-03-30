@@ -1,4 +1,7 @@
+import { auth } from "@/lib/auth";
+import { redirect } from "next/navigation";
 import Link from "next/link";
+import LegalDocumentsSection from "@/components/contracts/LegalDocumentsSection";
 
 // ── DSH Partner Plan configuration ──────────────────────────────────────────
 // Adjust PER_SEAT_PRICE and INCLUDED_SEATS to match your agreed contract terms
@@ -30,7 +33,10 @@ const monthlyTotal = PER_SEAT_PRICE * INCLUDED_SEATS;
 const annualTotal  = monthlyTotal * 12;
 const marketMonthlyBaseline = MARKET_RATE_PER_SEAT * INCLUDED_SEATS;
 
-export default function DSHPartnerPage() {
+export default async function DSHPartnerPage() {
+  const session = await auth();
+  if (!session) redirect("/login");
+
   return (
     <div style={{ background: BG, color: TEXT, fontFamily: "system-ui, -apple-system, sans-serif", minHeight: "100vh" }}>
 
@@ -149,6 +155,9 @@ export default function DSHPartnerPage() {
           </p>
         </div>
       </section>
+
+      {/* LEGAL DOCUMENTS & E-SIGNATURE */}
+      <LegalDocumentsSection />
 
       {/* HELP */}
       <section style={{ borderTop: `1px solid ${BORDER}`, padding: "56px 2rem" }}>

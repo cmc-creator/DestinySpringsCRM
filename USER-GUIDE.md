@@ -95,6 +95,12 @@ Each role has a tailored navigation sidebar and only sees data relevant to their
 2. Enter your email and password on the **Login** page.
 3. If 2FA is enabled on your account, enter the one-time code from your authenticator app.
 4. You will be redirected to your role-specific dashboard.
+5. On first login for a role, you will see a one-time welcome modal with direct links to the User Guide and Guided Walkthrough.
+
+### Guided Walkthrough (All Roles)
+- Use the **Guided Tour** button at the bottom of the sidebar to start the in-app walkthrough at any time.
+- The walkthrough highlights key navigation pages for your role (Admin, Rep, or Account) with step-by-step guidance.
+- Completing the walkthrough marks it complete for that role so it does not repeat automatically.
 
 ### First-Time Setup (Admins)
 1. Go to **Settings** → configure organization name, logo, and branding.
@@ -210,7 +216,7 @@ The executive dashboard provides a real-time operational snapshot.
 - **Admission Funnel**: bar chart showing Lead → Screened → Pending → Admitted → Discharged counts
 - **Revenue Trend**: line chart of admission revenue over the last 12 months
 - **Rep Leaderboard**: ranked list of reps by admissions this month
-- **Recent Activities Feed**: latest field activity log entries
+- **Recent Activities Feed**: latest field activity entries with **who** logged it, **what** activity type occurred, and **where** it happened (facility + city/state)
 - **Overdue Leads/Opportunities**: red-flagged items past their follow-up date
 
 ---
@@ -581,7 +587,7 @@ Personal KPI dashboard scoped to the logged-in rep's data only.
 - Overdue Leads (past follow-up date)
 - Overdue Opportunities (past expected admission date)
 
-**Activity Feed**: Recent field activities logged by this rep.
+**Activity Feed**: Recent field activities with detailed who/what/where context, including facility, location, activity type, and notes snippet.
 
 **Quick Log Widget (⚡ FAB button)**: Floating action button in the bottom-right corner for rapid activity logging from any page (see [Log a Field Activity with GPS](#log-a-field-activity-with-gps)).
 
@@ -943,12 +949,13 @@ Themes use CSS custom properties (`--nyx-*` tokens) — the entire UI responds t
 ### Microsoft 365 Admissions Referrals
 - Sync the Destiny Springs daily bedboard from M365 Excel/SharePoint.
 - Extract and track admissions referrals (who referred each admission) in the Referrals ledger.
+- Scheduled sync runs automatically every 4 hours, with manual sync still available in the UI.
 - Configured in **Integrations → Microsoft 365 Admissions Referrals Sync**.
 
 ### Discharge Sync
 - Automated discharge date and referred-out destination capture from the M365 discharge sheet.
 - Destination fields such as “Referred Out To”, “Discharge Destination”, or “Placement” are mapped into the Admissions Referrals ledger.
-- Triggered by EHR webhook or scheduled sync.
+- Triggered by EHR webhook and by scheduled sync (every 4 hours).
 
 ### Email Tracking
 - Track rep outreach emails (open rates, click rates).

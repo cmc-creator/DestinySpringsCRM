@@ -4,6 +4,7 @@ import { Sidebar } from "@/components/layout/sidebar";
 import AIChatWidget from "@/components/ai/AIChatWidget";
 import QuickLogWidget from "@/components/activities/QuickLogWidget";
 import FirstLoginCelebration from "@/components/onboarding/FirstLoginCelebration";
+import OnboardingWalkthrough from "@/components/onboarding/OnboardingWalkthrough";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -22,6 +23,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         <div className="px-4 pt-14 pb-6 md:p-8 page-enter">{children}</div>
       </main>
       <FirstLoginCelebration role="ADMIN" userName={session.user.name} userEmail={session.user.email} />
+      <OnboardingWalkthrough role="ADMIN" />
       <AIChatWidget />
       <QuickLogWidget role="ADMIN" repId={rep?.id} />
     </div>

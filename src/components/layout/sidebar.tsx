@@ -119,35 +119,36 @@ const ADMIN_NAV: NavGroup[] = [
     group: "Reps", tint: "orange",
     items: [
       { href: "/admin/reps",           label: "Reps" },
-      { href: "/admin/reps/performance", label: "Rep Performance" },
+      { href: "/admin/tasks",          label: "Tasks" },
       { href: "/admin/communications", label: "Communications" },
-      { href: "/admin/compliance",     label: "Compliance" },
-    ],
-  },
-  {
-    group: "Intelligence", tint: "pink",
-    items: [
-      { href: "/admin/analytics",  label: "Analytics" },
-      { href: "/admin/reports",    label: "Reports" },
-      { href: "/admin/census",     label: "Census" },
-      { href: "/admin/payor-mix",  label: "Payor Mix" },
-      { href: "/admin/audit",      label: "Audit Log" },
     ],
   },
   {
     group: "Intake", tint: "purple",
     items: [
-      { href: "/admin/inquiry",    label: "Admissions Intake Inbox" },
+      { href: "/admin/inquiry",    label: "Referral Intake Inbox" },
       { href: "/admin/resources",  label: "Resource Library" },
     ],
   },
   {
-    group: "Settings", tint: "red",
+    group: "Administration", tint: "red",
+    items: [
+      { href: "/admin/reps/performance", label: "Rep Performance" },
+      { href: "/admin/compliance",       label: "Compliance" },
+      { href: "/admin/analytics",        label: "Analytics" },
+      { href: "/admin/reports",          label: "Reports" },
+      { href: "/admin/census",           label: "Census" },
+      { href: "/admin/payor-mix",        label: "Payor Mix" },
+      { href: "/admin/audit",            label: "Audit Log" },
+      { href: "/admin/users",            label: "User Accounts" },
+      { href: "/admin/import",           label: "Import Data" },
+      { href: "/admin/integrations",     label: "Integrations" },
+    ],
+  },
+  {
+    group: "Settings", tint: "pink",
     items: [
       { href: "/me",                 label: "My Account" },
-      { href: "/admin/users",        label: "User Accounts" },
-      { href: "/admin/import",       label: "Import Data" },
-      { href: "/admin/integrations", label: "Integrations" },
       { href: "/admin/settings",     label: "Settings" },
       { href: "/enterprise/destiny-springs", label: "Partner Portal" },
     ],
@@ -174,12 +175,14 @@ const REP_NAV: NavGroup[] = [
     group: "Outreach", tint: "orange",
     items: [
       { href: "/rep/communications", label: "Communications" },
+      { href: "/rep/activities",     label: "My Activities" },
+      { href: "/rep/tasks",          label: "Tasks" },
     ],
   },
   {
     group: "Intake", tint: "purple",
     items: [
-      { href: "/rep/inquiry",   label: "Admissions Intake" },
+      { href: "/rep/inquiry",   label: "Referral Intake" },
       { href: "/rep/resources", label: "Resource Library" },
     ],
   },
@@ -212,6 +215,10 @@ function getNav(role: string) {
 function getInitials(name?: string | null) {
   if (!name) return "?";
   return name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
+}
+
+function tourIdForHref(href: string) {
+  return `tour-${href.replace(/[^a-zA-Z0-9]+/g, "-").replace(/^-+|-+$/g, "").toLowerCase()}`;
 }
 
 interface SidebarProps {
@@ -431,6 +438,7 @@ export function Sidebar({ role, userName, userEmail }: SidebarProps) {
                 <Link
                   key={item.href}
                   href={item.href}
+                  data-tour-id={tourIdForHref(item.href)}
                   onClick={() => setMobileOpen(false)}
                   style={{
                     display: "flex",
@@ -479,6 +487,12 @@ export function Sidebar({ role, userName, userEmail }: SidebarProps) {
             <div style={{ fontSize: "0.68rem", color: TEXT_MUTED, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{userEmail}</div>
           </div>
         </div>
+        <button
+          onClick={() => window.dispatchEvent(new CustomEvent("nyx:start-walkthrough", { detail: { role } }))}
+          style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: `1px solid ${BORDER}`, borderRadius: 6, padding: "11px 7px", minHeight: 44, fontSize: "0.78rem", color: TEXT, cursor: "pointer", fontWeight: 700, marginBottom: 6 }}
+        >
+          Guided Tour
+        </button>
         <button
           onClick={() => window.dispatchEvent(new Event("aegis:open"))}
           style={{ width: "100%", background: ACCENT_DIM, border: `1px solid ${ACCENT_MID}`, borderRadius: 6, padding: "11px 7px", minHeight: 44, fontSize: "0.78rem", color: CYAN, cursor: "pointer", fontWeight: 700, marginBottom: 6, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}

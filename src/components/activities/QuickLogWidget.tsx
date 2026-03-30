@@ -1,5 +1,5 @@
 "use client";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 
 type SpeechRecognitionHandle = {
   continuous: boolean;
@@ -39,10 +39,24 @@ export default function QuickLogWidget({ repId, role }: { repId?: string; role: 
   const [type, setType] = useState("");
   const [title, setTitle] = useState("");
   const [notes, setNotes] = useState("");
+  const [hospitalId, setHospitalId] = useState("");
+  const [completedAt, setCompletedAt] = useState("");
+  const [hospitals, setHospitals] = useState<{ id: string; hospitalName: string }[]>([]);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [listening, setListening] = useState(false);
   const speechRef = useRef<SpeechRecognitionHandle | null>(null);
+
+  useEffect(() => {
+    if (open && hospitals.length === 0) {
+      fetch("/api/hospitals?limit=200")
+        .then(r => r.ok ? r.json() : [])
+        .then((data: { id: string; hospitalName: string }[] | { hospitals?: { id: string; hospitalName: string }[] }) => {
+          setHospitals(Array.isArray(data) ? data : (data.hospitals ?? []));
+        })
+        .catch(() => {});
+    }
+  }, [open, hospitals.length]);
 
   function toggleSpeech() {
     const speechWindow = window as Window & {
@@ -68,7 +82,7 @@ export default function QuickLogWidget({ repId, role }: { repId?: string; role: 
 
   if (role === "ACCOUNT") return null;
 
-  const reset = () => { setStep("type"); setType(""); setTitle(""); setNotes(""); setSaved(false); };
+  const reset = () => { setStep("type"); setType(""); setTitle(""); setNotes(""); setHospitalId(""); setCompletedAt(""); setSaved(false); };
   const close = () => { setOpen(false); reset(); };
 
   const selectType = (t: string) => {
@@ -85,7 +99,14 @@ export default function QuickLogWidget({ repId, role }: { repId?: string; role: 
       const res = await fetch("/api/activities", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type, title: title.trim(), notes: notes.trim() || null, repId: repId ?? null }),
+        body: JSON.stringify({
+          type,
+          title: title.trim(),
+          notes: notes.trim() || null,
+          repId: repId ?? null,
+          hospitalId: hospitalId || null,
+          completedAt: completedAt ? new Date(completedAt).toISOString() : null,
+        }),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
@@ -167,6 +188,30 @@ export default function QuickLogWidget({ repId, role }: { repId?: string; role: 
                     onChange={e => setTitle(e.target.value)}
                     onKeyDown={e => e.key === "Enter" && save()}
                     style={{ width: "100%", background: "rgba(0,0,0,0.3)", border: "1px solid var(--nyx-accent-dim)", borderRadius: 8, padding: "9px 12px", color: "var(--nyx-text)", fontSize: "0.875rem", outline: "none", boxSizing: "border-box" }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ fontSize: "0.68rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.1em", textTransform: "uppercase", display: "block", marginBottom: 6 }}>Account (optional)</label>
+                  <select
+                    value={hospitalId}
+                    onChange={e => setHospitalId(e.target.value)}
+                    style={{ width: "100%", background: "rgba(0,0,0,0.3)", border: "1px solid var(--nyx-accent-dim)", borderRadius: 8, padding: "9px 12px", color: hospitalId ? "var(--nyx-text)" : "var(--nyx-text-muted)", fontSize: "0.875rem", outline: "none", boxSizing: "border-box" }}
+                  >
+                    <option value="">— None —</option>
+                    {hospitals.map(h => (
+                      <option key={h.id} value={h.id}>{h.hospitalName}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label style={{ fontSize: "0.68rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.1em", textTransform: "uppercase", display: "block", marginBottom: 6 }}>Date (optional)</label>
+                  <input
+                    type="date"
+                    value={completedAt}
+                    onChange={e => setCompletedAt(e.target.value)}
+                    style={{ width: "100%", background: "rgba(0,0,0,0.3)", border: "1px solid var(--nyx-accent-dim)", borderRadius: 8, padding: "9px 12px", color: "var(--nyx-text)", fontSize: "0.875rem", outline: "none", boxSizing: "border-box", colorScheme: "dark" }}
                   />
                 </div>
               <div>

@@ -55,11 +55,21 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth();
-  if (!session || session.user.role !== "ADMIN") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id } = await params;
+
+  const activity = await prisma.activity.findUnique({
+    where: { id },
+    select: { createdByUserId: true },
+  });
+  if (!activity) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  // Admins can delete any activity; others can only delete their own
+  if (session.user.role !== "ADMIN" && activity.createdByUserId !== session.user.id) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   await prisma.activity.delete({ where: { id } });
   return NextResponse.json({ ok: true });
 }

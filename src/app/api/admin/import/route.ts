@@ -77,7 +77,7 @@ function normalizeMondayCellText(value: string): string {
       }
       if (parsed && typeof parsed === "object") {
         const obj = parsed as Record<string, unknown>;
-        const fromText = [obj.text, obj.label, obj.name].find((v) => typeof v === "string" && String(v).trim()) as string | undefined;
+        const fromText = [obj.text, obj.label, obj.name, obj.display_value, obj.title].find((v) => typeof v === "string" && String(v).trim()) as string | undefined;
         if (fromText) return fromText.trim();
       }
     } catch {
@@ -88,6 +88,64 @@ function normalizeMondayCellText(value: string): string {
   // Trim leading emoji/symbol noise and common separators that appear in exports.
   out = out.replace(/^[^A-Za-z0-9]+/, "").replace(/^[-:|]+\s*/, "").trim();
   return out;
+}
+
+function toFlatStringSet(value: unknown, out = new Set<string>()): Set<string> {
+  if (value === null || value === undefined) return out;
+  if (typeof value === "string") {
+    const v = value.trim();
+    if (v) out.add(v);
+    if ((v.startsWith("{") && v.endsWith("}")) || (v.startsWith("[") && v.endsWith("]"))) {
+      try {
+        const parsed = JSON.parse(v) as unknown;
+        toFlatStringSet(parsed, out);
+      } catch {
+        // keep raw value only
+      }
+    }
+    return out;
+  }
+  if (typeof value === "number" || typeof value === "boolean") {
+    out.add(String(value));
+    return out;
+  }
+  if (Array.isArray(value)) {
+    for (const item of value) toFlatStringSet(item, out);
+    return out;
+  }
+  if (typeof value === "object") {
+    const obj = value as Record<string, unknown>;
+    const priorityKeys = ["text", "label", "name", "title", "display_value", "value", "person", "owner"];
+    for (const key of priorityKeys) {
+      if (key in obj) toFlatStringSet(obj[key], out);
+    }
+    for (const val of Object.values(obj)) {
+      toFlatStringSet(val, out);
+    }
+  }
+  return out;
+}
+
+function normalizedName(value: string): string {
+  return value.toLowerCase().replace(/[^a-z0-9 ]+/g, " ").replace(/\s+/g, " ").trim();
+}
+
+function extractCandidateNames(raw: unknown): string[] {
+  const values = Array.from(toFlatStringSet(raw));
+  const split: string[] = [];
+  for (const value of values) {
+    const normalized = normalizeMondayCellText(value);
+    if (!normalized) continue;
+    const chunks = normalized.split(/,|;|\||\n|\s+&\s+/g).map((c) => c.trim()).filter(Boolean);
+    split.push(...(chunks.length ? chunks : [normalized]));
+  }
+  const unique = new Map<string, string>();
+  for (const item of split) {
+    const norm = normalizedName(item);
+    if (!norm || norm.length < 2) continue;
+    if (!unique.has(norm)) unique.set(norm, item);
+  }
+  return Array.from(unique.values());
 }
 
 function parseSpreadsheetDate(value: unknown): Date | undefined {
@@ -402,44 +460,53 @@ async function importAccounts(rows: Record<string, unknown>[], dryRun = false, d
         continue;
       }
 
-      if (!portalEmail) {
-        skipped++;
-        skipReasons["new facility requires portal email - use Referral Sources for network accounts"] = (skipReasons["new facility requires portal email - use Referral Sources for network accounts"] ?? 0) + 1;
-        if (preview.length < MAX_PREVIEW) {
-          preview.push({
-            action: "skip",
-            reason: "new facility requires portal email",
-            fields: Object.fromEntries([
-              ["Name", name], ["Primary Contact", contactName], ["Contact Email", contactEmail],
-            ].filter(([, v]) => v)),
-          });
+      // Create account — portal email is optional.
+      // With portal email: create a linked portal user + hospital.
+      // Without portal email: create the hospital record only (standard for referral accounts).
+      if (portalEmail) {
+        const existingPortalUser = await prisma.user.findUnique({ where: { email: portalEmail } });
+        if (existingPortalUser) {
+          skipped++;
+          skipReasons["portal email already in use"] = (skipReasons["portal email already in use"] ?? 0) + 1;
+          if (preview.length < MAX_PREVIEW) {
+            preview.push({ action: "skip", reason: "portal email already in use", fields: { Name: name, "Portal Email": portalEmail } });
+          }
+          continue;
         }
-        continue;
-      }
-
-      const existingPortalUser = await prisma.user.findUnique({ where: { email: portalEmail } });
-      if (existingPortalUser) {
-        skipped++;
-        skipReasons["portal email already exists"] = (skipReasons["portal email already exists"] ?? 0) + 1;
-        if (preview.length < MAX_PREVIEW) {
-          preview.push({ action: "skip", reason: "portal email already exists", fields: { Name: name, "Portal Email": portalEmail } });
-        }
-        continue;
       }
 
       if (!dryRun) {
-        await prisma.$transaction(async (tx) => {
-          const user = await tx.user.create({
-            data: {
-              email: portalEmail,
-              name: contactName || name,
-              role: "ACCOUNT",
-            },
+        if (portalEmail) {
+          await prisma.$transaction(async (tx) => {
+            const user = await tx.user.create({
+              data: {
+                email: portalEmail,
+                name: contactName || name,
+                role: "ACCOUNT",
+              },
+            });
+            await tx.hospital.create({
+              data: {
+                userId: user.id,
+                hospitalName: name,
+                city: city || undefined,
+                state: state || undefined,
+                zip: zip || undefined,
+                npi: npi || undefined,
+                bedCount: beds ? parseInt(beds) || undefined : undefined,
+                notes: notes || undefined,
+                primaryContactName: contactName || undefined,
+                primaryContactTitle: contactTitle || undefined,
+                primaryContactEmail: contactEmail || undefined,
+                primaryContactPhone: contactPhone || phone || undefined,
+                hospitalType: mapFacilityType(type),
+                status: "PROSPECT",
+              },
+            });
           });
-
-          await tx.hospital.create({
+        } else {
+          await prisma.hospital.create({
             data: {
-              userId: user.id,
               hospitalName: name,
               city: city || undefined,
               state: state || undefined,
@@ -455,13 +522,14 @@ async function importAccounts(rows: Record<string, unknown>[], dryRun = false, d
               status: "PROSPECT",
             },
           });
-        });
+        }
       }
       created++;
       if (preview.length < MAX_PREVIEW) {
         preview.push({ action: "create", fields: Object.fromEntries([
           ["Name", name], ["City", city], ["State", state], ["Phone", phone],
-          ["NPI", npi], ["Beds", beds], ["Primary Contact", contactName], ["Portal Email", portalEmail],
+          ["NPI", npi], ["Beds", beds], ["Primary Contact", contactName],
+          ...(portalEmail ? [["Portal Email", portalEmail]] : []),
         ].filter(([, v]) => v)) });
       }
     } catch (e) {
@@ -502,9 +570,13 @@ async function importContacts(rows: Record<string, unknown>[], dryRun = false, d
     const rawAccountName = col(row,
       "Account Name", "Organization", "Company", "Hospital", "Facility",
       "Account", "Linked Account", "Accounts", "Board", "Board Item",
-      "Referral Source", "Facility Name", "Hospital Name", "Site", "Partner"
-    ) || colByHeaderToken(row, "account", "facility", "hospital", "organization", "company", "site", "partner", "board");
-    const accountName = normalizeMondayCellText(rawAccountName);
+      "Referral Source", "Facility Name", "Hospital Name", "Site", "Partner",
+      "Related item", "Related Item", "Related Items", "Related items",
+      "Connect boards", "Connected item", "Connected boards",
+      "Linked item", "Linked items"
+    ) || colByHeaderToken(row, "account", "facility", "hospital", "organization", "company", "site", "partner", "board", "related", "linked");
+    // Strip parenthetical board names from Monday "Connect boards" values (e.g. "Account (Board)")
+    const accountName = normalizeMondayCellText(rawAccountName).replace(/\s*\([^)]*\)\s*$/, "").trim();
     const title       = col(row, "Title", "Job Title", "Position", "Role");
     const email       = col(row, "Email", "Work Email", "E-mail", "Email Address");
     const phone       = col(row, "Phone", "Work Phone", "Mobile", "Cell", "Direct", "Phone Number");
@@ -536,9 +608,9 @@ async function importContacts(rows: Record<string, unknown>[], dryRun = false, d
 
     if (!hospitalId) {
       skipped++;
-      const key = `no match for "${accountName.slice(0, 40)}"`;
+      const key = `no account matched "${accountName.slice(0, 40)}"`;
       skipReasons[key] = (skipReasons[key] ?? 0) + 1;
-      if (preview.length < MAX_PREVIEW) preview.push({ action: "skip", reason: `no facility matched "${accountName.slice(0, 30)}"`, fields: { Name: name } });
+      if (preview.length < MAX_PREVIEW) preview.push({ action: "skip", reason: `no account matched "${accountName.slice(0, 30)}"`, fields: { Name: name } });
       continue;
     }
 
@@ -628,11 +700,15 @@ function isJunkActivitySubject(s: string): boolean {
 
 async function importActivities(rows: Record<string, unknown>[], dryRun = false, duplicateMode: DuplicateMode = "skip") {
   let created = 0, updated = 0, skipped = 0;
+  let accountsFound = 0, accountsMatched = 0, repsMatched = 0;
   const errors: string[] = [];
   const skipReasons: Record<string, number> = {};
   const preview: PreviewSample[] = [];
 
   const reps = await prisma.rep.findMany({ include: { user: true } });
+  const hospitals = await prisma.hospital.findMany({
+    select: { id: true, hospitalName: true },
+  });
 
   for (const row of rows) {
     // Try known aliases; if nothing matches, fall back to the first non-empty column
@@ -660,68 +736,159 @@ async function importActivities(rows: Record<string, unknown>[], dryRun = false,
     }
 
     const typeStr = normalizeMondayCellText(col(row, "Type", "Activity Type", "Call Type", "Subitem", "Status", "Category"));
-    const dateStr = col(row, "Date", "Due Date", "Completed Date", "ActivityDate", "Close Date",
+    const dateStr = col(row, "Date", "Start time", "Start Time", "End time", "End Time", "Due Date", "Completed Date", "ActivityDate", "Close Date",
       "Created", "Last Updated", "Timeline", "Activities timeline", "Date Created");
     let accountName = col(row, "Account Name", "Organization", "Hospital", "Facility",
-      "Account", "Accounts", "Client", "Company", "Partner", "Referral Source", "Linked Account");
+      "Account", "Accounts", "Client", "Company", "Partner", "Referral Source", "Linked Account",
+      "Related item", "Related Item", "Related Items", "Related items",
+      "Connect boards", "Connected item", "Connected items", "Connected boards",
+      "Related account", "Related Account", "Linked item", "Linked items",
+      "Item link", "Board link", "Mirror", "Subitems");
+    if (!accountName) {
+      accountName = colByHeaderToken(row, "account", "hospital", "facility", "organization", "company", "client", "related", "linked", "connect", "mirror");
+    }
     accountName = normalizeMondayCellText(accountName);
-    const repName   = col(row, "Owner", "Assigned To", "Rep", "Rep Name", "Created By",
-      "Assignee", "Person", "Team Member");
+    // Monday "Connect boards" values may include parenthetical board names like "Account Name (Board)"
+    // Strip them so we match on the item name only.
+    accountName = accountName.replace(/\s*\([^)]*\)\s*$/, "").trim();
+    const repCell = col(row, "Owner", "Assigned To", "Rep", "Rep Name", "Created By",
+      "Assignee", "Person", "People", "Team Member") || colByHeaderToken(row, "owner", "assignee", "person", "rep", "people");
     const notes     = normalizeMondayCellText(col(row, "Description", "Comments", "Notes", "Body", "Details", "Update"));
 
-    // Monday often has "AccountName - ActivityTitle" in a single Name column.
-    // If no explicit account column was found, try to split the subject on " - ".
+    // Monday titles are often "Account - Activity" format. Always extract both parts
+    // so we can use the prefix as a hospital-match fallback and the suffix as the real title.
     let resolvedTitle = subject;
-    if (!accountName) {
+    let titlePrefixAccount = "";
+    let titleSuffixActivity = "";
+    {
       const dashIdx = subject.indexOf(" - ");
       if (dashIdx > 2 && dashIdx < 80) {
-        const potentialAccount = subject.slice(0, dashIdx).trim();
-        const potentialTitle   = subject.slice(dashIdx + 3).trim();
-        if (potentialTitle) {
-          accountName   = potentialAccount;
-          resolvedTitle = potentialTitle;
+        const pfx = subject.slice(0, dashIdx).trim();
+        const sfx = subject.slice(dashIdx + 3).trim();
+        if (pfx && sfx) {
+          titlePrefixAccount = pfx;
+          titleSuffixActivity = sfx;
         }
       }
     }
 
-    // Match hospital
+    // If no explicit account from any column, fall back to title prefix
+    if (!accountName && titlePrefixAccount) {
+      accountName = titlePrefixAccount;
+      resolvedTitle = titleSuffixActivity;
+    }
+
+    // Match hospital.
+    // Monday "Connect boards" / "Related item" columns can hold multiple linked items as a
+    // comma-separated string. Split into individual segments so we try each one.
+    // Also include the title prefix (e.g. "Account - Activity") as a final fallback.
+    function splitAccountCandidates(raw: string): string[] {
+      // Split on comma or semicolon, strip any residual parenthetical board names, dedupe.
+      const seen = new Set<string>();
+      const out: string[] = [];
+      for (const seg of raw.split(/[,;]+/)) {
+        const clean = seg.replace(/\s*\([^)]*\)\s*$/, "").trim();
+        if (clean && !seen.has(clean.toLowerCase())) {
+          seen.add(clean.toLowerCase());
+          out.push(clean);
+        }
+      }
+      return out;
+    }
+
     let hospitalId: string | undefined;
     if (accountName) {
-      const hosp = await prisma.hospital.findFirst({
-        where: { hospitalName: { contains: accountName, mode: "insensitive" } },
-      });
-      // Try the other direction too: account name contains the stored hospital name
-      if (!hosp) {
-        const hospAlt = await prisma.hospital.findFirst({
-          where: { hospitalName: { contains: accountName.split(" ")[0], mode: "insensitive" } },
-        });
-        if (hospAlt && accountName.toLowerCase().startsWith(hospAlt.hospitalName.slice(0, 6).toLowerCase())) {
-          hospitalId = hospAlt.id;
-        }
-      } else {
-        hospitalId = hosp.id;
+      accountsFound++;
+      // Build all candidates: every comma-separated segment from the Related item value,
+      // plus the title prefix if it's different.
+      const rawCandidates = splitAccountCandidates(accountName);
+      if (titlePrefixAccount && !rawCandidates.some((c) => normalizedName(c) === normalizedName(titlePrefixAccount))) {
+        rawCandidates.push(titlePrefixAccount);
       }
+
+      outer:
+      for (const candidate of rawCandidates) {
+        const norm = normalizedName(candidate);
+        if (!norm) continue;
+        // 1. Exact normalized match
+        const exact = hospitals.find((h) => normalizedName(h.hospitalName) === norm);
+        if (exact) {
+          hospitalId = exact.id;
+          if (titleSuffixActivity && normalizedName(candidate) === normalizedName(titlePrefixAccount)) {
+            resolvedTitle = titleSuffixActivity;
+          }
+          break outer;
+        }
+        // 2. Fuzzy: one contains the other (handles abbreviations / partial names)
+        const fuzzy = hospitals.find((h) => {
+          const n = normalizedName(h.hospitalName);
+          return n.includes(norm) || norm.includes(n);
+        });
+        if (fuzzy) {
+          hospitalId = fuzzy.id;
+          if (titleSuffixActivity && normalizedName(candidate) === normalizedName(titlePrefixAccount)) {
+            resolvedTitle = titleSuffixActivity;
+          }
+          break outer;
+        }
+        // 3. First-word match (≥4 chars) as last resort
+        const firstWord = norm.split(/\s+/)[0];
+        if (firstWord.length >= 4) {
+          const byWord = hospitals.find((h) => normalizedName(h.hospitalName).startsWith(firstWord));
+          if (byWord) {
+            hospitalId = byWord.id;
+            if (titleSuffixActivity && normalizedName(candidate) === normalizedName(titlePrefixAccount)) {
+              resolvedTitle = titleSuffixActivity;
+            }
+            break outer;
+          }
+        }
+      }
+
+      if (hospitalId) accountsMatched++;
+    }
+
+    // Always use the activity suffix part as the resolved title when we detected a dash-split,
+    // regardless of whether the hospital matched — this puts the real activity in the Title column.
+    if (titleSuffixActivity && resolvedTitle === subject) {
+      resolvedTitle = titleSuffixActivity;
     }
 
     // Match rep by name
     let repId: string | undefined;
-    if (repName) {
-      const needle = repName.toLowerCase();
-      const matched = reps.find((r) => r.user.name?.toLowerCase().includes(needle) || needle.includes(r.user.name?.toLowerCase() ?? "____"));
-      repId = matched?.id;
+    let createdByUserId: string | undefined;
+    const repCandidates = extractCandidateNames(repCell);
+    if (repCandidates.length) {
+      const matched = repCandidates
+        .map((candidate) => {
+          const needle = normalizedName(candidate);
+          return reps.find((r) => {
+            const repName = normalizedName(r.user.name ?? "");
+            if (!repName) return false;
+            return repName === needle || repName.includes(needle) || needle.includes(repName);
+          });
+        })
+        .find(Boolean);
+      if (matched) {
+        repId = matched.id;
+        createdByUserId = matched.userId;
+        repsMatched++;
+      }
     }
 
-    let completedAt: Date | undefined;
-    if (dateStr) {
-      const d = new Date(dateStr);
-      if (!isNaN(d.getTime())) completedAt = d;
-    }
+    const dateRaw = row[Object.keys(row).find((k) => {
+      const nk = normalizeKey(k);
+      return ["date", "start time", "end time", "due date", "completed date", "activitydate",
+        "close date", "created", "last updated", "timeline", "activities timeline", "date created"].includes(nk);
+    }) ?? ""] ?? dateStr;
+    let completedAt: Date | undefined = parseSpreadsheetDate(dateRaw);
+    if (!completedAt && dateStr) completedAt = parseSpreadsheetDate(dateStr);
 
-    // Dedup: update or skip when same title + hospital already exists
+    // Dedup by title only — do NOT filter by hospitalId here because existing records
+    // from a previous import may have hospitalId = null and would never be found otherwise.
     const existingActivity = await prisma.activity.findFirst({
       where: {
         title: { equals: resolvedTitle.slice(0, 255), mode: "insensitive" },
-        ...(hospitalId ? { hospitalId } : {}),
       },
     });
     if (existingActivity) {
@@ -735,6 +902,7 @@ async function importActivities(rows: Record<string, unknown>[], dryRun = false,
                 notes: notes || undefined,
                 hospitalId: hospitalId ?? existingActivity.hospitalId ?? undefined,
                 repId: repId ?? existingActivity.repId ?? undefined,
+                createdByUserId: createdByUserId ?? existingActivity.createdByUserId ?? undefined,
                 completedAt: completedAt ?? existingActivity.completedAt ?? new Date(),
               },
             });
@@ -743,7 +911,9 @@ async function importActivities(rows: Record<string, unknown>[], dryRun = false,
           if (preview.length < MAX_PREVIEW) {
             preview.push({ action: "update", fields: Object.fromEntries([
               ["Subject", resolvedTitle.slice(0, 80)], ["Type", mapActivityType(typeStr)],
-              ["Date", dateStr], ["Account", accountName], ["Rep", repName],
+              ["Date", dateStr],
+              ["Account", accountName ? `${accountName}${hospitalId ? " ✓" : " ✗"}` : ""],
+              ["Rep", repCandidates[0] ? `${repCandidates[0]}${repId ? " ✓" : " ✗"}` : ""],
             ].filter(([, v]) => v)) });
           }
         } catch (e) {
@@ -766,6 +936,7 @@ async function importActivities(rows: Record<string, unknown>[], dryRun = false,
             notes: notes || undefined,
             hospitalId: hospitalId ?? undefined,
             repId: repId ?? undefined,
+            createdByUserId: createdByUserId ?? undefined,
             completedAt: completedAt ?? new Date(),
           },
         });
@@ -774,7 +945,9 @@ async function importActivities(rows: Record<string, unknown>[], dryRun = false,
       if (preview.length < MAX_PREVIEW) {
         preview.push({ action: "create", fields: Object.fromEntries([
           ["Subject", resolvedTitle.slice(0, 80)], ["Type", mapActivityType(typeStr)],
-          ["Date", dateStr], ["Account", accountName], ["Rep", repName],
+          ["Date", dateStr],
+          ["Account", accountName ? `${accountName}${hospitalId ? " ✓" : " ✗"}` : ""],
+          ["Rep", repCandidates[0] ? `${repCandidates[0]}${repId ? " ✓" : " ✗"}` : ""],
         ].filter(([, v]) => v)) });
       }
     } catch (e) {
@@ -782,7 +955,7 @@ async function importActivities(rows: Record<string, unknown>[], dryRun = false,
     }
   }
 
-  return { created, updated, skipped, errors, skipReasons, preview };
+  return { created, updated, skipped, errors, skipReasons, preview, accountsFound, accountsMatched, repsMatched };
 }
 
 async function importLeads(rows: Record<string, unknown>[], dryRun = false, duplicateMode: DuplicateMode = "skip") {
@@ -1235,16 +1408,24 @@ async function importMarketingBudget(rows: Record<string, unknown>[], dryRun = f
 function mapFacilityType(s: string) {
   const v = s.toLowerCase();
   if (v.includes("emergency") || v.includes("ed ") || v.includes(" ed")) return "EMERGENCY_DEPARTMENT" as const;
-  if (v.includes("inpatient") || v.includes("psychiatric")) return "INPATIENT_MEDICAL" as const;
-  if (v.includes("primary care") || v.includes("pcp")) return "PRIMARY_CARE" as const;
-  if (v.includes("outpatient") || v.includes("therapy")) return "OUTPATIENT_PSYCHIATRY" as const;
+  if (v.includes("inpatient") || v.includes("psychiatric hospital")) return "INPATIENT_MEDICAL" as const;
+  if (v.includes("primary care") || v.includes("pcp") || v.includes("family medicine") || v.includes("internal medicine")) return "PRIMARY_CARE" as const;
+  if (v.includes("doctor") || v.includes("physician") || v.includes("private practice") || v.includes("medical office") || v.includes("physicians office")) return "PHYSICIANS_OFFICE" as const;
+  if (v.includes("outpatient psych") || v.includes("outpatient psychiatry") || v.includes("counseling practice")) return "OUTPATIENT_PSYCHIATRY" as const;
+  if (v.includes("outpatient") || v.includes("clinic") || v.includes("treatment center")) return "OUTPATIENT_PROGRAM" as const;
   if (v.includes("iop") || v.includes("php")) return "IOP_PHP" as const;
+  if (v.includes("crisis stabilization") || v.includes("csu") || v.includes("mobile crisis")) return "CRISIS_STABILIZATION_UNIT" as const;
+  if (v.includes("crisis line") || v.includes("hotline")) return "CRISIS_LINE" as const;
   if (v.includes("crisis")) return "CRISIS_STABILIZATION_UNIT" as const;
-  if (v.includes("court") || v.includes("legal") || v.includes("probation")) return "COURT_LEGAL" as const;
-  if (v.includes("community") || v.includes("fqhc")) return "COMMUNITY_MENTAL_HEALTH" as const;
-  if (v.includes("school")) return "SCHOOL_COUNSELOR" as const;
-  if (v.includes("peer")) return "PEER_SUPPORT" as const;
-  if (v.includes("snf") || v.includes("skilled")) return "SNF_LTACH" as const;
+  if (v.includes("court") || v.includes("legal") || v.includes("probation") || v.includes("dcs")) return "COURT_LEGAL" as const;
+  if (v.includes("community") || v.includes("fqhc") || v.includes("mental health center")) return "COMMUNITY_MENTAL_HEALTH" as const;
+  if (v.includes("church") || v.includes("faith") || v.includes("ministry") || v.includes("congregation") || v.includes("parish") || v.includes("mosque") || v.includes("synagogue")) return "FAITH_ORGANIZATION" as const;
+  if (v.includes("volunteer") || v.includes("nonprofit") || v.includes("non-profit") || v.includes("charity") || v.includes("foundation") || v.includes("association")) return "VOLUNTEER_ORGANIZATION" as const;
+  if (v.includes("school counselor") || v.includes("school-based")) return "SCHOOL_COUNSELOR" as const;
+  if (v.includes("school") || v.includes("university") || v.includes("college") || v.includes("district") || v.includes("education")) return "SCHOOL" as const;
+  if (v.includes("peer") || v.includes("recovery")) return "PEER_SUPPORT" as const;
+  if (v.includes("snf") || v.includes("skilled") || v.includes("ltach") || v.includes("nursing home")) return "SNF_LTACH" as const;
+  if (v.includes("self") || v.includes("family")) return "SELF_REFERRAL" as const;
   return "OTHER" as const;
 }
 

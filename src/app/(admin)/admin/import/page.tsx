@@ -33,20 +33,23 @@ type ImportResult = {
   skipReasons?: Record<string, number>;
   isDryRun?: boolean;
   preview?: PreviewSample[];
+  accountsFound?: number;
+  accountsMatched?: number;
+  repsMatched?: number;
 };
 
 const IMPORT_TYPES: { value: ImportType; label: string; hint: string; badge: string }[] = [
   {
     value: "accounts",
-    label: "Facilities / Accounts",
+    label: "Accounts",
     badge: "ACCOUNTS",
-    hint: "Import only true facility portal accounts. New rows must include a Portal Email because this creates a linked account-portal user. For field network and referral relationships, use Referral Sources instead.",
+    hint: "Import all external accounts — doctor offices, ERs, outpatient programs, schools, churches, volunteer orgs, or any place your reps visit. Portal Email is optional: only include it if you want to give that account a login to the portal.",
   },
   {
     value: "contacts",
     label: "Contacts",
     badge: "CONTACTS",
-    hint: "Import contacts linked to existing facilities. Each row must have an Account Name that matches an existing facility. Expected columns: Name, Title, Email, Phone, Department, Account Name, etc.",
+    hint: "Import contacts linked to existing accounts. Each row must have an Account Name that matches an existing account. Expected columns: Name, Title, Email, Phone, Department, Account Name, etc.",
   },
   {
     value: "activities",
@@ -82,6 +85,22 @@ export default function AdminImportPage() {
   const [dragging, setDragging] = useState(false);
   const [duplicateMode, setDuplicateMode] = useState<DuplicateMode>(defaultDuplicateModeForType("accounts"));
   const fileRef                 = useRef<HTMLInputElement>(null);
+  const [relinking, setRelinking] = useState(false);
+  const [relinkResult, setRelinkResult] = useState<{ linked: number; skipped: number } | null>(null);
+
+  async function handleRelink() {
+    setRelinking(true);
+    setRelinkResult(null);
+    try {
+      const res = await fetch("/api/admin/relink-activities", { method: "POST" });
+      const data = await res.json();
+      setRelinkResult({ linked: data.linked ?? 0, skipped: data.skipped ?? 0 });
+    } catch {
+      alert("Re-link failed — please try again.");
+    } finally {
+      setRelinking(false);
+    }
+  }
 
   function handleDrop(e: React.DragEvent) {
     e.preventDefault();
@@ -127,13 +146,33 @@ export default function AdminImportPage() {
 
   return (
     <div style={{ maxWidth: 760, margin: "0 auto" }}>
-      <div style={{ marginBottom: 24 }}>
-        <h1 style={{ margin: 0, fontSize: "1.6rem", fontWeight: 800, color: "#ede4cf" }}>Import Data</h1>
-        <p style={{ margin: "4px 0 0", fontSize: "0.85rem", color: "rgba(237,228,207,0.5)" }}>
-          Upload Excel (.xlsx) or CSV files to populate facilities, contacts, and activity history.
-          Import Accounts first, then Contacts, then Activities.
-        </p>
+      <div style={{ marginBottom: 24, display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
+        <div>
+          <h1 style={{ margin: 0, fontSize: "1.6rem", fontWeight: 800, color: "#ede4cf" }}>Import Data</h1>
+          <p style={{ margin: "4px 0 0", fontSize: "0.85rem", color: "rgba(237,228,207,0.5)" }}>
+            Upload Excel (.xlsx) or CSV files to populate accounts, contacts, and activity history.
+            Import Accounts first, then Contacts, then Activities.
+          </p>
+        </div>
+        <button
+          onClick={handleRelink}
+          disabled={relinking}
+          style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(201,168,76,0.25)", color: relinking ? "rgba(237,228,207,0.3)" : "rgba(237,228,207,0.75)", fontWeight: 700, fontSize: "0.8rem", borderRadius: 10, padding: "10px 16px", cursor: relinking ? "not-allowed" : "pointer", whiteSpace: "nowrap", flexShrink: 0 }}
+        >
+          {relinking ? "Linking…" : "🔗 Re-link Activities → Accounts"}
+        </button>
       </div>
+
+      {relinkResult && (
+        <div style={{ background: relinkResult.linked > 0 ? "rgba(80,200,120,0.08)" : "rgba(255,180,0,0.08)", border: `1px solid ${relinkResult.linked > 0 ? "rgba(80,200,120,0.3)" : "rgba(255,180,0,0.3)"}`, borderRadius: 10, padding: "12px 16px", marginBottom: 20, display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: "0.82rem", color: "#ede4cf" }}>
+          <span>
+            {relinkResult.linked > 0
+              ? `✅ Linked ${relinkResult.linked} activit${relinkResult.linked === 1 ? "y" : "ies"} to accounts.${ relinkResult.skipped > 0 ? ` ${relinkResult.skipped} still unmatched — their activity title may not contain the account name.` : " All unlinked activities are now connected!"}`
+              : `⚠️ No activities were linked. Make sure you import Accounts first, then click Re-link.`}
+          </span>
+          <button onClick={() => setRelinkResult(null)} style={{ background: "none", border: "none", color: "rgba(237,228,207,0.5)", cursor: "pointer", fontSize: "1rem", padding: "0 4px", marginLeft: 12 }}>×</button>
+        </div>
+      )}
 
       {/* Type selector */}
       <div style={{ display: "flex", gap: 10, marginBottom: 22, flexWrap: "wrap" }}>
@@ -262,6 +301,19 @@ export default function AdminImportPage() {
                 {" "}— nothing has been written yet. Review below, then click <strong style={{ color: "#fde68a" }}>Confirm and Import</strong>.
               </p>
 
+              {/* Activity match stats */}
+              {result.type === "activities" && result.accountsFound !== undefined && (
+                <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 14 }}>
+                  <span style={{ background: result.accountsMatched === result.accountsFound && result.accountsFound > 0 ? "rgba(34,197,94,0.1)" : "rgba(239,68,68,0.1)", border: `1px solid ${result.accountsMatched === result.accountsFound && result.accountsFound > 0 ? "rgba(34,197,94,0.3)" : "rgba(239,68,68,0.3)"}`, borderRadius: 8, padding: "6px 12px", fontSize: "0.78rem", color: result.accountsMatched === result.accountsFound && result.accountsFound > 0 ? "#86efac" : "#fca5a5", fontWeight: 700 }}>
+                    Accounts linked: {result.accountsMatched ?? 0} / {result.accountsFound ?? 0}
+                    {(result.accountsFound ?? 0) > 0 && (result.accountsMatched ?? 0) < (result.accountsFound ?? 0) && " \u2014 some rows did not match any account (check \u2717 rows below)"}
+                  </span>
+                  <span style={{ background: "rgba(147,197,253,0.08)", border: "1px solid rgba(147,197,253,0.2)", borderRadius: 8, padding: "6px 12px", fontSize: "0.78rem", color: "#93c5fd", fontWeight: 700 }}>
+                    Reps linked: {result.repsMatched ?? 0}
+                  </span>
+                </div>
+              )}
+
               {/* Detected columns */}
               {result.columns && result.columns.length > 0 && (
                 <details open style={{ marginBottom: 12 }}>
@@ -362,7 +414,7 @@ export default function AdminImportPage() {
 
       <p style={{ marginTop: 24, fontSize: "0.72rem", color: "rgba(237,228,207,0.28)", textAlign: "center", lineHeight: 1.6 }}>
         Import order: <strong style={{ color: "rgba(237,228,207,0.45)" }}>1. Accounts</strong> → <strong style={{ color: "rgba(237,228,207,0.45)" }}>2. Contacts</strong> → <strong style={{ color: "rgba(237,228,207,0.45)" }}>3. Activities</strong>.
-        Imports are additive and do not delete existing records. Duplicate accounts (matched by name) are skipped. Contacts without a matching facility are skipped. Before production imports, take a database backup/snapshot so rollback is available if needed.
+        Imports are additive and do not delete existing records. Duplicate accounts (matched by name) are skipped. Contacts without a matching account are skipped. Before production imports, take a database backup/snapshot so rollback is available if needed.
       </p>
     </div>
   );

@@ -10,6 +10,7 @@ const GOLD     = "var(--nyx-accent)";
 const BORDER   = "var(--nyx-accent-dim)";
 const TEXT     = "var(--nyx-text)";
 const MUTED    = "var(--nyx-text-muted)";
+const COMPACT_PANEL_MAX_WIDTH = 860;
 
 const stageColor: Record<string, string> = {
   INQUIRY: "#94a3b8", CLINICAL_REVIEW: "#fbbf24", INSURANCE_AUTH: "#f59e0b",
@@ -37,7 +38,19 @@ function fmtCurrency(n: number) {
 
 // ─── Prop types ───────────────────────────────────────────────────────────────
 export interface StatItem { id: string; label: string; value: number; icon: string; href: string }
-export interface ActivityItem { id: string; title: string; notes: string | null; createdAt: string; hospitalName: string | null; repName: string | null }
+export interface ActivityItem {
+  id: string;
+  title: string;
+  type: string;
+  notes: string | null;
+  createdAt: string;
+  hospitalName: string | null;
+  locationCity: string | null;
+  locationState: string | null;
+  whoName: string | null;
+  opportunityTitle: string | null;
+  repName: string | null;
+}
 export interface OppItem { id: string; title: string; stage: string; value: number | null; hospitalName: string; repName: string | null }
 export interface MapHospital { id: string; hospitalName: string; city: string | null; state: string | null; status: string; assignedRepName: string | null }
 export interface RepTerritory { id: string; userId?: string; name: string; color: string; states: string[] }
@@ -96,7 +109,7 @@ function Icon({ id, color }: { id: string; color: string }) {
 function ComplianceSection({ expiredDocs, soonDocs }: { expiredDocs: ComplianceDocItem[]; soonDocs: ComplianceDocItem[] }) {
   if (expiredDocs.length === 0 && soonDocs.length === 0) return null;
   return (
-    <div style={{ marginBottom: 28 }}>
+    <div style={{ marginBottom: 28, maxWidth: COMPACT_PANEL_MAX_WIDTH }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
         <p style={{ fontSize: "0.7rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.12em", textTransform: "uppercase" }}>COMPLIANCE ALERTS</p>
         <Link href="/admin/compliance" style={{ fontSize: "0.75rem", color: GOLD, textDecoration: "none", opacity: 0.7 }}>Manage →</Link>
@@ -193,7 +206,7 @@ function TerritorySection({ mapHospitals, repTerritories }: { mapHospitals: MapH
 
 function RecentOppsSection({ opps }: { opps: OppItem[] }) {
   return (
-    <div className="gold-card" style={{ borderRadius: 12, padding: "20px", marginBottom: 32 }}>
+    <div className="gold-card" style={{ borderRadius: 12, padding: "20px", marginBottom: 32, maxWidth: COMPACT_PANEL_MAX_WIDTH }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
         <p style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.12em", textTransform: "uppercase" }}>RECENT OPPORTUNITIES</p>
         <Link href="/admin/opportunities" style={{ fontSize: "0.75rem", color: GOLD, textDecoration: "none", opacity: 0.7 }}>View all →</Link>
@@ -219,19 +232,27 @@ function RecentOppsSection({ opps }: { opps: OppItem[] }) {
 
 function RecentActivitySection({ activities }: { activities: ActivityItem[] }) {
   return (
-    <div className="gold-card" style={{ borderRadius: 12, padding: "20px", marginBottom: 32 }}>
+    <div className="gold-card" style={{ borderRadius: 12, padding: "20px", marginBottom: 32, maxWidth: COMPACT_PANEL_MAX_WIDTH }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
         <p style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.12em", textTransform: "uppercase" }}>RECENT ACTIVITY</p>
         <Link href="/admin/activities" style={{ fontSize: "0.75rem", color: GOLD, textDecoration: "none", opacity: 0.7 }}>View all →</Link>
       </div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         {activities.length === 0 && <p style={{ color: MUTED, fontSize: "0.85rem" }}>No activity yet.</p>}
         {activities.map((act) => (
           <div key={act.id} style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
             <div style={{ width: 6, height: 6, borderRadius: "50%", background: GOLD, marginTop: 6, flexShrink: 0, opacity: 0.6 }} />
             <div>
-              <div style={{ fontSize: "0.82rem", color: TEXT, marginBottom: 1 }}>{act.title}</div>
-              <div style={{ fontSize: "0.72rem", color: MUTED }}>{act.hospitalName ?? "-"} · {relTime(act.createdAt)}</div>
+              <div style={{ fontSize: "0.82rem", color: TEXT, marginBottom: 2 }}>{act.title}</div>
+              <div style={{ fontSize: "0.72rem", color: MUTED }}>
+                {(act.whoName ?? act.repName ?? "Unknown user")} · {act.type.replace(/_/g, " ")} · {relTime(act.createdAt)}
+              </div>
+              <div style={{ fontSize: "0.72rem", color: MUTED, marginTop: 2 }}>
+                {(act.hospitalName ?? "No facility")}
+                {act.locationCity || act.locationState ? ` · ${[act.locationCity, act.locationState].filter(Boolean).join(", ")}` : ""}
+                {act.opportunityTitle ? ` · ${act.opportunityTitle}` : ""}
+              </div>
+              {act.notes && <div style={{ fontSize: "0.72rem", color: MUTED, marginTop: 2, opacity: 0.85 }}>{act.notes.slice(0, 120)}</div>}
             </div>
           </div>
         ))}
