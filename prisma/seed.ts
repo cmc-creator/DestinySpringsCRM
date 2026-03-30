@@ -508,38 +508,6 @@ async function main() {
     },
   ]});
 
-  // ── TASKS ─────────────────────────────────────────────────────────────────
-
-  const now2 = new Date();
-  function daysFromNow(n: number) {
-    const d = new Date(now2);
-    d.setDate(d.getDate() + n);
-    return d;
-  }
-
-  if (rep1) {
-    await prisma.task.createMany({ skipDuplicates: true, data: [
-      { title: "Follow up with Valleywise social work team", status: "OPEN", priority: "HIGH", dueAt: daysFromNow(2), repId: rep1.id, createdByUserId: repUser.id, hospitalId: h1?.id, notes: "Call Michael Ramirez re: Q2 admission pipeline and CE scheduling." },
-      { title: "Submit Q2 activity report", status: "IN_PROGRESS", priority: "MEDIUM", dueAt: daysFromNow(5), repId: rep1.id, createdByUserId: repUser.id, notes: "Include in-service attendee counts, referral totals, and mileage log." },
-      { title: "Schedule AHCCCS-auth training for Abrazo staff", status: "OPEN", priority: "MEDIUM", dueAt: daysFromNow(10), repId: rep1.id, createdByUserId: repUser.id, hospitalId: h3?.id, notes: "Coordinate with David Torres on a convenient morning slot." },
-      { title: "Renew BAA — Valleywise Health", status: "OPEN", priority: "HIGH", dueAt: daysFromNow(14), repId: rep1.id, createdByUserId: repUser.id, hospitalId: h1?.id, notes: "Current BAA expires end of Q2. Send renewal to compliance for countersignature." },
-      { title: "Prepare Title 36 CE slide deck (Q3)", status: "OPEN", priority: "LOW", dueAt: daysFromNow(30), repId: rep1.id, createdByUserId: repUser.id, notes: "Update with 2026 ARS §36-520 amendments. Add real-case walkthrough slide." },
-    ]});
-  }
-  if (rep2) {
-    await prisma.task.createMany({ skipDuplicates: true, data: [
-      { title: "Quarterly check-in — Banner Gateway", status: "OPEN", priority: "HIGH", dueAt: daysFromNow(3), repId: rep2.id, createdByUserId: rep2User.id, notes: "Review Q1 referral volume with Dr. Paul Kim and discuss summer census planning." },
-      { title: "Renew Ironwood Family Medicine contract", status: "OPEN", priority: "HIGH", dueAt: daysFromNow(7), repId: rep2.id, createdByUserId: rep2User.id, hospitalId: h6?.id, notes: "Contract expired 12/31/2025. Draft 2026 renewal terms and route for signature." },
-      { title: "Log HonorHealth in-service attendance records", status: "IN_PROGRESS", priority: "MEDIUM", dueAt: daysFromNow(1), repId: rep2.id, createdByUserId: rep2User.id, hospitalId: h2?.id, notes: "Capture CEU attendance sheet from April session — upload to CRM." },
-    ]});
-  }
-  if (rep3) {
-    await prisma.task.createMany({ skipDuplicates: true, data: [
-      { title: "Intro call — Tucson Medical Center follow-up", status: "OPEN", priority: "HIGH", dueAt: daysFromNow(2), repId: rep3.id, createdByUserId: rep3User.id, notes: "Sandra Flores replied positively. Schedule 15-min intro call." },
-      { title: "Update Southern AZ territory contact list", status: "OPEN", priority: "LOW", dueAt: daysFromNow(21), repId: rep3.id, createdByUserId: rep3User.id, notes: "Confirm contacts at Sonora BH, Casa Grande Regional, and TMC ED." },
-    ]});
-  }
-
   console.log("✅ Destiny Springs Healthcare CRM seed complete!");
   console.log("  ADMIN:   admin@destinysprings.com / admin123!");
   console.log("  REP:     sarah@destinysprings.com / rep123!");
