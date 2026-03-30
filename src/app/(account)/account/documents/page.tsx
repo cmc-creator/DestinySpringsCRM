@@ -56,6 +56,13 @@ export default async function AccountDocumentsPage() {
         ))}
       </div>
 
+      <div style={{ marginBottom: 24, padding: "16px 18px", background: "rgba(45,212,191,0.08)", border: "1px solid rgba(45,212,191,0.22)", borderRadius: 12 }}>
+        <div style={{ color: TEXT, fontWeight: 700, fontSize: "0.85rem", marginBottom: 6 }}>PHI-enabled integrations require approval first</div>
+        <p style={{ color: TEXT_MUTED, fontSize: "0.8rem", lineHeight: 1.7, margin: 0 }}>
+          If your organization plans to connect documents or integrations that may contain Protected Health Information, those workflows must stay within an executed BAA and an approved implementation scope. Do not place PHI into general notes, unapproved uploads, exports, or other workflows until that approval is in place.
+        </p>
+      </div>
+
       {hospital.contracts.length === 0 ? (
         <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: "40px 24px", textAlign: "center", color: TEXT_MUTED }}>
           No contracts on file yet. Contact your Destiny Springs liaison to get started.
