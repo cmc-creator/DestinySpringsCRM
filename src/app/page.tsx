@@ -235,6 +235,130 @@ export default async function RootPage() {
           color: rgba(237,228,207,0.4);
           letter-spacing: 0.02em;
         }
+        .home-proof {
+          margin-top: 24px;
+          border: 1px solid rgba(201,168,76,0.15);
+          border-radius: 20px;
+          padding: 22px;
+          background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+          box-shadow: 0 18px 42px rgba(0,0,0,0.34);
+        }
+        .home-proof-kicker {
+          margin: 0;
+          font-size: 0.72rem;
+          letter-spacing: 0.12em;
+          text-transform: uppercase;
+          color: rgba(237,228,207,0.63);
+          font-weight: 700;
+        }
+        .home-proof-title {
+          margin: 9px 0 8px;
+          font-size: clamp(1.2rem, 2.4vw, 1.85rem);
+          line-height: 1.2;
+          font-weight: 800;
+          color: rgba(245,231,190,0.98);
+        }
+        .home-proof-sub {
+          margin: 0;
+          color: rgba(237,228,207,0.6);
+          font-size: 0.92rem;
+          line-height: 1.62;
+          max-width: 70ch;
+        }
+        .home-shot-grid {
+          margin-top: 16px;
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 12px;
+        }
+        .home-shot {
+          border: 1px solid rgba(201,168,76,0.22);
+          border-radius: 14px;
+          background: rgba(0,0,0,0.27);
+          overflow: hidden;
+          transition: transform 0.22s ease, border-color 0.22s ease;
+        }
+        .home-shot:hover {
+          transform: translateY(-2px);
+          border-color: rgba(201,168,76,0.45);
+        }
+        .home-shot-img {
+          position: relative;
+          aspect-ratio: 16 / 10;
+          border-bottom: 1px solid rgba(201,168,76,0.2);
+          overflow: hidden;
+        }
+        .home-shot-meta {
+          padding: 10px 11px 12px;
+        }
+        .home-shot-tag {
+          font-size: 0.64rem;
+          letter-spacing: 0.09em;
+          text-transform: uppercase;
+          color: rgba(201,168,76,0.85);
+          font-weight: 700;
+          margin-bottom: 5px;
+        }
+        .home-shot-title {
+          margin: 0;
+          color: rgba(237,228,207,0.94);
+          font-size: 0.84rem;
+          font-weight: 700;
+        }
+        .home-win-grid {
+          margin-top: 16px;
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 10px;
+        }
+        .home-win {
+          border: 1px solid rgba(201,168,76,0.18);
+          border-radius: 12px;
+          background: rgba(255,255,255,0.02);
+          padding: 11px 12px;
+        }
+        .home-win-title {
+          margin: 0 0 4px;
+          color: rgba(245,231,190,0.95);
+          font-size: 0.81rem;
+          font-weight: 700;
+        }
+        .home-win-copy {
+          margin: 0;
+          color: rgba(237,228,207,0.57);
+          font-size: 0.78rem;
+          line-height: 1.52;
+        }
+        .home-proof-ctas {
+          margin-top: 16px;
+          display: flex;
+          gap: 10px;
+          flex-wrap: wrap;
+        }
+        .home-proof-btn,
+        .home-proof-link {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          min-height: 42px;
+          border-radius: 11px;
+          padding: 10px 14px;
+          text-decoration: none;
+          text-transform: uppercase;
+          letter-spacing: 0.06em;
+          font-size: 0.78rem;
+          font-weight: 800;
+        }
+        .home-proof-btn {
+          border: 1px solid rgba(201,168,76,0.44);
+          background: linear-gradient(180deg, rgba(201,168,76,1), rgba(169,131,40,1));
+          color: #2e1a08;
+        }
+        .home-proof-link {
+          border: 1px solid rgba(201,168,76,0.27);
+          color: rgba(237,228,207,0.84);
+          background: rgba(255,255,255,0.02);
+        }
         @media (max-width: 980px) {
           .home-wrap { padding: 20px 14px 34px; }
           .home-hero { grid-template-columns: 1fr; }
@@ -243,6 +367,13 @@ export default async function RootPage() {
           .home-metrics { grid-template-columns: 1fr; }
           .home-nav { margin-bottom: 24px; }
           .home-brand-name { font-size: 1rem; }
+          .home-proof {
+            padding: 16px 14px;
+            border-radius: 16px;
+          }
+          .home-shot-grid {
+            grid-template-columns: 1fr 1fr;
+          }
         }
         @media (max-width: 640px) {
           .home-nav {
@@ -276,6 +407,17 @@ export default async function RootPage() {
             flex-direction: column;
             align-items: flex-start;
             gap: 4px;
+          }
+          .home-shot-grid,
+          .home-win-grid {
+            grid-template-columns: 1fr;
+          }
+          .home-proof-ctas {
+            flex-direction: column;
+          }
+          .home-proof-btn,
+          .home-proof-link {
+            width: 100%;
           }
         }
       `}</style>
@@ -348,6 +490,70 @@ export default async function RootPage() {
               <p className="home-card-sub">Keep engagement history, contracts, invoices, and communications anchored to the right facility teams.</p>
             </div>
           </aside>
+        </section>
+
+        <section className="home-proof">
+          <p className="home-proof-kicker">Product Proof</p>
+          <h2 className="home-proof-title">See the platform your team will actually use every day.</h2>
+          <p className="home-proof-sub">
+            Instead of a generic CRM dashboard, NyxAegis gives your team purpose-built views for referrals, rep execution, and facility account health. These screens are from your real product flow.
+          </p>
+
+          <div className="home-shot-grid">
+            <article className="home-shot">
+              <div className="home-shot-img">
+                <Image src="/Landing/desk.png" alt="Admin command dashboard view" fill sizes="(max-width: 640px) 100vw, (max-width: 980px) 50vw, 33vw" style={{ objectFit: "cover" }} />
+              </div>
+              <div className="home-shot-meta">
+                <div className="home-shot-tag">Admin View</div>
+                <p className="home-shot-title">Executive command desk with revenue and referral visibility</p>
+              </div>
+            </article>
+
+            <article className="home-shot">
+              <div className="home-shot-img">
+                <Image src="/Landing/console.png" alt="Referral and engagement console view" fill sizes="(max-width: 640px) 100vw, (max-width: 980px) 50vw, 33vw" style={{ objectFit: "cover" }} />
+              </div>
+              <div className="home-shot-meta">
+                <div className="home-shot-tag">Pipeline View</div>
+                <p className="home-shot-title">Referral console to move opportunities stage by stage</p>
+              </div>
+            </article>
+
+            <article className="home-shot">
+              <div className="home-shot-img">
+                <Image src="/Landing/table.png" alt="Account and activity table view" fill sizes="(max-width: 640px) 100vw, (max-width: 980px) 50vw, 33vw" style={{ objectFit: "cover" }} />
+              </div>
+              <div className="home-shot-meta">
+                <div className="home-shot-tag">Field Ops View</div>
+                <p className="home-shot-title">Rep activity and account coverage with fast follow-up control</p>
+              </div>
+            </article>
+          </div>
+
+          <div className="home-win-grid">
+            <div className="home-win">
+              <h3 className="home-win-title">Faster Follow-up Cadence</h3>
+              <p className="home-win-copy">Keep outreach momentum from inquiry through discharge without missed handoffs.</p>
+            </div>
+            <div className="home-win">
+              <h3 className="home-win-title">Cleaner Rep Accountability</h3>
+              <p className="home-win-copy">See field execution by market, account, and activity quality in one place.</p>
+            </div>
+            <div className="home-win">
+              <h3 className="home-win-title">Partner-Side Confidence</h3>
+              <p className="home-win-copy">Facilities get clear documents, invoices, and relationship history tied to the right team.</p>
+            </div>
+            <div className="home-win">
+              <h3 className="home-win-title">Week-One Time to Value</h3>
+              <p className="home-win-copy">Designed for quick rollout so teams can use live workflows in the first week.</p>
+            </div>
+          </div>
+
+          <div className="home-proof-ctas">
+            <Link href="/signup" className="home-proof-btn">Start Your Trial</Link>
+            <Link href="/pricing" className="home-proof-link">View Pricing and Plans</Link>
+          </div>
         </section>
 
         <footer className="home-footer">
