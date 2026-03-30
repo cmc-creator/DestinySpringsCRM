@@ -22,23 +22,38 @@ const STATUSES: InvoiceStatus[] = ["DRAFT","SENT","PAID","OVERDUE","VOID"];
 const fmt = (v: string | number | null | undefined) => v ? `$${Number(v).toLocaleString("en-US", { minimumFractionDigits: 2 })}` : "$0.00";
 const fmtDate = (d: string | null | undefined) => d ? new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "-";
 const genInvoiceNum = () => `INV-${new Date().getFullYear()}-${String(Math.floor(Math.random()*9000)+1000)}`;
+const STANDARD_SEAT_ADDON_MONTHLY = 50;
+const PRIORITY_PARTNER_DISCOUNT = 0.2;
+const STANDARD_BUYOUT_PRICE = 300000;
+const PRIORITY_SEAT_ADDON_MONTHLY = Number((STANDARD_SEAT_ADDON_MONTHLY * (1 - PRIORITY_PARTNER_DISCOUNT)).toFixed(2));
+const PRIORITY_BUYOUT_PRICE = Math.round(STANDARD_BUYOUT_PRICE * (1 - PRIORITY_PARTNER_DISCOUNT));
 
 const INVOICE_DRAFTS = {
   seatAddon: {
     status: "DRAFT" as InvoiceStatus,
     notes: "Seat expansion invoice. If accepted, update organization seat limit after payment confirmation.",
-    lineItems: [{ description: "Additional user seats (monthly)", qty: 1, unitPrice: 50 }],
+    lineItems: [{ description: "Additional user seats (monthly)", qty: 1, unitPrice: STANDARD_SEAT_ADDON_MONTHLY }],
+  },
+  prioritySeatAddon: {
+    status: "DRAFT" as InvoiceStatus,
+    notes: "Priority partner seat expansion invoice with discounted seat rate. Update organization seat limit after payment confirmation.",
+    lineItems: [{ description: `Priority partner additional user seats (monthly, ${Math.round(PRIORITY_PARTNER_DISCOUNT * 100)}% discount)`, qty: 1, unitPrice: PRIORITY_SEAT_ADDON_MONTHLY }],
   },
   buyout: {
     status: "DRAFT" as InvoiceStatus,
     notes: "One-time white-label platform buyout invoice per executed buyout agreement.",
-    lineItems: [{ description: "Bespoke white-label platform buyout (one-time)", qty: 1, unitPrice: 300000 }],
+    lineItems: [{ description: "Bespoke white-label platform buyout (one-time)", qty: 1, unitPrice: STANDARD_BUYOUT_PRICE }],
+  },
+  priorityBuyout: {
+    status: "DRAFT" as InvoiceStatus,
+    notes: "One-time white-label platform buyout invoice for priority partner with discounted pricing.",
+    lineItems: [{ description: `Priority partner white-label platform buyout (one-time, ${Math.round(PRIORITY_PARTNER_DISCOUNT * 100)}% discount)`, qty: 1, unitPrice: PRIORITY_BUYOUT_PRICE }],
   },
 };
 
 interface LineItem { description: string; qty: number; unitPrice: number }
 
-function InvoiceModal({ invoice, hospitals, onClose, onSave, onDelete }: {
+function InvoiceModal({ invoice, hospitals, onClose, onSave, onDelete, initialDraft }: {
   invoice: Invoice | null; hospitals: Hospital[]; onClose: () => void;
   onSave: (d: Partial<Invoice>) => Promise<void>; onDelete?: () => Promise<void>;
   initialDraft?: Partial<Invoice>;
@@ -214,7 +229,9 @@ export default function InvoicesClient({ hospitals }: { hospitals: Hospital[] })
           </div>
           <button onClick={() => { setNewDraft(undefined); setModal("add"); }} style={{ background: "var(--nyx-accent-dim)", border: "1px solid var(--nyx-accent-str)", borderRadius: 8, padding: "9px 18px", color: C.cyan, cursor: "pointer", fontWeight: 700 }}>+ New Invoice</button>
           <button onClick={() => { setNewDraft(INVOICE_DRAFTS.seatAddon); setModal("add"); }} style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${C.border}`, borderRadius: 8, padding: "9px 12px", color: C.text, cursor: "pointer", fontWeight: 600 }}>+ Seat Add-On</button>
+          <button onClick={() => { setNewDraft(INVOICE_DRAFTS.prioritySeatAddon); setModal("add"); }} style={{ background: "rgba(52,211,153,0.09)", border: "1px solid rgba(52,211,153,0.3)", borderRadius: 8, padding: "9px 12px", color: "#34d399", cursor: "pointer", fontWeight: 700 }}>+ Priority Seat Add-On</button>
           <button onClick={() => { setNewDraft(INVOICE_DRAFTS.buyout); setModal("add"); }} style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${C.border}`, borderRadius: 8, padding: "9px 12px", color: C.text, cursor: "pointer", fontWeight: 600 }}>+ Buyout Invoice</button>
+          <button onClick={() => { setNewDraft(INVOICE_DRAFTS.priorityBuyout); setModal("add"); }} style={{ background: "rgba(52,211,153,0.09)", border: "1px solid rgba(52,211,153,0.3)", borderRadius: 8, padding: "9px 12px", color: "#34d399", cursor: "pointer", fontWeight: 700 }}>+ Priority Buyout Invoice</button>
         </div>
       </div>
 

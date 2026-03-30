@@ -22,7 +22,11 @@ const STATUS_CLR: Record<ContractStatus, string> = { DRAFT: "#94a3b8", SENT: "#6
 const STATUSES: ContractStatus[] = ["DRAFT","SENT","SIGNED","ACTIVE","EXPIRED","TERMINATED"];
 const fmt = (v: string | number | null | undefined) => v ? `$${Number(v).toLocaleString()}` : "-";
 const fmtDate = (d: string | null | undefined) => d ? new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "-";
+const STANDARD_SEAT_ADDON_MONTHLY = 50;
+const PRIORITY_PARTNER_DISCOUNT = 0.2;
 const BUYOUT_SUGGESTED_PRICE = 300000;
+const PRIORITY_SEAT_ADDON_MONTHLY = Number((STANDARD_SEAT_ADDON_MONTHLY * (1 - PRIORITY_PARTNER_DISCOUNT)).toFixed(2));
+const PRIORITY_BUYOUT_SUGGESTED_PRICE = Math.round(BUYOUT_SUGGESTED_PRICE * (1 - PRIORITY_PARTNER_DISCOUNT));
 
 const CONTRACT_DRAFTS = {
   seatAddendum: {
@@ -32,7 +36,19 @@ const CONTRACT_DRAFTS = {
       "Addendum purpose: increase licensed user seats.\n" +
       "- Effective date: [DATE]\n" +
       "- Additional seats: [QTY]\n" +
-      "- Price per added seat/month: $50.00\n" +
+      `- Price per added seat/month: $${STANDARD_SEAT_ADDON_MONTHLY.toFixed(2)}\n` +
+      "- Billing: prorated from effective date through current billing cycle\n" +
+      "- All other MSLA terms remain in full force and effect.",
+  },
+  prioritySeatAddendum: {
+    title: "Priority Partner Addendum - Additional Seats",
+    status: "DRAFT" as ContractStatus,
+    terms:
+      "Addendum purpose: increase licensed user seats for priority partner account.\n" +
+      "- Effective date: [DATE]\n" +
+      "- Additional seats: [QTY]\n" +
+      `- Priority partner discount: ${(PRIORITY_PARTNER_DISCOUNT * 100).toFixed(0)}%\n` +
+      `- Price per added seat/month: $${PRIORITY_SEAT_ADDON_MONTHLY.toFixed(2)}\n` +
       "- Billing: prorated from effective date through current billing cycle\n" +
       "- All other MSLA terms remain in full force and effect.",
   },
@@ -49,9 +65,23 @@ const CONTRACT_DRAFTS = {
       "- Payment schedule: [milestones]\n" +
       "- Ongoing support/maintenance (optional): separate MSA/SOW.",
   },
+  priorityWhiteLabelBuyout: {
+    title: "Priority Partner White-Label Buyout Agreement",
+    status: "DRAFT" as ContractStatus,
+    value: PRIORITY_BUYOUT_SUGGESTED_PRICE,
+    terms:
+      "Buyout scope: bespoke white-label platform purchase and transfer rights for priority partner account.\n" +
+      `- Priority partner discount: ${(PRIORITY_PARTNER_DISCOUNT * 100).toFixed(0)}%\n` +
+      "- Purchase type: one-time buyout\n" +
+      "- Included assets: codebase, branded deployment assets, docs, deployment scripts\n" +
+      "- Transition support: [X] days included\n" +
+      "- IP transfer/assignment: per attached schedule\n" +
+      "- Payment schedule: [milestones]\n" +
+      "- Ongoing support/maintenance (optional): separate MSA/SOW.",
+  },
 };
 
-function ContractModal({ contract, hospitals, reps, onClose, onSave, onDelete }: {
+function ContractModal({ contract, hospitals, reps, onClose, onSave, onDelete, initialDraft }: {
   contract: Contract | null; hospitals: Hospital[]; reps: Rep[]; onClose: () => void;
   onSave: (d: Partial<Contract>) => Promise<void>; onDelete?: () => Promise<void>;
   initialDraft?: Partial<Contract>;
@@ -198,16 +228,28 @@ export default function ContractsClient({ hospitals, reps }: { hospitals: Hospit
             + Seat Addendum
           </button>
           <button
+            onClick={() => { setNewDraft(CONTRACT_DRAFTS.prioritySeatAddendum); setModal("add"); }}
+            style={{ background: "rgba(52,211,153,0.09)", border: "1px solid rgba(52,211,153,0.3)", borderRadius: 8, padding: "10px 14px", color: "#34d399", cursor: "pointer", fontWeight: 700 }}
+          >
+            + Priority Seat Addendum
+          </button>
+          <button
             onClick={() => { setNewDraft(CONTRACT_DRAFTS.whiteLabelBuyout); setModal("add"); }}
             style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${C.border}`, borderRadius: 8, padding: "10px 14px", color: C.text, cursor: "pointer", fontWeight: 600 }}
           >
             + Buyout Draft
           </button>
+          <button
+            onClick={() => { setNewDraft(CONTRACT_DRAFTS.priorityWhiteLabelBuyout); setModal("add"); }}
+            style={{ background: "rgba(52,211,153,0.09)", border: "1px solid rgba(52,211,153,0.3)", borderRadius: 8, padding: "10px 14px", color: "#34d399", cursor: "pointer", fontWeight: 700 }}
+          >
+            + Priority Buyout Draft
+          </button>
         </div>
       </div>
 
       <div style={{ marginBottom: 14, color: C.muted, fontSize: "0.78rem" }}>
-        Buyout draft pre-fills <strong style={{ color: C.text }}>${BUYOUT_SUGGESTED_PRICE.toLocaleString()}</strong> as a starting value.
+        Buyout draft pre-fills <strong style={{ color: C.text }}>${BUYOUT_SUGGESTED_PRICE.toLocaleString()}</strong> and priority draft pre-fills <strong style={{ color: "#34d399" }}>${PRIORITY_BUYOUT_SUGGESTED_PRICE.toLocaleString()}</strong>.
       </div>
 
       <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
