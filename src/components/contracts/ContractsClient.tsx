@@ -22,13 +22,42 @@ const STATUS_CLR: Record<ContractStatus, string> = { DRAFT: "#94a3b8", SENT: "#6
 const STATUSES: ContractStatus[] = ["DRAFT","SENT","SIGNED","ACTIVE","EXPIRED","TERMINATED"];
 const fmt = (v: string | number | null | undefined) => v ? `$${Number(v).toLocaleString()}` : "-";
 const fmtDate = (d: string | null | undefined) => d ? new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "-";
+const BUYOUT_SUGGESTED_PRICE = 300000;
+
+const CONTRACT_DRAFTS = {
+  seatAddendum: {
+    title: "Contract Addendum - Additional Seats",
+    status: "DRAFT" as ContractStatus,
+    terms:
+      "Addendum purpose: increase licensed user seats.\n" +
+      "- Effective date: [DATE]\n" +
+      "- Additional seats: [QTY]\n" +
+      "- Price per added seat/month: $50.00\n" +
+      "- Billing: prorated from effective date through current billing cycle\n" +
+      "- All other MSLA terms remain in full force and effect.",
+  },
+  whiteLabelBuyout: {
+    title: "White-Label Platform Buyout Agreement",
+    status: "DRAFT" as ContractStatus,
+    value: BUYOUT_SUGGESTED_PRICE,
+    terms:
+      "Buyout scope: bespoke white-label platform purchase and transfer rights.\n" +
+      "- Purchase type: one-time buyout\n" +
+      "- Included assets: codebase, branded deployment assets, docs, deployment scripts\n" +
+      "- Transition support: [X] days included\n" +
+      "- IP transfer/assignment: per attached schedule\n" +
+      "- Payment schedule: [milestones]\n" +
+      "- Ongoing support/maintenance (optional): separate MSA/SOW.",
+  },
+};
 
 function ContractModal({ contract, hospitals, reps, onClose, onSave, onDelete }: {
   contract: Contract | null; hospitals: Hospital[]; reps: Rep[]; onClose: () => void;
   onSave: (d: Partial<Contract>) => Promise<void>; onDelete?: () => Promise<void>;
+  initialDraft?: Partial<Contract>;
 }) {
   const isEdit = !!contract;
-  const [form, setForm] = useState<Partial<Contract>>(contract ?? { status: "DRAFT" });
+  const [form, setForm] = useState<Partial<Contract>>(contract ?? initialDraft ?? { status: "DRAFT" });
   const [saving, setSaving] = useState(false);
   const [confirmDel, setConfirmDel] = useState(false);
   const set = (k: keyof Contract, v: unknown) => setForm(f => ({ ...f, [k]: v }));
@@ -120,6 +149,7 @@ export default function ContractsClient({ hospitals, reps }: { hospitals: Hospit
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState<"add" | Contract | null>(null);
+  const [newDraft, setNewDraft] = useState<Partial<Contract> | undefined>(undefined);
   const [filterStatus, setFilterStatus] = useState<string>("ALL");
 
   const load = useCallback(async () => {
@@ -154,7 +184,30 @@ export default function ContractsClient({ hospitals, reps }: { hospitals: Hospit
           <h1 style={{ fontSize: "1.8rem", fontWeight: 900, color: C.text }}>Contracts</h1>
           <p style={{ color: C.muted, fontSize: "0.875rem", marginTop: 4 }}>{contracts.length} contracts · {fmt(totalActive)} active value</p>
         </div>
-        <button onClick={() => setModal("add")} style={{ background: "var(--nyx-accent-dim)", border: "1px solid var(--nyx-accent-str)", borderRadius: 8, padding: "10px 20px", color: C.cyan, cursor: "pointer", fontWeight: 700 }}>+ New Contract</button>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
+          <button
+            onClick={() => { setNewDraft(undefined); setModal("add"); }}
+            style={{ background: "var(--nyx-accent-dim)", border: "1px solid var(--nyx-accent-str)", borderRadius: 8, padding: "10px 20px", color: C.cyan, cursor: "pointer", fontWeight: 700 }}
+          >
+            + New Contract
+          </button>
+          <button
+            onClick={() => { setNewDraft(CONTRACT_DRAFTS.seatAddendum); setModal("add"); }}
+            style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${C.border}`, borderRadius: 8, padding: "10px 14px", color: C.text, cursor: "pointer", fontWeight: 600 }}
+          >
+            + Seat Addendum
+          </button>
+          <button
+            onClick={() => { setNewDraft(CONTRACT_DRAFTS.whiteLabelBuyout); setModal("add"); }}
+            style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${C.border}`, borderRadius: 8, padding: "10px 14px", color: C.text, cursor: "pointer", fontWeight: 600 }}
+          >
+            + Buyout Draft
+          </button>
+        </div>
+      </div>
+
+      <div style={{ marginBottom: 14, color: C.muted, fontSize: "0.78rem" }}>
+        Buyout draft pre-fills <strong style={{ color: C.text }}>${BUYOUT_SUGGESTED_PRICE.toLocaleString()}</strong> as a starting value.
       </div>
 
       <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
@@ -202,6 +255,7 @@ export default function ContractsClient({ hospitals, reps }: { hospitals: Hospit
       {modal !== null && (
         <ContractModal
           contract={modal === "add" ? null : modal}
+          initialDraft={modal === "add" ? newDraft : undefined}
           hospitals={hospitals} reps={reps}
           onClose={() => setModal(null)}
           onSave={handleSave}

@@ -23,24 +23,38 @@ const fmt = (v: string | number | null | undefined) => v ? `$${Number(v).toLocal
 const fmtDate = (d: string | null | undefined) => d ? new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "-";
 const genInvoiceNum = () => `INV-${new Date().getFullYear()}-${String(Math.floor(Math.random()*9000)+1000)}`;
 
+const INVOICE_DRAFTS = {
+  seatAddon: {
+    status: "DRAFT" as InvoiceStatus,
+    notes: "Seat expansion invoice. If accepted, update organization seat limit after payment confirmation.",
+    lineItems: [{ description: "Additional user seats (monthly)", qty: 1, unitPrice: 50 }],
+  },
+  buyout: {
+    status: "DRAFT" as InvoiceStatus,
+    notes: "One-time white-label platform buyout invoice per executed buyout agreement.",
+    lineItems: [{ description: "Bespoke white-label platform buyout (one-time)", qty: 1, unitPrice: 300000 }],
+  },
+};
+
 interface LineItem { description: string; qty: number; unitPrice: number }
 
 function InvoiceModal({ invoice, hospitals, onClose, onSave, onDelete }: {
   invoice: Invoice | null; hospitals: Hospital[]; onClose: () => void;
   onSave: (d: Partial<Invoice>) => Promise<void>; onDelete?: () => Promise<void>;
+  initialDraft?: Partial<Invoice>;
 }) {
   const isEdit = !!invoice;
   const [form, setForm] = useState<Partial<Invoice>>({
     invoiceNumber: invoice?.invoiceNumber ?? genInvoiceNum(),
-    hospitalId: invoice?.hospitalId ?? "",
-    status: invoice?.status ?? "DRAFT",
+    hospitalId: invoice?.hospitalId ?? initialDraft?.hospitalId ?? "",
+    status: invoice?.status ?? initialDraft?.status ?? "DRAFT",
     totalAmount: invoice?.totalAmount ?? 0,
     dueDate: invoice?.dueDate ?? null,
     paidAt: invoice?.paidAt ?? null,
-    notes: invoice?.notes ?? "",
-    lineItems: (invoice?.lineItems as LineItem[] ?? null),
+    notes: invoice?.notes ?? initialDraft?.notes ?? "",
+    lineItems: (invoice?.lineItems as LineItem[] ?? (initialDraft?.lineItems as LineItem[] ?? null)),
   });
-  const [lines, setLines] = useState<LineItem[]>((invoice?.lineItems as LineItem[]) ?? [{ description: "", qty: 1, unitPrice: 0 }]);
+  const [lines, setLines] = useState<LineItem[]>((invoice?.lineItems as LineItem[]) ?? (initialDraft?.lineItems as LineItem[] ?? [{ description: "", qty: 1, unitPrice: 0 }]));
   const [saving, setSaving] = useState(false);
   const [confirmDel, setConfirmDel] = useState(false);
   const set = (k: keyof Invoice, v: unknown) => setForm(f => ({ ...f, [k]: v }));
@@ -153,6 +167,7 @@ export default function InvoicesClient({ hospitals }: { hospitals: Hospital[] })
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState<"add" | Invoice | null>(null);
+  const [newDraft, setNewDraft] = useState<Partial<Invoice> | undefined>(undefined);
   const [filterStatus, setFilterStatus] = useState<string>("ALL");
 
   const load = useCallback(async () => {
@@ -197,7 +212,9 @@ export default function InvoicesClient({ hospitals }: { hospitals: Hospital[] })
             <div style={{ fontSize: "1rem", fontWeight: 900, color: "#fbbf24" }}>{fmt(totalOutstanding)}</div>
             <div style={{ fontSize: "0.65rem", color: C.muted }}>Outstanding</div>
           </div>
-          <button onClick={() => setModal("add")} style={{ background: "var(--nyx-accent-dim)", border: "1px solid var(--nyx-accent-str)", borderRadius: 8, padding: "9px 18px", color: C.cyan, cursor: "pointer", fontWeight: 700 }}>+ New Invoice</button>
+          <button onClick={() => { setNewDraft(undefined); setModal("add"); }} style={{ background: "var(--nyx-accent-dim)", border: "1px solid var(--nyx-accent-str)", borderRadius: 8, padding: "9px 18px", color: C.cyan, cursor: "pointer", fontWeight: 700 }}>+ New Invoice</button>
+          <button onClick={() => { setNewDraft(INVOICE_DRAFTS.seatAddon); setModal("add"); }} style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${C.border}`, borderRadius: 8, padding: "9px 12px", color: C.text, cursor: "pointer", fontWeight: 600 }}>+ Seat Add-On</button>
+          <button onClick={() => { setNewDraft(INVOICE_DRAFTS.buyout); setModal("add"); }} style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${C.border}`, borderRadius: 8, padding: "9px 12px", color: C.text, cursor: "pointer", fontWeight: 600 }}>+ Buyout Invoice</button>
         </div>
       </div>
 
@@ -246,6 +263,7 @@ export default function InvoicesClient({ hospitals }: { hospitals: Hospital[] })
       {modal !== null && (
         <InvoiceModal
           invoice={modal === "add" ? null : modal}
+          initialDraft={modal === "add" ? newDraft : undefined}
           hospitals={hospitals}
           onClose={() => setModal(null)}
           onSave={handleSave}
