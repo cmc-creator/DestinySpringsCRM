@@ -496,11 +496,11 @@ export default function CommunicationsHub({ role: _role }: Props) {
 
       {/* ── COMPOSE TAB ───────────────────────────────────────────────────────── */}
       {activeTab === "compose" && (
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 340px", gap: 20, alignItems: "start" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 20, alignItems: "start" }}>
 
           {/* Compose form */}
           <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 14, padding: 24 }}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 14 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14, marginBottom: 14 }}>
               <div>
                 <label style={labelStyle}>To (Email)</label>
                 <input value={to} onChange={(e) => setTo(e.target.value)}
@@ -744,7 +744,7 @@ export default function CommunicationsHub({ role: _role }: Props) {
           {showNewTemplate && (
             <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 14, padding: 24, marginBottom: 20 }}>
               <div style={{ fontWeight: 700, color: TEXT, marginBottom: 16, fontSize: "0.95rem" }}>New Template</div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 14 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14, marginBottom: 14 }}>
                 <div>
                   <label style={labelStyle}>Template Name</label>
                   <input value={tplName} onChange={(e) => setTplName(e.target.value)} placeholder="e.g. Warm Introduction" style={inputStyle} />

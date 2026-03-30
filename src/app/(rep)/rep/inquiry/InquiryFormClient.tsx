@@ -104,7 +104,7 @@ export default function InquiryFormClient({
         {/* Section: Patient */}
         <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: "20px 22px" }}>
           <div style={{ fontSize: "0.72rem", fontWeight: 800, color: C.lbl, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 16 }}>Patient Information</div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 12 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12, marginBottom: 12 }}>
             <div>
               <label style={lbl}>Initials</label>
               <input value={form.patientInitials} onChange={e => set("patientInitials", e.target.value)} style={inp} placeholder="J.D." />
@@ -168,7 +168,7 @@ export default function InquiryFormClient({
         {/* Section: Insurance */}
         <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: "20px 22px" }}>
           <div style={{ fontSize: "0.72rem", fontWeight: 800, color: C.lbl, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 16 }}>Insurance Information</div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>
             <div>
               <label style={lbl}>Primary Insurance</label>
               <input value={form.primaryInsurance} onChange={e => set("primaryInsurance", e.target.value)} style={inp} placeholder="Blue Cross Blue Shield" />
@@ -187,7 +187,7 @@ export default function InquiryFormClient({
         {/* Section: Referral Context */}
         <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: "20px 22px" }}>
           <div style={{ fontSize: "0.72rem", fontWeight: 800, color: C.lbl, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 16 }}>Referral Context</div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
             <div>
               <label style={lbl}>Sending Facility</label>
               <select value={form.hospitalId} onChange={e => set("hospitalId", e.target.value)} style={{ ...inp, cursor: "pointer" }}>

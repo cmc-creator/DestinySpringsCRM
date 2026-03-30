@@ -13,13 +13,36 @@ export async function GET() {
     select: { firstLoginAt: true, onboardedAt: true },
   });
 
-  const firstLoginAt = user?.firstLoginAt?.toISOString() ?? null;
-  const onboardedAt = user?.onboardedAt?.toISOString() ?? null;
+  if (!user?.firstLoginAt) {
+    return NextResponse.json({
+      firstLoginAt: null,
+      onboardedAt: user?.onboardedAt?.toISOString() ?? null,
+      shouldShowWelcome: false,
+    });
+  }
+
+  if (user.onboardedAt) {
+    return NextResponse.json({
+      firstLoginAt: user.firstLoginAt.toISOString(),
+      onboardedAt: user.onboardedAt.toISOString(),
+      shouldShowWelcome: false,
+    });
+  }
+
+  // Atomically claim the one-time welcome on first eligible login.
+  const claim = await prisma.user.updateMany({
+    where: {
+      id: session.user.id,
+      firstLoginAt: { not: null },
+      onboardedAt: null,
+    },
+    data: { onboardedAt: new Date() },
+  });
 
   return NextResponse.json({
-    firstLoginAt,
-    onboardedAt,
-    shouldShowWelcome: Boolean(firstLoginAt && !onboardedAt),
+    firstLoginAt: user.firstLoginAt.toISOString(),
+    onboardedAt: null,
+    shouldShowWelcome: claim.count === 1,
   });
 }
 

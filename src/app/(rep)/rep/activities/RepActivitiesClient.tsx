@@ -259,55 +259,59 @@ export default function RepActivitiesClient({
 
       {/* Table */}
       <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, overflow: "hidden" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "40px 1fr 180px 120px 36px", padding: "10px 16px", borderBottom: `1px solid ${C.border}`, fontSize: "0.72rem", fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: "0.06em" }}>
-          <span />
-          <span>Activity</span>
-          <span>Account</span>
-          <span>Date</span>
-          <span />
-        </div>
-
-        {loading ? (
-          <div style={{ padding: 40, textAlign: "center", color: C.muted, fontSize: "0.85rem" }}>Loading…</div>
-        ) : filtered.length === 0 ? (
-          <div style={{ padding: 40, textAlign: "center", color: C.muted, fontSize: "0.85rem" }}>
-            {activities.length === 0 ? "No activities yet. Hit + Log Activity to get started." : "No matches for your filters."}
-          </div>
-        ) : (
-          filtered.map((a, i) => (
-            <div
-              key={a.id}
-              style={{
-                display: "grid",
-                gridTemplateColumns: "40px 1fr 180px 120px 36px",
-                padding: "12px 16px",
-                borderBottom: i < filtered.length - 1 ? `1px solid ${C.border}` : "none",
-                alignItems: "start",
-              }}
-            >
-              <span style={{ fontSize: "1.1rem", paddingTop: 1 }}>{ACT_ICON[a.type] ?? "•"}</span>
-              <div>
-                <p style={{ margin: 0, fontSize: "0.85rem", fontWeight: 700, color: C.text, lineHeight: 1.3 }}>{a.title}</p>
-                {a.notes && <p style={{ margin: "3px 0 0", fontSize: "0.75rem", color: C.muted, lineHeight: 1.4 }}>{a.notes.slice(0, 120)}{a.notes.length > 120 ? "…" : ""}</p>}
-                <span style={{ display: "inline-block", marginTop: 4, fontSize: "0.68rem", fontWeight: 700, color: GOLD, background: "rgba(201,168,76,0.1)", borderRadius: 4, padding: "1px 6px" }}>
-                  {ACT_LABEL[a.type] ?? a.type}
-                </span>
-              </div>
-              <span style={{ fontSize: "0.8rem", color: C.muted, paddingTop: 2 }}>
-                {a.hospital?.hospitalName ?? "—"}
-              </span>
-              <span style={{ fontSize: "0.75rem", color: C.muted, paddingTop: 2 }}>
-                {relTime(a.completedAt ?? a.createdAt)}
-              </span>
-              <div style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "center" }}>
-                <button onClick={() => openEdit(a)} title="Edit" style={{ background: "none", border: "none", color: "rgba(201,168,76,0.6)", cursor: "pointer", fontSize: "0.85rem", padding: 2 }}>✏️</button>
-                <button onClick={() => handleDelete(a.id)} disabled={deleting.has(a.id)} title="Delete" style={{ background: "none", border: "none", color: "rgba(255,80,80,0.5)", cursor: deleting.has(a.id) ? "not-allowed" : "pointer", fontSize: "1rem", padding: 2 }}>
-                  {deleting.has(a.id) ? "..." : "×"}
-                </button>
-              </div>
+        <div className="nyx-table-scroll">
+          <div style={{ minWidth: 760 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "40px 1fr 180px 120px 36px", padding: "10px 16px", borderBottom: `1px solid ${C.border}`, fontSize: "0.72rem", fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+              <span />
+              <span>Activity</span>
+              <span>Account</span>
+              <span>Date</span>
+              <span />
             </div>
-          ))
-        )}
+
+            {loading ? (
+              <div style={{ padding: 40, textAlign: "center", color: C.muted, fontSize: "0.85rem" }}>Loading…</div>
+            ) : filtered.length === 0 ? (
+              <div style={{ padding: 40, textAlign: "center", color: C.muted, fontSize: "0.85rem" }}>
+                {activities.length === 0 ? "No activities yet. Hit + Log Activity to get started." : "No matches for your filters."}
+              </div>
+            ) : (
+              filtered.map((a, i) => (
+                <div
+                  key={a.id}
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "40px 1fr 180px 120px 36px",
+                    padding: "12px 16px",
+                    borderBottom: i < filtered.length - 1 ? `1px solid ${C.border}` : "none",
+                    alignItems: "start",
+                  }}
+                >
+                  <span style={{ fontSize: "1.1rem", paddingTop: 1 }}>{ACT_ICON[a.type] ?? "•"}</span>
+                  <div>
+                    <p style={{ margin: 0, fontSize: "0.85rem", fontWeight: 700, color: C.text, lineHeight: 1.3 }}>{a.title}</p>
+                    {a.notes && <p style={{ margin: "3px 0 0", fontSize: "0.75rem", color: C.muted, lineHeight: 1.4 }}>{a.notes.slice(0, 120)}{a.notes.length > 120 ? "…" : ""}</p>}
+                    <span style={{ display: "inline-block", marginTop: 4, fontSize: "0.68rem", fontWeight: 700, color: GOLD, background: "rgba(201,168,76,0.1)", borderRadius: 4, padding: "1px 6px" }}>
+                      {ACT_LABEL[a.type] ?? a.type}
+                    </span>
+                  </div>
+                  <span style={{ fontSize: "0.8rem", color: C.muted, paddingTop: 2 }}>
+                    {a.hospital?.hospitalName ?? "—"}
+                  </span>
+                  <span style={{ fontSize: "0.75rem", color: C.muted, paddingTop: 2 }}>
+                    {relTime(a.completedAt ?? a.createdAt)}
+                  </span>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "center" }}>
+                    <button onClick={() => openEdit(a)} title="Edit" style={{ background: "none", border: "none", color: "rgba(201,168,76,0.6)", cursor: "pointer", fontSize: "0.85rem", padding: 2 }}>✏️</button>
+                    <button onClick={() => handleDelete(a.id)} disabled={deleting.has(a.id)} title="Delete" style={{ background: "none", border: "none", color: "rgba(255,80,80,0.5)", cursor: deleting.has(a.id) ? "not-allowed" : "pointer", fontSize: "1rem", padding: 2 }}>
+                      {deleting.has(a.id) ? "..." : "×"}
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Edit modal */}

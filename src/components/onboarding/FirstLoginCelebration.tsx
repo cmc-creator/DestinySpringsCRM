@@ -32,7 +32,7 @@ function roleLabel(role: Role) {
 
 export default function FirstLoginCelebration({ role, userEmail: _userEmail, userName }: FirstLoginCelebrationProps) {
   const [open, setOpen] = useState(false);
-  const [onboarded, setOnboarded] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const pieces = useMemo<ConfettiPiece[]>(() => {
     return Array.from({ length: 90 }, (_, i) => ({
@@ -49,41 +49,35 @@ export default function FirstLoginCelebration({ role, userEmail: _userEmail, use
 
   useEffect(() => {
     let active = true;
+    let timer: number | undefined;
+
     fetch("/api/onboarding")
       .then(async (response) => {
         if (!response.ok) return null;
         return response.json() as Promise<{ shouldShowWelcome?: boolean }>;
       })
       .then((data) => {
-        if (!active) return;
-        if (data?.shouldShowWelcome) {
-          void fetch("/api/onboarding", {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ markOnboarded: true }),
-          }).catch(() => {
-            // non-fatal
-          });
-          setOnboarded(true);
-          const t = window.setTimeout(() => setOpen(true), 450);
-          return () => window.clearTimeout(t);
-        }
+        if (!active || !data?.shouldShowWelcome) return;
+        timer = window.setTimeout(() => {
+          if (active) setOpen(true);
+        }, 450);
       })
       .catch(() => {
-        // non-fatal: fail closed to avoid repeated onboarding on uncertain state
+        // non-fatal: if onboarding state is uncertain, fail closed and do not force-open
       });
 
     return () => {
       active = false;
+      if (timer !== undefined) {
+        window.clearTimeout(timer);
+      }
     };
   }, []);
 
   const markWelcomeSeen = async () => {
     setOpen(false);
-    if (onboarded) {
-      return;
-    }
-    setOnboarded(true);
+    if (saving) return;
+    setSaving(true);
     try {
       await fetch("/api/onboarding", {
         method: "PUT",
@@ -92,6 +86,8 @@ export default function FirstLoginCelebration({ role, userEmail: _userEmail, use
       });
     } catch {
       // non-fatal
+    } finally {
+      setSaving(false);
     }
   };
 
