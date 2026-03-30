@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import type { TaskStatus } from "@prisma/client";
 
 export const maxDuration = 30;
 
@@ -21,7 +22,7 @@ export async function GET(req: NextRequest) {
     ...(hospitalId    ? { hospitalId }    : {}),
     ...(leadId        ? { leadId }        : {}),
     ...(opportunityId ? { opportunityId } : {}),
-    ...(status        ? { status }        : {}),
+    ...(status        ? { status: status as TaskStatus } : {}),
     // Reps can only see their own tasks
     ...(session.user.role === "REP"
       ? { createdByUserId: session.user.id }
