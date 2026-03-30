@@ -86,20 +86,20 @@ const DOCS: DocDef[] = [
   {
     type: "CONFLICT_OF_INTEREST",
     title: "Conflict of Interest Disclosure & Recusal Memo",
-    subtitle: "Internal memorandum · COI declaration by Director of Business Development",
+    subtitle: "Internal memorandum · COI declaration by Chief Executive Officer of NyxCollective LLC",
     badgeLabel: "Memo",
     bs: B.memo,
     parties: [
       {
         role: "acknowledger",
         label: "Acknowledgment — Dave Carnahan, CEO, Destiny Springs Healthcare",
-        nameHint: "Dave Carnahan", titleHint: "Chief Executive Officer", emailHint: "dave@destinysprings.com",
+        nameHint: "Dave Carnahan", titleHint: "Chief Executive Officer", emailHint: "dcarnahan@destinysprings.com",
       },
     ],
     content: `MEMORANDUM
 
 TO:    Dave Carnahan, Chief Executive Officer — Destiny Springs Healthcare LLC
-FROM:  Connie Cooper, Director of Business Development
+FROM:  Connie Cooper, Chief Executive Officer of NyxCollective LLC
 DATE:  March 26, 2025
 RE:    Conflict of Interest Disclosure & Voluntary Recusal
 
@@ -107,7 +107,7 @@ RE:    Conflict of Interest Disclosure & Voluntary Recusal
 
 1.  DISCLOSURE OF OWNERSHIP INTEREST
 
-I, Connie Cooper, hereby disclose that I am the sole owner and managing member of NyxCollective LLC,
+I, Connie Cooper, hereby disclose that I am the sole owner and Chief Executive Officer of NyxCollective LLC,
 an Arizona limited liability company (Arizona Entity ID: 25024921), which developed the NyxAegis CRM
 platform currently under consideration for adoption by Destiny Springs Healthcare LLC ("DSH").
 
@@ -137,8 +137,8 @@ and federal regulations. A copy of this memo will be retained in employee record
 
 ──────────────────────────────────────────────────────────────────
 
-Submitted by:   Connie Cooper, Director of Business Development
-                NyxCollective LLC | Managing Member
+Submitted by:   Connie Cooper, Chief Executive Officer of NyxCollective LLC
+                NyxCollective LLC | Chief Executive Officer
                 Date of Submission: March 26, 2025`,
   },
 
@@ -152,13 +152,13 @@ Submitted by:   Connie Cooper, Director of Business Development
     parties: [
       {
         role: "ip_declarant",
-        label: "Declarant — Connie Cooper, NyxCollective LLC",
-        nameHint: "Connie Cooper", titleHint: "Managing Member", emailHint: "info@nyxcollectivellc.com",
+        label: "Declarant — Connie Cooper, Chief Executive Officer of NyxCollective LLC",
+        nameHint: "Connie Cooper", titleHint: "Chief Executive Officer of NyxCollective LLC", emailHint: "info@nyxcollectivellc.com",
       },
       {
         role: "ip_acknowledger",
         label: "Acknowledging Party — Dave Carnahan, CEO, Destiny Springs Healthcare LLC",
-        nameHint: "Dave Carnahan", titleHint: "Chief Executive Officer", emailHint: "dave@destinysprings.com",
+        nameHint: "Dave Carnahan", titleHint: "Chief Executive Officer", emailHint: "dcarnahan@destinysprings.com",
       },
     ],
     content: `INDEPENDENT DEVELOPMENT AND INTELLECTUAL PROPERTY OWNERSHIP AFFIDAVIT
@@ -170,8 +170,7 @@ the licensing of NyxAegis CRM by NyxCollective LLC to Destiny Springs Healthcare
 
 BACKGROUND
 
-Declarant is employed by Destiny Springs Healthcare LLC ("DSH") as Director of Business Development.
-Separately, Declarant is the sole owner and managing member of NyxCollective LLC, an Arizona limited
+Declarant is the sole owner and Chief Executive Officer of NyxCollective LLC, an Arizona limited
 liability company (Entity ID: 25024921), which designed, developed, and owns the NyxAegis CRM
 platform ("Software").
 
@@ -233,12 +232,12 @@ I declare under penalty of perjury that the foregoing declarations are true and 
       {
         role: "nda_party_a",
         label: "Party A — NyxCollective LLC",
-        nameHint: "Connie Cooper", titleHint: "Managing Member", emailHint: "info@nyxcollectivellc.com",
+        nameHint: "Connie Cooper", titleHint: "Chief Executive Officer of NyxCollective LLC", emailHint: "info@nyxcollectivellc.com",
       },
       {
         role: "nda_party_b",
         label: "Party B — Destiny Springs Healthcare LLC",
-        nameHint: "Dave Carnahan", titleHint: "Chief Executive Officer", emailHint: "dave@destinysprings.com",
+        nameHint: "Dave Carnahan", titleHint: "Chief Executive Officer", emailHint: "dcarnahan@destinysprings.com",
       },
     ],
     content: `MUTUAL NON-DISCLOSURE AGREEMENT
@@ -334,12 +333,12 @@ This Agreement is governed by the laws of Arizona. Disputes shall be resolved in
       {
         role: "licensor",
         label: "Licensor — NyxCollective LLC",
-        nameHint: "Connie Cooper", titleHint: "Managing Member", emailHint: "info@nyxcollectivellc.com",
+        nameHint: "Connie Cooper", titleHint: "Chief Executive Officer of NyxCollective LLC", emailHint: "info@nyxcollectivellc.com",
       },
       {
         role: "licensee",
         label: "Licensee — Destiny Springs Healthcare LLC",
-        nameHint: "Dave Carnahan", titleHint: "Chief Executive Officer", emailHint: "dave@destinysprings.com",
+        nameHint: "Dave Carnahan", titleHint: "Chief Executive Officer", emailHint: "dcarnahan@destinysprings.com",
       },
     ],
     content: `MASTER SOFTWARE LICENSE AGREEMENT
@@ -436,12 +435,12 @@ other and use reasonable efforts to resume performance.
       {
         role: "business_associate",
         label: "Business Associate — NyxCollective LLC",
-        nameHint: "Connie Cooper", titleHint: "Managing Member", emailHint: "info@nyxcollectivellc.com",
+        nameHint: "Connie Cooper", titleHint: "Chief Executive Officer of NyxCollective LLC", emailHint: "info@nyxcollectivellc.com",
       },
       {
         role: "covered_entity",
         label: "Covered Entity — Destiny Springs Healthcare LLC",
-        nameHint: "Dave Carnahan", titleHint: "Chief Executive Officer", emailHint: "dave@destinysprings.com",
+        nameHint: "Dave Carnahan", titleHint: "Chief Executive Officer", emailHint: "dcarnahan@destinysprings.com",
       },
     ],
     content: `HIPAA BUSINESS ASSOCIATE AGREEMENT
@@ -528,12 +527,12 @@ throughout the term of this BAA.
       {
         role: "sla_provider",
         label: "Service Provider — NyxCollective LLC",
-        nameHint: "Connie Cooper", titleHint: "Managing Member", emailHint: "info@nyxcollectivellc.com",
+        nameHint: "Connie Cooper", titleHint: "Chief Executive Officer of NyxCollective LLC", emailHint: "info@nyxcollectivellc.com",
       },
       {
         role: "sla_client",
         label: "Client — Destiny Springs Healthcare LLC",
-        nameHint: "Dave Carnahan", titleHint: "Chief Executive Officer", emailHint: "dave@destinysprings.com",
+        nameHint: "Dave Carnahan", titleHint: "Chief Executive Officer", emailHint: "dcarnahan@destinysprings.com",
       },
     ],
     content: `SERVICE LEVEL AGREEMENT
@@ -631,7 +630,7 @@ suspension for non-payment.
       {
         role: "aup_representative",
         label: "Authorized Representative — Destiny Springs Healthcare LLC",
-        nameHint: "Dave Carnahan", titleHint: "Chief Executive Officer", emailHint: "dave@destinysprings.com",
+        nameHint: "Dave Carnahan", titleHint: "Chief Executive Officer", emailHint: "dcarnahan@destinysprings.com",
       },
     ],
     content: `ACCEPTABLE USE POLICY
@@ -724,7 +723,7 @@ Provider may update this AUP with 30 days' written notice. Continued Platform us
       {
         role: "approver",
         label: "Approving Authority — Dave Carnahan, CEO, Destiny Springs Healthcare LLC",
-        nameHint: "Dave Carnahan", titleHint: "Chief Executive Officer", emailHint: "dave@destinysprings.com",
+        nameHint: "Dave Carnahan", titleHint: "Chief Executive Officer", emailHint: "dcarnahan@destinysprings.com",
       },
     ],
     content: `SOLE SOURCE JUSTIFICATION AND PROCUREMENT AUTHORIZATION
