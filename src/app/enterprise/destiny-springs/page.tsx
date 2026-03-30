@@ -1,15 +1,16 @@
-import { auth } from "@/lib/auth";
+﻿import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import LegalDocumentsSection from "@/components/contracts/LegalDocumentsSection";
 
-// ── DSH Partner Plan configuration ──────────────────────────────────────────
+// â”€â”€ DSH Partner Plan configuration â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Adjust PER_SEAT_PRICE and INCLUDED_SEATS to match your agreed contract terms
 const PER_SEAT_PRICE = 50;        // $ / seat / month
 const INCLUDED_SEATS = 4;         // seats included in base contract
 const CONTRACT_TERM = "Annual";   // display only
 const MARKET_RATE_PER_SEAT = 150; // reference retail seat price
-// ────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const BG    = "var(--nyx-bg)";
 const TEXT  = "var(--nyx-text)";
@@ -18,9 +19,9 @@ const GOLD_DIM = "rgba(201,168,76,0.15)";
 const BORDER = "rgba(201,168,76,0.25)";
 
 const PLATFORM_FEATURES = [
-  { cat: "Admissions & Pipeline",  items: ["Full admissions pipeline (Inquiry → Discharged)", "Title 36 / ARS §36-520 workflow", "Insurance authorization tracking", "Denial tracking & lock enforcement", "Pre-assessment intake inbox"] },
+  { cat: "Admissions & Pipeline",  items: ["Full admissions pipeline (Inquiry â†’ Discharged)", "Title 36 / ARS Â§36-520 workflow", "Insurance authorization tracking", "Denial tracking & lock enforcement", "Pre-assessment intake inbox"] },
   { cat: "Referral Development",   items: ["Unlimited referral sources", "Referral source tiering (A/B/C) & influence scoring", "Competitor intel tracking", "Referral trend analytics", "Source ROI reports"] },
-  { cat: "Territory & Field Ops",  items: ["Interactive Leaflet territory maps", "GPS field check-in / check-out", "Voice dictation for visit notes", "Quick Log Widget (⚡ floating logger)", "Progressive Web App (home screen install)"] },
+  { cat: "Territory & Field Ops",  items: ["Interactive Leaflet territory maps", "GPS field check-in / check-out", "Voice dictation for visit notes", "Quick Log Widget (âš¡ floating logger)", "Progressive Web App (home screen install)"] },
   { cat: "Aegis AI Copilot",       items: ["Context-aware AI assistant on every page", "Voice input (mic) + text-to-speech replies", "Proactive insights panel (sourced from live data)", "AI-executable actions (log activity, create lead, etc.)", "Suggestion chips for rep & admin workflows"] },
   { cat: "Analytics & Reporting",  items: ["Executive dashboard with census + revenue KPIs", "Funnel analytics & conversion rates", "Rep performance leaderboards", "Payor mix reporting", "CSV & printable reports"] },
   { cat: "Team & Compliance",      items: ["Unlimited user seats", "Role-based access (Admin / Rep / Account)", "Rep compliance document vault (HIPAA certs, licenses)", "Audit log (immutable, exportable)", "Document library for rep collateral"] },
@@ -43,11 +44,7 @@ export default async function DSHPartnerPage() {
       {/* NAV */}
       <nav style={{ borderBottom: `1px solid ${BORDER}`, padding: "0 2rem", display: "flex", alignItems: "center", justifyContent: "space-between", height: 60, background: BG }}>
         <Link href="/" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
-          <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
-            <rect width="32" height="32" rx="8" fill={BG} stroke={GOLD} strokeWidth="1"/>
-            <path d="M16 6 L26 12 L26 20 L16 26 L6 20 L6 12 Z" stroke={GOLD} strokeWidth="1.5" fill="none"/>
-            <circle cx="16" cy="16" r="4" fill={GOLD} fillOpacity="0.9"/>
-          </svg>
+          <Image src="/Aegislogo.png" alt="NyxAegis" width={36} height={36} style={{ objectFit: "contain" }} />
           <span style={{ fontWeight: 900, color: TEXT, fontSize: "0.95rem" }}>Destiny Springs CRM</span>
         </Link>
         <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
@@ -59,7 +56,7 @@ export default async function DSHPartnerPage() {
       {/* HERO */}
       <section style={{ padding: "80px 2rem 60px", textAlign: "center", borderBottom: `1px solid ${BORDER}`, background: `radial-gradient(ellipse 800px 400px at 50% 0%, rgba(201,168,76,0.07), transparent)` }}>
         <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: GOLD_DIM, border: `1px solid ${BORDER}`, borderRadius: 100, padding: "5px 16px", marginBottom: 24, fontSize: "0.72rem", fontWeight: 800, color: GOLD, letterSpacing: "0.15em", textTransform: "uppercase" }}>
-          ★ Preferred Partner Program ★
+          â˜… Preferred Partner Program â˜…
         </div>
         <h1 style={{ fontSize: "clamp(2.2rem, 6vw, 3.6rem)", fontWeight: 900, color: TEXT, letterSpacing: "-0.03em", lineHeight: 1.1, marginBottom: 20 }}>
           Destiny Springs&nbsp;
@@ -121,7 +118,7 @@ export default async function DSHPartnerPage() {
               <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 8 }}>
                 {group.items.map((item) => (
                   <li key={item} style={{ display: "flex", gap: 8, fontSize: "0.825rem", color: "rgba(216,232,244,0.75)", alignItems: "flex-start" }}>
-                    <span style={{ color: GOLD, flexShrink: 0, marginTop: 2 }}>✦</span> {item}
+                    <span style={{ color: GOLD, flexShrink: 0, marginTop: 2 }}>âœ¦</span> {item}
                   </li>
                 ))}
               </ul>
@@ -138,7 +135,7 @@ export default async function DSHPartnerPage() {
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 2, background: BORDER, borderRadius: 14, overflow: "hidden", marginBottom: 24 }}>
             {[
-              { label: "Monthly Investment", value: `$${monthlyTotal.toLocaleString()}`, sub: `${INCLUDED_SEATS} seats × $${PER_SEAT_PRICE}` },
+              { label: "Monthly Investment", value: `$${monthlyTotal.toLocaleString()}`, sub: `${INCLUDED_SEATS} seats Ã— $${PER_SEAT_PRICE}` },
               { label: "Annual Investment", value: `$${annualTotal.toLocaleString()}`, sub: "billed annually" },
               { label: "Annual Savings vs. Market", value: `$${((marketMonthlyBaseline - monthlyTotal) * 12).toLocaleString()}`, sub: "using $150/seat baseline", highlight: true },
             ].map(({ label, value, sub, highlight }) => (
@@ -188,10 +185,10 @@ export default async function DSHPartnerPage() {
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16, marginBottom: 44 }}>
           {[
-            { icon: "🎯", label: "Dedicated Account Manager", sub: "Named contact, not a support queue" },
-            { icon: "⚡", label: "Priority Response", sub: "Same-day for all tickets" },
-            { icon: "🎓", label: "Training Sessions", sub: "On-demand team onboarding" },
-            { icon: "🛠️", label: "Custom Feature Requests", sub: "Your needs shape the roadmap" },
+            { icon: "ðŸŽ¯", label: "Dedicated Account Manager", sub: "Named contact, not a support queue" },
+            { icon: "âš¡", label: "Priority Response", sub: "Same-day for all tickets" },
+            { icon: "ðŸŽ“", label: "Training Sessions", sub: "On-demand team onboarding" },
+            { icon: "ðŸ› ï¸", label: "Custom Feature Requests", sub: "Your needs shape the roadmap" },
           ].map(({ icon, label, sub }) => (
             <div key={label} style={{ background: "rgba(255,255,255,0.025)", border: `1px solid rgba(201,168,76,0.12)`, borderRadius: 12, padding: "20px 18px" }}>
               <div style={{ fontSize: "1.6rem", marginBottom: 10 }}>{icon}</div>
@@ -212,7 +209,7 @@ export default async function DSHPartnerPage() {
       {/* FOOTER */}
       <footer style={{ borderTop: `1px solid ${BORDER}`, padding: "24px 2rem", textAlign: "center" }}>
         <p style={{ fontSize: "0.78rem", color: "rgba(216,232,244,0.22)" }}>
-          © 2026 NyxCollective LLC | <a href="https://nycollectivellc.com" target="_blank" rel="noreferrer" style={{ color: "inherit" }}>nycollectivellc.com</a> |{" "}
+          Â© 2026 NyxCollective LLC | <a href="https://nycollectivellc.com" target="_blank" rel="noreferrer" style={{ color: "inherit" }}>nycollectivellc.com</a> |{" "}
           <Link href="/terms" style={{ color: "inherit" }}>Terms</Link> | <Link href="/privacy" style={{ color: "inherit" }}>Privacy</Link>
         </p>
         <p style={{ fontSize: "0.72rem", color: "rgba(216,232,244,0.15)", marginTop: 6 }}>
