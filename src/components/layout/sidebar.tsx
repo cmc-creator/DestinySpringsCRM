@@ -201,6 +201,8 @@ const ACCOUNT_NAV: NavGroup[] = [
     items: [
       { href: "/account/dashboard",    label: "Dashboard" },
       { href: "/account/engagements",  label: "Engagements" },
+      { href: "/account/invoices",     label: "Invoices" },
+      { href: "/account/documents",    label: "Documents" },
       { href: "/me",                    label: "My Account" },
     ],
   },

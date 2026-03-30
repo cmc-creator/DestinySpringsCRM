@@ -1,5 +1,6 @@
 "use client";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 
 type RepPerf = {
   repId: string;
@@ -229,6 +230,7 @@ export default function RepPerformancePage() {
                 "Paid",
                 "Pending",
                 "Comp",
+                "",
               ].map((header) => (
                 <th key={header} style={{ textAlign: "left", padding: "10px 12px", color: "var(--nyx-accent-label)", fontSize: "0.64rem", textTransform: "uppercase", letterSpacing: "0.1em" }}>
                   {header}
@@ -275,6 +277,25 @@ export default function RepPerformancePage() {
                   >
                     {savingPayment === row.repId ? "Saving…" : "Log Bonus"}
                   </button>
+                </td>
+                <td style={{ padding: "10px 12px" }}>
+                  <Link
+                    href={`/admin/reps/${row.repId}`}
+                    style={{
+                      display: "inline-block",
+                      background: "rgba(201,168,76,0.07)",
+                      border: "1px solid rgba(201,168,76,0.25)",
+                      borderRadius: 7,
+                      padding: "6px 10px",
+                      color: C.accent,
+                      fontSize: "0.74rem",
+                      fontWeight: 700,
+                      textDecoration: "none",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    View →
+                  </Link>
                 </td>
               </tr>
             ))}

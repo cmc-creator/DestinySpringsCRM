@@ -242,6 +242,7 @@ export default function AdminTasksPage() {
                 padding: "14px 18px",
                 display: "flex",
                 alignItems: "flex-start",
+                flexWrap: "wrap",
                 gap: 14,
               }}
             >
