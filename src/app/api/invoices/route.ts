@@ -64,10 +64,11 @@ export async function POST(req: NextRequest) {
         });
         const organizationId = hospital?.user?.organizationId;
         if (organizationId) {
-          await tx.organization.update({
-            where: { id: organizationId },
-            data: { seatLimit: { increment: seatQty } },
-          });
+          await tx.$executeRaw`
+            UPDATE "organizations"
+            SET "seatLimit" = COALESCE("seatLimit", 0) + ${seatQty}
+            WHERE "id" = ${organizationId}
+          `;
         }
       }
     }
