@@ -274,6 +274,8 @@ model Hospital {
   // BD relationship
   status         HospitalStatus @default(PROSPECT)
   assignedRepId  String?
+  isPriorityPartner Boolean @default(false)
+  priorityDiscountPercent Int @default(20)
   contractValue  Decimal?
   notes          String?
   source         String?
@@ -507,6 +509,10 @@ model Invoice {
   paidAt      DateTime?
   notes       String?
   lineItems   Json?
+  discountPercent Int?
+  discountApprovedBy String?
+  discountApprovedAt DateTime?
+  pricingTier String?
 
   stripePaymentIntentId String?
   stripeInvoiceId       String?
@@ -549,6 +555,10 @@ model Contract {
   terms      String?
   fileUrl    String?
 
+  discountPercent Int?
+  discountApprovedBy String?
+  discountApprovedAt DateTime?
+  pricingTier String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -1259,3 +1269,4 @@ model PasswordResetToken {
 
   @@map("password_reset_tokens")
 }
+
