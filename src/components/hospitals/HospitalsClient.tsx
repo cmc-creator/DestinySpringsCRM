@@ -11,6 +11,8 @@ interface Hospital {
   systemName?: string | null;
   hospitalType: HospitalType;
   status: HospitalStatus;
+  isPriorityPartner?: boolean;
+  priorityDiscountPercent?: number | null;
   city?: string | null;
   state?: string | null;
   primaryContactName?: string | null;
@@ -127,6 +129,32 @@ function HospitalModal({ hospital, onClose, onSave }: {
             <div>
               <label style={{ fontSize: "0.72rem", color: C.muted, display: "block", marginBottom: 4 }}>BED COUNT</label>
               <input style={inp} type="number" value={form.bedCount ?? ""} onChange={e => set("bedCount", e.target.value ? Number(e.target.value) : null)} placeholder="250" />
+            </div>
+
+            <div style={{ gridColumn: "1/-1", borderTop: `1px solid ${C.border}`, paddingTop: 14, marginTop: 4 }}>
+              <p style={{ fontSize: "0.68rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 10 }}>Partner Terms</p>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <input
+                id="priorityPartner"
+                type="checkbox"
+                checked={Boolean(form.isPriorityPartner)}
+                onChange={e => set("isPriorityPartner", e.target.checked)}
+                style={{ width: 16, height: 16 }}
+              />
+              <label htmlFor="priorityPartner" style={{ fontSize: "0.82rem", color: C.text }}>Priority Partner Account</label>
+            </div>
+            <div>
+              <label style={{ fontSize: "0.72rem", color: C.muted, display: "block", marginBottom: 4 }}>DISCOUNT %</label>
+              <input
+                style={inp}
+                type="number"
+                min={0}
+                max={100}
+                value={form.priorityDiscountPercent ?? 20}
+                onChange={e => set("priorityDiscountPercent", e.target.value ? Number(e.target.value) : 20)}
+                disabled={!form.isPriorityPartner}
+              />
             </div>
 
             {/* Address */}
@@ -312,7 +340,14 @@ export default function HospitalsClient({ initialHospitals }: { initialHospitals
                   onMouseEnter={e => (e.currentTarget.style.background = "var(--nyx-accent-dim)")}
                   onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
                   <td style={{ padding: "14px 16px" }}>
-                    <div style={{ fontWeight: 600, fontSize: "0.875rem", color: C.text }}>{h.hospitalName}</div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <div style={{ fontWeight: 600, fontSize: "0.875rem", color: C.text }}>{h.hospitalName}</div>
+                      {h.isPriorityPartner && (
+                        <span style={{ fontSize: "0.65rem", fontWeight: 700, color: "#34d399", background: "rgba(52,211,153,0.1)", border: "1px solid rgba(52,211,153,0.35)", padding: "2px 6px", borderRadius: 4 }}>
+                          PRIORITY {h.priorityDiscountPercent ?? 20}%
+                        </span>
+                      )}
+                    </div>
                     <div style={{ fontSize: "0.75rem", color: C.muted }}>{h.city}{h.city && h.state ? ", " : ""}{h.state}</div>
                   </td>
                   <td style={{ padding: "14px 16px", fontSize: "0.85rem", color: C.muted }}>{h.systemName ?? "-"}</td>

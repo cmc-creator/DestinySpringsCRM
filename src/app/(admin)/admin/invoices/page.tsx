@@ -3,7 +3,7 @@ import InvoicesClient from "@/components/invoices/InvoicesClient";
 
 export default async function InvoicesPage() {
   const hospitals = await prisma.hospital.findMany({
-    select: { id: true, hospitalName: true },
+    select: { id: true, hospitalName: true, isPriorityPartner: true, priorityDiscountPercent: true },
     orderBy: { hospitalName: "asc" },
   });
   return <InvoicesClient hospitals={hospitals} />;

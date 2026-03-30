@@ -4,7 +4,7 @@ import ContractsClient from "@/components/contracts/ContractsClient";
 export default async function ContractsPage() {
   const [hospitals, reps] = await Promise.all([
     prisma.hospital.findMany({
-      select: { id: true, hospitalName: true },
+      select: { id: true, hospitalName: true, isPriorityPartner: true, priorityDiscountPercent: true },
       orderBy: { hospitalName: "asc" },
     }),
     prisma.rep.findMany({

@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from "react";
 
 type InvoiceStatus = "DRAFT"|"SENT"|"PAID"|"OVERDUE"|"VOID";
-interface Hospital { id: string; hospitalName: string }
+interface Hospital { id: string; hospitalName: string; isPriorityPartner?: boolean; priorityDiscountPercent?: number | null }
 interface Invoice {
   id: string; invoiceNumber: string;
   hospitalId: string; hospital: { hospitalName: string };
@@ -10,6 +10,10 @@ interface Invoice {
   status: InvoiceStatus; totalAmount: string | number;
   dueDate?: string | null; paidAt?: string | null;
   notes?: string | null; lineItems?: LineItem[] | null;
+  discountPercent?: number | null;
+  discountApprovedBy?: string | null;
+  discountApprovedAt?: string | null;
+  pricingTier?: string | null;
   createdAt: string;
 }
 
@@ -24,30 +28,54 @@ const fmtDate = (d: string | null | undefined) => d ? new Date(d).toLocaleDateSt
 const genInvoiceNum = () => `INV-${new Date().getFullYear()}-${String(Math.floor(Math.random()*9000)+1000)}`;
 const STANDARD_SEAT_ADDON_MONTHLY = 50;
 const PRIORITY_PARTNER_DISCOUNT = 0.2;
+const MAX_AUTO_DISCOUNT_PERCENT = 20;
 const STANDARD_BUYOUT_PRICE = 300000;
 const PRIORITY_SEAT_ADDON_MONTHLY = Number((STANDARD_SEAT_ADDON_MONTHLY * (1 - PRIORITY_PARTNER_DISCOUNT)).toFixed(2));
 const PRIORITY_BUYOUT_PRICE = Math.round(STANDARD_BUYOUT_PRICE * (1 - PRIORITY_PARTNER_DISCOUNT));
+const BUYOUT_PACKAGES = {
+  LITE: { value: 180000, label: "Lite Buyout" },
+  STANDARD: { value: 300000, label: "Standard Buyout" },
+  FULL_TRANSFER: { value: 420000, label: "Full Transfer Buyout" },
+} as const;
 
 const INVOICE_DRAFTS = {
   seatAddon: {
     status: "DRAFT" as InvoiceStatus,
     notes: "Seat expansion invoice. If accepted, update organization seat limit after payment confirmation.",
+    pricingTier: "SEAT_ADDON_STANDARD",
     lineItems: [{ description: "Additional user seats (monthly)", qty: 1, unitPrice: STANDARD_SEAT_ADDON_MONTHLY }],
   },
   prioritySeatAddon: {
     status: "DRAFT" as InvoiceStatus,
     notes: "Priority partner seat expansion invoice with discounted seat rate. Update organization seat limit after payment confirmation.",
+    pricingTier: "SEAT_ADDON_PRIORITY",
+    discountPercent: Math.round(PRIORITY_PARTNER_DISCOUNT * 100),
     lineItems: [{ description: `Priority partner additional user seats (monthly, ${Math.round(PRIORITY_PARTNER_DISCOUNT * 100)}% discount)`, qty: 1, unitPrice: PRIORITY_SEAT_ADDON_MONTHLY }],
   },
   buyout: {
     status: "DRAFT" as InvoiceStatus,
     notes: "One-time white-label platform buyout invoice per executed buyout agreement.",
+    pricingTier: "BUYOUT_STANDARD",
     lineItems: [{ description: "Bespoke white-label platform buyout (one-time)", qty: 1, unitPrice: STANDARD_BUYOUT_PRICE }],
   },
   priorityBuyout: {
     status: "DRAFT" as InvoiceStatus,
     notes: "One-time white-label platform buyout invoice for priority partner with discounted pricing.",
+    pricingTier: "BUYOUT_PRIORITY_STANDARD",
+    discountPercent: Math.round(PRIORITY_PARTNER_DISCOUNT * 100),
     lineItems: [{ description: `Priority partner white-label platform buyout (one-time, ${Math.round(PRIORITY_PARTNER_DISCOUNT * 100)}% discount)`, qty: 1, unitPrice: PRIORITY_BUYOUT_PRICE }],
+  },
+  buyoutLite: {
+    status: "DRAFT" as InvoiceStatus,
+    notes: "One-time white-label Lite buyout invoice.",
+    pricingTier: "BUYOUT_LITE",
+    lineItems: [{ description: "White-label buyout Lite package (one-time)", qty: 1, unitPrice: BUYOUT_PACKAGES.LITE.value }],
+  },
+  buyoutFullTransfer: {
+    status: "DRAFT" as InvoiceStatus,
+    notes: "One-time white-label Full Transfer buyout invoice.",
+    pricingTier: "BUYOUT_FULL_TRANSFER",
+    lineItems: [{ description: "White-label buyout Full Transfer package (one-time)", qty: 1, unitPrice: BUYOUT_PACKAGES.FULL_TRANSFER.value }],
   },
 };
 
@@ -68,6 +96,9 @@ function InvoiceModal({ invoice, hospitals, onClose, onSave, onDelete, initialDr
     paidAt: invoice?.paidAt ?? null,
     notes: invoice?.notes ?? initialDraft?.notes ?? "",
     lineItems: (invoice?.lineItems as LineItem[] ?? (initialDraft?.lineItems as LineItem[] ?? null)),
+    discountPercent: invoice?.discountPercent ?? initialDraft?.discountPercent ?? null,
+    discountApprovedBy: invoice?.discountApprovedBy ?? initialDraft?.discountApprovedBy ?? null,
+    pricingTier: invoice?.pricingTier ?? initialDraft?.pricingTier ?? null,
   });
   const [lines, setLines] = useState<LineItem[]>((invoice?.lineItems as LineItem[]) ?? (initialDraft?.lineItems as LineItem[] ?? [{ description: "", qty: 1, unitPrice: 0 }]));
   const [saving, setSaving] = useState(false);
@@ -108,7 +139,19 @@ function InvoiceModal({ invoice, hospitals, onClose, onSave, onDelete, initialDr
             </div>
             <div>
               <label style={{ fontSize: "0.72rem", color: C.muted, display: "block", marginBottom: 4 }}>HOSPITAL *</label>
-              <select style={sel} required value={form.hospitalId ?? ""} onChange={e => set("hospitalId", e.target.value)}>
+              <select
+                style={sel}
+                required
+                value={form.hospitalId ?? ""}
+                onChange={e => {
+                  const hospitalId = e.target.value;
+                  set("hospitalId", hospitalId);
+                  const selectedHospital = hospitals.find(h => h.id === hospitalId);
+                  if (selectedHospital?.isPriorityPartner) {
+                    set("discountPercent", selectedHospital.priorityDiscountPercent ?? 20);
+                  }
+                }}
+              >
                 <option value="">Select Account</option>
                 {hospitals.map(h => <option key={h.id} value={h.id}>{h.hospitalName}</option>)}
               </select>
@@ -116,6 +159,29 @@ function InvoiceModal({ invoice, hospitals, onClose, onSave, onDelete, initialDr
             <div>
               <label style={{ fontSize: "0.72rem", color: C.muted, display: "block", marginBottom: 4 }}>DUE DATE</label>
               <input style={inp} type="date" value={form.dueDate ? String(form.dueDate).slice(0,10) : ""} onChange={e => set("dueDate", e.target.value ? new Date(e.target.value).toISOString() : null)} />
+            </div>
+            <div>
+              <label style={{ fontSize: "0.72rem", color: C.muted, display: "block", marginBottom: 4 }}>PRICING TIER</label>
+              <input style={inp} value={form.pricingTier ?? ""} onChange={e => set("pricingTier", e.target.value)} placeholder="BUYOUT_STANDARD" />
+            </div>
+            <div>
+              <label style={{ fontSize: "0.72rem", color: C.muted, display: "block", marginBottom: 4 }}>DISCOUNT (%)</label>
+              <input
+                style={inp}
+                type="number"
+                min={0}
+                max={100}
+                value={form.discountPercent ?? ""}
+                onChange={e => set("discountPercent", e.target.value ? Number(e.target.value) : null)}
+                placeholder="20"
+              />
+              <p style={{ fontSize: "0.68rem", color: C.muted, marginTop: 4 }}>
+                Discounts above {MAX_AUTO_DISCOUNT_PERCENT}% require approver name.
+              </p>
+            </div>
+            <div>
+              <label style={{ fontSize: "0.72rem", color: C.muted, display: "block", marginBottom: 4 }}>DISCOUNT APPROVED BY</label>
+              <input style={inp} value={form.discountApprovedBy ?? ""} onChange={e => set("discountApprovedBy", e.target.value)} placeholder="Chief Executive Officer" />
             </div>
             {form.status === "PAID" && (
               <div>
@@ -232,7 +298,13 @@ export default function InvoicesClient({ hospitals }: { hospitals: Hospital[] })
           <button onClick={() => { setNewDraft(INVOICE_DRAFTS.prioritySeatAddon); setModal("add"); }} style={{ background: "rgba(52,211,153,0.09)", border: "1px solid rgba(52,211,153,0.3)", borderRadius: 8, padding: "9px 12px", color: "#34d399", cursor: "pointer", fontWeight: 700 }}>+ Priority Seat Add-On</button>
           <button onClick={() => { setNewDraft(INVOICE_DRAFTS.buyout); setModal("add"); }} style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${C.border}`, borderRadius: 8, padding: "9px 12px", color: C.text, cursor: "pointer", fontWeight: 600 }}>+ Buyout Invoice</button>
           <button onClick={() => { setNewDraft(INVOICE_DRAFTS.priorityBuyout); setModal("add"); }} style={{ background: "rgba(52,211,153,0.09)", border: "1px solid rgba(52,211,153,0.3)", borderRadius: 8, padding: "9px 12px", color: "#34d399", cursor: "pointer", fontWeight: 700 }}>+ Priority Buyout Invoice</button>
+          <button onClick={() => { setNewDraft(INVOICE_DRAFTS.buyoutLite); setModal("add"); }} style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${C.border}`, borderRadius: 8, padding: "9px 12px", color: C.text, cursor: "pointer", fontWeight: 600 }}>+ Buyout Lite Invoice</button>
+          <button onClick={() => { setNewDraft(INVOICE_DRAFTS.buyoutFullTransfer); setModal("add"); }} style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${C.border}`, borderRadius: 8, padding: "9px 12px", color: C.text, cursor: "pointer", fontWeight: 600 }}>+ Buyout Full Transfer Invoice</button>
         </div>
+      </div>
+
+      <div style={{ marginBottom: 12, color: C.muted, fontSize: "0.78rem" }}>
+        Buyout matrix: Lite ${BUYOUT_PACKAGES.LITE.value.toLocaleString()}, Standard ${BUYOUT_PACKAGES.STANDARD.value.toLocaleString()}, Full Transfer ${BUYOUT_PACKAGES.FULL_TRANSFER.value.toLocaleString()}.
       </div>
 
       <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>

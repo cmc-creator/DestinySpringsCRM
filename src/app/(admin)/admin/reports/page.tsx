@@ -68,6 +68,14 @@ const REPORTS = [
     badge: "FINANCE",
     color: "#f87171",
   },
+  {
+    id: "partner-economics",
+    title: "Priority Partner Economics",
+    desc: "Partner discount impact, paid revenue, buyout totals, and seat expansion trends",
+    icon: "🤝",
+    badge: "PARTNERS",
+    color: "#34d399",
+  },
 ];
 
 export default function ReportsPage() {

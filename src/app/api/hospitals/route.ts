@@ -58,6 +58,10 @@ export async function POST(req: NextRequest) {
           systemName: rest.systemName ?? null,
           hospitalType: rest.hospitalType ?? "ACUTE_CARE",
           status: rest.status ?? "PROSPECT",
+          isPriorityPartner: Boolean(rest.isPriorityPartner),
+          priorityDiscountPercent: Number.isFinite(Number(rest.priorityDiscountPercent))
+            ? Math.max(0, Math.min(100, Number(rest.priorityDiscountPercent)))
+            : 20,
           bedCount: rest.bedCount ? Number(rest.bedCount) : null,
           address: rest.address ?? null,
           city: rest.city ?? null,

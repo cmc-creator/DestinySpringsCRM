@@ -21,6 +21,29 @@ function fmt(d: Date | null | undefined) {
   return d ? new Date(d).toISOString().slice(0, 10) : "";
 }
 
+type LineItem = { description?: unknown; qty?: unknown; unitPrice?: unknown };
+
+function getSeatUnits(lineItems: unknown): number {
+  if (!Array.isArray(lineItems)) return 0;
+  return (lineItems as LineItem[]).reduce((sum, item) => {
+    const description = String(item?.description ?? "").toLowerCase();
+    const qty = Number(item?.qty ?? 0);
+    if (!Number.isFinite(qty) || qty <= 0) return sum;
+    return description.includes("seat") ? sum + qty : sum;
+  }, 0);
+}
+
+function getBuyoutAmount(lineItems: unknown): number {
+  if (!Array.isArray(lineItems)) return 0;
+  return (lineItems as LineItem[]).reduce((sum, item) => {
+    const description = String(item?.description ?? "").toLowerCase();
+    const qty = Number(item?.qty ?? 0);
+    const unitPrice = Number(item?.unitPrice ?? 0);
+    if (!Number.isFinite(qty) || !Number.isFinite(unitPrice) || qty <= 0) return sum;
+    return description.includes("buyout") ? sum + (qty * unitPrice) : sum;
+  }, 0);
+}
+
 async function getRows(type: string) {
   switch (type) {
     case "pipeline": {
@@ -150,6 +173,8 @@ async function getRows(type: string) {
         "Primary Contact": h.primaryContactName ?? "",
         "Contact Email": h.primaryContactEmail ?? "",
         "Contact Phone": h.primaryContactPhone ?? "",
+        "Priority Partner": h.isPriorityPartner ? "Yes" : "No",
+        "Priority Discount %": h.priorityDiscountPercent ?? "",
         "Annual Revenue ($)": Number(h.annualRevenue ?? 0),
         "Contract Value ($)": Number(h.contractValue ?? 0),
         "Active Contract Value ($)": h.contracts.reduce((s, c) => s + Number(c.value ?? 0), 0),
@@ -160,6 +185,52 @@ async function getRows(type: string) {
         "Service Lines": (h.serviceLines ?? []).join("; "),
         "Created": fmt(h.createdAt),
       }));
+    }
+
+    case "partner-economics": {
+      const hospitals = await prisma.hospital.findMany({
+        where: { isPriorityPartner: true },
+        include: {
+          contracts: { select: { status: true, value: true, pricingTier: true } },
+          invoices: { select: { status: true, totalAmount: true, dueDate: true, paidAt: true, lineItems: true, discountPercent: true } },
+        },
+        orderBy: { hospitalName: "asc" },
+      });
+
+      return hospitals.map(h => {
+        const paidInvoices = h.invoices.filter(i => i.status === "PAID");
+        const outstanding = h.invoices.filter(i => i.status === "SENT" || i.status === "OVERDUE");
+        const activeContractValue = h.contracts
+          .filter(c => c.status === "ACTIVE")
+          .reduce((sum, c) => sum + Number(c.value ?? 0), 0);
+
+        const seatUnitsBilled = h.invoices.reduce((sum, inv) => sum + getSeatUnits(inv.lineItems), 0);
+        const buyoutInvoiced = h.invoices.reduce((sum, inv) => sum + getBuyoutAmount(inv.lineItems), 0);
+
+        const discountedInvoices = h.invoices.filter(i => Number(i.discountPercent ?? 0) > 0);
+        const avgDiscount = discountedInvoices.length
+          ? Math.round(discountedInvoices.reduce((sum, i) => sum + Number(i.discountPercent ?? 0), 0) / discountedInvoices.length)
+          : Number(h.priorityDiscountPercent ?? 0);
+
+        const paidRevenue = paidInvoices.reduce((sum, i) => sum + Number(i.totalAmount ?? 0), 0);
+        const outstandingRevenue = outstanding.reduce((sum, i) => sum + Number(i.totalAmount ?? 0), 0);
+        const lastInvoice = h.invoices
+          .map(i => i.paidAt ?? i.dueDate)
+          .filter(Boolean)
+          .sort((a, b) => new Date(String(b)).getTime() - new Date(String(a)).getTime())[0] ?? null;
+
+        return {
+          "Partner": h.hospitalName,
+          "Priority Discount %": h.priorityDiscountPercent ?? "",
+          "Average Applied Discount %": avgDiscount,
+          "Active Contract Value ($)": activeContractValue,
+          "Paid Revenue ($)": paidRevenue,
+          "Outstanding Revenue ($)": outstandingRevenue,
+          "Seat Units Billed": seatUnitsBilled,
+          "Buyout Invoiced ($)": buyoutInvoiced,
+          "Last Invoice Activity": fmt(lastInvoice ? new Date(String(lastInvoice)) : null),
+        };
+      });
     }
 
     case "contracts": {

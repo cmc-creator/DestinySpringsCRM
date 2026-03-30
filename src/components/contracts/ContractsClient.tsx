@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from "react";
 
 type ContractStatus = "DRAFT"|"SENT"|"SIGNED"|"ACTIVE"|"EXPIRED"|"TERMINATED";
-interface Hospital { id: string; hospitalName: string }
+interface Hospital { id: string; hospitalName: string; isPriorityPartner?: boolean; priorityDiscountPercent?: number | null }
 interface Rep { id: string; user: { name: string | null; email: string } }
 interface Contract {
   id: string; title: string;
@@ -11,6 +11,10 @@ interface Contract {
   assignedRepId?: string | null; assignedRep?: { user: { name: string | null } } | null;
   status: ContractStatus; startDate?: string | null; endDate?: string | null;
   value?: string | number | null; terms?: string | null; fileUrl?: string | null;
+  discountPercent?: number | null;
+  discountApprovedBy?: string | null;
+  discountApprovedAt?: string | null;
+  pricingTier?: string | null;
   createdAt: string;
 }
 
@@ -24,9 +28,16 @@ const fmt = (v: string | number | null | undefined) => v ? `$${Number(v).toLocal
 const fmtDate = (d: string | null | undefined) => d ? new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "-";
 const STANDARD_SEAT_ADDON_MONTHLY = 50;
 const PRIORITY_PARTNER_DISCOUNT = 0.2;
+const MAX_AUTO_DISCOUNT_PERCENT = 20;
 const BUYOUT_SUGGESTED_PRICE = 300000;
 const PRIORITY_SEAT_ADDON_MONTHLY = Number((STANDARD_SEAT_ADDON_MONTHLY * (1 - PRIORITY_PARTNER_DISCOUNT)).toFixed(2));
 const PRIORITY_BUYOUT_SUGGESTED_PRICE = Math.round(BUYOUT_SUGGESTED_PRICE * (1 - PRIORITY_PARTNER_DISCOUNT));
+
+const BUYOUT_PACKAGES = {
+  LITE: { value: 180000, label: "Lite Buyout" },
+  STANDARD: { value: 300000, label: "Standard Buyout" },
+  FULL_TRANSFER: { value: 420000, label: "Full Transfer Buyout" },
+} as const;
 
 const CONTRACT_DRAFTS = {
   seatAddendum: {
@@ -51,6 +62,8 @@ const CONTRACT_DRAFTS = {
       `- Price per added seat/month: $${PRIORITY_SEAT_ADDON_MONTHLY.toFixed(2)}\n` +
       "- Billing: prorated from effective date through current billing cycle\n" +
       "- All other MSLA terms remain in full force and effect.",
+    discountPercent: Math.round(PRIORITY_PARTNER_DISCOUNT * 100),
+    pricingTier: "PRIORITY_SEAT_ADDON",
   },
   whiteLabelBuyout: {
     title: "White-Label Platform Buyout Agreement",
@@ -64,11 +77,14 @@ const CONTRACT_DRAFTS = {
       "- IP transfer/assignment: per attached schedule\n" +
       "- Payment schedule: [milestones]\n" +
       "- Ongoing support/maintenance (optional): separate MSA/SOW.",
+    pricingTier: "BUYOUT_STANDARD",
   },
   priorityWhiteLabelBuyout: {
     title: "Priority Partner White-Label Buyout Agreement",
     status: "DRAFT" as ContractStatus,
     value: PRIORITY_BUYOUT_SUGGESTED_PRICE,
+    discountPercent: Math.round(PRIORITY_PARTNER_DISCOUNT * 100),
+    pricingTier: "PRIORITY_BUYOUT_STANDARD",
     terms:
       "Buyout scope: bespoke white-label platform purchase and transfer rights for priority partner account.\n" +
       `- Priority partner discount: ${(PRIORITY_PARTNER_DISCOUNT * 100).toFixed(0)}%\n` +
@@ -78,6 +94,28 @@ const CONTRACT_DRAFTS = {
       "- IP transfer/assignment: per attached schedule\n" +
       "- Payment schedule: [milestones]\n" +
       "- Ongoing support/maintenance (optional): separate MSA/SOW.",
+  },
+  buyoutLite: {
+    title: `${BUYOUT_PACKAGES.LITE.label} Agreement`,
+    status: "DRAFT" as ContractStatus,
+    value: BUYOUT_PACKAGES.LITE.value,
+    pricingTier: "BUYOUT_LITE",
+    terms:
+      "Buyout tier: Lite package.\n" +
+      "- Includes: core platform codebase, setup docs, 30 days transition support\n" +
+      "- Excludes: custom feature backlog transfer and long-term SLA\n" +
+      "- Payment schedule: [milestones].",
+  },
+  buyoutFullTransfer: {
+    title: `${BUYOUT_PACKAGES.FULL_TRANSFER.label} Agreement`,
+    status: "DRAFT" as ContractStatus,
+    value: BUYOUT_PACKAGES.FULL_TRANSFER.value,
+    pricingTier: "BUYOUT_FULL_TRANSFER",
+    terms:
+      "Buyout tier: Full transfer package.\n" +
+      "- Includes: codebase, branded assets, infra scripts, migration runbooks, 90 days transition support\n" +
+      "- Includes: handover workshops and architecture transfer sessions\n" +
+      "- Payment schedule: [milestones].",
   },
 };
 
@@ -112,7 +150,19 @@ function ContractModal({ contract, hospitals, reps, onClose, onSave, onDelete, i
             </div>
             <div>
               <label style={{ fontSize: "0.72rem", color: C.muted, display: "block", marginBottom: 4 }}>HOSPITAL *</label>
-              <select style={sel} required value={form.hospitalId ?? ""} onChange={e => set("hospitalId", e.target.value)}>
+              <select
+                style={sel}
+                required
+                value={form.hospitalId ?? ""}
+                onChange={e => {
+                  const hospitalId = e.target.value;
+                  set("hospitalId", hospitalId);
+                  const selectedHospital = hospitals.find(h => h.id === hospitalId);
+                  if (selectedHospital?.isPriorityPartner) {
+                    set("discountPercent", selectedHospital.priorityDiscountPercent ?? 20);
+                  }
+                }}
+              >
                 <option value="">Select Account</option>
                 {hospitals.map(h => <option key={h.id} value={h.id}>{h.hospitalName}</option>)}
               </select>
@@ -133,6 +183,29 @@ function ContractModal({ contract, hospitals, reps, onClose, onSave, onDelete, i
             <div>
               <label style={{ fontSize: "0.72rem", color: C.muted, display: "block", marginBottom: 4 }}>CONTRACT VALUE ($)</label>
               <input style={inp} type="number" value={form.value ?? ""} onChange={e => set("value", e.target.value ? Number(e.target.value) : null)} placeholder="125000" />
+            </div>
+            <div>
+              <label style={{ fontSize: "0.72rem", color: C.muted, display: "block", marginBottom: 4 }}>PRICING TIER</label>
+              <input style={inp} value={form.pricingTier ?? ""} onChange={e => set("pricingTier", e.target.value)} placeholder="BUYOUT_STANDARD" />
+            </div>
+            <div>
+              <label style={{ fontSize: "0.72rem", color: C.muted, display: "block", marginBottom: 4 }}>DISCOUNT (%)</label>
+              <input
+                style={inp}
+                type="number"
+                min={0}
+                max={100}
+                value={form.discountPercent ?? ""}
+                onChange={e => set("discountPercent", e.target.value ? Number(e.target.value) : null)}
+                placeholder="20"
+              />
+              <p style={{ fontSize: "0.68rem", color: C.muted, marginTop: 4 }}>
+                Discounts above {MAX_AUTO_DISCOUNT_PERCENT}% require approver name.
+              </p>
+            </div>
+            <div>
+              <label style={{ fontSize: "0.72rem", color: C.muted, display: "block", marginBottom: 4 }}>DISCOUNT APPROVED BY</label>
+              <input style={inp} value={form.discountApprovedBy ?? ""} onChange={e => set("discountApprovedBy", e.target.value)} placeholder="Chief Executive Officer" />
             </div>
             <div>
               <label style={{ fontSize: "0.72rem", color: C.muted, display: "block", marginBottom: 4 }}>START DATE</label>
@@ -245,11 +318,23 @@ export default function ContractsClient({ hospitals, reps }: { hospitals: Hospit
           >
             + Priority Buyout Draft
           </button>
+          <button
+            onClick={() => { setNewDraft(CONTRACT_DRAFTS.buyoutLite); setModal("add"); }}
+            style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${C.border}`, borderRadius: 8, padding: "10px 14px", color: C.text, cursor: "pointer", fontWeight: 600 }}
+          >
+            + Buyout Lite
+          </button>
+          <button
+            onClick={() => { setNewDraft(CONTRACT_DRAFTS.buyoutFullTransfer); setModal("add"); }}
+            style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${C.border}`, borderRadius: 8, padding: "10px 14px", color: C.text, cursor: "pointer", fontWeight: 600 }}
+          >
+            + Buyout Full Transfer
+          </button>
         </div>
       </div>
 
       <div style={{ marginBottom: 14, color: C.muted, fontSize: "0.78rem" }}>
-        Buyout draft pre-fills <strong style={{ color: C.text }}>${BUYOUT_SUGGESTED_PRICE.toLocaleString()}</strong> and priority draft pre-fills <strong style={{ color: "#34d399" }}>${PRIORITY_BUYOUT_SUGGESTED_PRICE.toLocaleString()}</strong>.
+        Buyout matrix: Lite <strong style={{ color: C.text }}>${BUYOUT_PACKAGES.LITE.value.toLocaleString()}</strong>, Standard <strong style={{ color: C.text }}>${BUYOUT_PACKAGES.STANDARD.value.toLocaleString()}</strong>, Full Transfer <strong style={{ color: C.text }}>${BUYOUT_PACKAGES.FULL_TRANSFER.value.toLocaleString()}</strong>. Priority defaults apply {Math.round(PRIORITY_PARTNER_DISCOUNT * 100)}% off standard.
       </div>
 
       <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
