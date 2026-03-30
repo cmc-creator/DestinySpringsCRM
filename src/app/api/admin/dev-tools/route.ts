@@ -12,6 +12,9 @@ export async function POST(req: NextRequest) {
   const { action } = await req.json();
 
   if (action === "clear-demo") {
+    if (isProduction) {
+      return NextResponse.json({ ok: false, message: "Data clearing is disabled in production." }, { status: 403 });
+    }
     // Delete in dependency order
     await prisma.activity.deleteMany({});
     await prisma.invoice.deleteMany({});
@@ -25,6 +28,9 @@ export async function POST(req: NextRequest) {
   }
 
   if (action === "clear-all") {
+    if (isProduction) {
+      return NextResponse.json({ ok: false, message: "Data clearing is disabled in production." }, { status: 403 });
+    }
     await prisma.activity.deleteMany({});
     await prisma.invoice.deleteMany({});
     await prisma.contract.deleteMany({});
