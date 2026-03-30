@@ -111,6 +111,56 @@ export async function sendOpportunityAssignedEmail(opts: {
     .catch((e: unknown) => console.error("[email] opp-assigned failed:", e));
 }
 
+// ── Compliance: Expiring Soon (to rep) ───────────────────────────────────────
+export async function sendComplianceExpiringSoonEmail(opts: {
+  to: string;
+  name: string;
+  docTitle: string;
+  docType: string;
+  expiresOn: string;
+}) {
+  if (!process.env.RESEND_API_KEY || !process.env.RESEND_FROM_EMAIL) return;
+  const typeLabel = opts.docType.replace(/_/g, " ");
+  await resend.emails
+    .send({
+      from: FROM,
+      to: opts.to,
+      subject: `Compliance Document Expiring: ${opts.docTitle}`,
+      html: layout(`
+        <h2 style="margin:0 0 6px;color:#fbbf24;font-size:17px;font-weight:800;">Compliance Document Expiring Soon</h2>
+        <p style="color:rgba(237,228,207,0.55);margin:0 0 18px;font-size:14px;">Hi ${opts.name || "there"},<br>The following compliance document will expire soon. Please renew it to stay active.</p>
+        ${infoBox("#fbbf24", typeLabel, opts.docTitle, `Expires: ${opts.expiresOn}`)}
+        ${btn(`${BASE}/rep/documents`, "View My Documents", "#fbbf24", "#1a1208")}
+      `),
+    })
+    .catch((e: unknown) => console.error("[email] compliance-expiring failed:", e));
+}
+
+// ── Compliance: Expired (to admin) ───────────────────────────────────────────
+export async function sendComplianceExpiredAdminEmail(opts: {
+  to: string;
+  repName: string;
+  docTitle: string;
+  docType: string;
+  expiredOn: string;
+}) {
+  if (!process.env.RESEND_API_KEY || !process.env.RESEND_FROM_EMAIL) return;
+  const typeLabel = opts.docType.replace(/_/g, " ");
+  await resend.emails
+    .send({
+      from: FROM,
+      to: opts.to,
+      subject: `Expired Compliance Doc: ${opts.repName} — ${opts.docTitle}`,
+      html: layout(`
+        <h2 style="margin:0 0 6px;color:#f87171;font-size:17px;font-weight:800;">Compliance Document Expired</h2>
+        <p style="color:rgba(237,228,207,0.55);margin:0 0 18px;font-size:14px;">A rep's compliance document has expired and requires attention.</p>
+        ${infoBox("#f87171", typeLabel, opts.docTitle, `Rep: ${opts.repName} &bull; Expired: ${opts.expiredOn}`)}
+        ${btn(`${BASE}/admin/compliance`, "View Compliance Center", "#f87171", "#fff")}
+      `),
+    })
+    .catch((e: unknown) => console.error("[email] compliance-expired-admin failed:", e));
+}
+
 // ── Opportunity: Admitted ────────────────────────────────────────────────────
 export async function sendAdmissionEmail(opts: {
   to: string;
