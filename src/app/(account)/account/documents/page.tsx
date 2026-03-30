@@ -31,8 +31,8 @@ export default async function AccountDocumentsPage() {
   if (!hospital) redirect("/login");
 
   const active   = hospital.contracts.filter((c) => ["ACTIVE", "SIGNED"].includes(c.status)).length;
-  const pending  = hospital.contracts.filter((c) => c.status === "PENDING").length;
-  const expired  = hospital.contracts.filter((c) => c.status === "EXPIRED").length;
+  const pending  = hospital.contracts.filter((c) => ["DRAFT", "SENT"].includes(c.status)).length;
+  const expired  = hospital.contracts.filter((c) => ["EXPIRED", "TERMINATED"].includes(c.status)).length;
 
   return (
     <div>
