@@ -24,16 +24,11 @@ const ROLE_TEXT: Record<string, string> = {
 
 export default function AdminUsersPage() {
   const [users, setUsers]         = useState<UserRow[]>([]);
-  const [roleFilter, setRoleFilter] = useState<"ALL" | "ADMIN" | "REP" | "ACCOUNT">("ALL");
-  const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading]     = useState(true);
   const [error, setError]         = useState("");
   const [showForm, setShowForm]   = useState(false);
   const [deleting, setDeleting]   = useState<string | null>(null);
   const [approving, setApproving] = useState<string | null>(null);
-  const [resetting, setResetting] = useState<string | null>(null);
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [bulkDeleting, setBulkDeleting] = useState(false);
   const [toast, setToast]         = useState("");
 
   // Form state
@@ -54,9 +49,7 @@ export default function AdminUsersPage() {
       const res = await fetch("/api/admin/users");
       const data = await res.json() as { users?: UserRow[]; error?: string };
       if (!res.ok) throw new Error(data.error ?? "Failed to load");
-      const nextUsers = data.users ?? [];
-      setUsers(nextUsers);
-      setSelectedIds((current) => current.filter((id) => nextUsers.some((user) => user.id === id)));
+      setUsers(data.users ?? []);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load users");
     } finally {
@@ -120,73 +113,6 @@ export default function AdminUsersPage() {
     }
   }
 
-  async function resetPassword(id: string, name: string | null) {
-    const nextPassword = prompt(`Enter a new temporary password for ${name ?? "this user"} (min 8 characters):`);
-    if (!nextPassword) return;
-    if (nextPassword.length < 8) {
-      showToast("Password must be at least 8 characters.");
-      return;
-    }
-
-    setResetting(id);
-    try {
-      const res = await fetch(`/api/admin/users?id=${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password: nextPassword }),
-      });
-      const data = await res.json() as { ok?: boolean; error?: string };
-      if (!res.ok) throw new Error(data.error ?? "Password reset failed");
-      showToast(`✓ Password reset for ${name ?? "user"}`);
-    } catch (e) {
-      showToast(e instanceof Error ? e.message : "Password reset failed");
-    } finally {
-      setResetting(null);
-    }
-  }
-
-  function toggleUserSelection(id: string) {
-    setSelectedIds((current) => current.includes(id) ? current.filter((value) => value !== id) : [...current, id]);
-  }
-
-  function toggleSelectAll() {
-    if (visibleUsers.length === 0) return;
-    setSelectedIds((current) => {
-      if (allVisibleSelected) {
-        return current.filter((id) => !visibleUsers.some((user) => user.id === id));
-      }
-      const visibleIds = visibleUsers.map((user) => user.id);
-      return [...new Set([...current, ...visibleIds])];
-    });
-  }
-
-  async function removeSelectedUsers() {
-    if (selectedIds.length === 0) return;
-    if (!confirm(`Delete ${selectedIds.length} selected account(s)? This cannot be undone.`)) return;
-
-    setBulkDeleting(true);
-    try {
-      const res = await fetch("/api/admin/users/bulk-delete", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ids: selectedIds }),
-      });
-      const data = await res.json() as {
-        deletedCount?: number;
-        failedCount?: number;
-        skippedCount?: number;
-        error?: string;
-      };
-      if (!res.ok) throw new Error(data.error ?? "Bulk delete failed");
-      showToast(`✓ Removed ${data.deletedCount ?? 0} account(s).${(data.skippedCount ?? 0) > 0 ? ` ${data.skippedCount} skipped.` : ""}${(data.failedCount ?? 0) > 0 ? ` ${data.failedCount} failed.` : ""}`);
-      await loadUsers();
-    } catch (e) {
-      showToast(e instanceof Error ? e.message : "Bulk delete failed");
-    } finally {
-      setBulkDeleting(false);
-    }
-  }
-
   function getApprovalStatus(user: UserRow) {
     if (user.role === "REP") return user.rep?.status ?? null;
     if (user.role === "ACCOUNT") return user.hospital?.status ?? null;
@@ -200,16 +126,6 @@ export default function AdminUsersPage() {
       ? user.hospital?.status === "PROSPECT"
       : false;
   }
-
-  const normalizedQuery = searchQuery.toLowerCase().trim();
-  const roleFilteredUsers = roleFilter === "ALL" ? users : users.filter((user) => user.role === roleFilter);
-  const visibleUsers = normalizedQuery
-    ? roleFilteredUsers.filter((user) => {
-        const haystack = `${user.name ?? ""} ${user.email}`.toLowerCase();
-        return haystack.includes(normalizedQuery);
-      })
-    : roleFilteredUsers;
-  const allVisibleSelected = visibleUsers.length > 0 && visibleUsers.every((user) => selectedIds.includes(user.id));
 
   const inputStyle: React.CSSProperties = {
     width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(201,168,76,0.25)",
@@ -238,72 +154,12 @@ export default function AdminUsersPage() {
             Create and manage login accounts for your team. Self-signups stay pending until you approve them.
           </p>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(event) => setSearchQuery(event.target.value)}
-            placeholder="Search name or email"
-            style={{
-              background: "rgba(255,255,255,0.05)",
-              color: "#ede4cf",
-              border: "1px solid rgba(255,255,255,0.12)",
-              borderRadius: 999,
-              padding: "8px 12px",
-              minWidth: 220,
-              fontSize: "0.78rem",
-              outline: "none",
-            }}
-          />
-          {(["ALL", "REP", "ACCOUNT", "ADMIN"] as const).map((role) => {
-            const active = roleFilter === role;
-            return (
-              <button
-                key={role}
-                type="button"
-                onClick={() => setRoleFilter(role)}
-                style={{
-                  background: active ? "rgba(201,168,76,0.16)" : "rgba(255,255,255,0.04)",
-                  color: active ? "#c9a84c" : "rgba(237,228,207,0.65)",
-                  fontWeight: active ? 800 : 700,
-                  fontSize: "0.75rem",
-                  border: `1px solid ${active ? "rgba(201,168,76,0.38)" : "rgba(255,255,255,0.12)"}`,
-                  borderRadius: 999,
-                  padding: "7px 12px",
-                  cursor: "pointer",
-                  letterSpacing: "0.04em",
-                }}
-              >
-                {role}
-              </button>
-            );
-          })}
-          <span style={{ fontSize: "0.72rem", color: "rgba(237,228,207,0.45)", marginLeft: 4 }}>
-            Showing {visibleUsers.length} of {users.length}
-          </span>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-          <button
-            onClick={toggleSelectAll}
-            disabled={visibleUsers.length === 0}
-            style={{ background: "rgba(255,255,255,0.05)", color: "rgba(237,228,207,0.72)", fontWeight: 700, fontSize: "0.82rem", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 10, padding: "10px 14px", cursor: visibleUsers.length === 0 ? "not-allowed" : "pointer", opacity: visibleUsers.length === 0 ? 0.7 : 1 }}
-          >
-            {allVisibleSelected ? "Clear Selection" : "Select All"}
-          </button>
-          <button
-            onClick={removeSelectedUsers}
-            disabled={selectedIds.length === 0 || bulkDeleting}
-            style={{ background: "rgba(239,68,68,0.14)", color: "#fca5a5", fontWeight: 800, fontSize: "0.85rem", border: "1px solid rgba(239,68,68,0.35)", borderRadius: 10, padding: "11px 18px", cursor: selectedIds.length === 0 || bulkDeleting ? "not-allowed" : "pointer", opacity: selectedIds.length === 0 || bulkDeleting ? 0.7 : 1 }}
-          >
-            {bulkDeleting ? "Removing…" : `Remove Selected (${selectedIds.length})`}
-          </button>
-          <button
-            onClick={() => { setShowForm(true); setFormError(""); }}
-            style={{ background: "#c9a84c", color: "#100805", fontWeight: 800, fontSize: "0.85rem", border: "none", borderRadius: 10, padding: "11px 18px", cursor: "pointer" }}
-          >
-            + Add Account
-          </button>
-        </div>
+        <button
+          onClick={() => { setShowForm(true); setFormError(""); }}
+          style={{ background: "#c9a84c", color: "#100805", fontWeight: 800, fontSize: "0.85rem", border: "none", borderRadius: 10, padding: "11px 18px", cursor: "pointer" }}
+        >
+          + Add Account
+        </button>
       </div>
 
       {/* Create form */}
@@ -326,7 +182,7 @@ export default function AdminUsersPage() {
             </div>
             <div>
               <label style={labelStyle}>Temporary Password *</label>
-              <input required type="text" minLength={8} style={inputStyle} value={form.password} onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))} placeholder="Minimum 8 characters" />
+              <input required type="password" minLength={8} style={inputStyle} value={form.password} onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))} placeholder="Minimum 8 characters" autoComplete="new-password" />
             </div>
             <div>
               <label style={labelStyle}>Role *</label>
@@ -339,7 +195,7 @@ export default function AdminUsersPage() {
             {form.role === "REP" && (
               <div>
                 <label style={labelStyle}>BD Title</label>
-                <input style={inputStyle} value={form.repTitle} onChange={(e) => setForm((f) => ({ ...f, repTitle: e.target.value }))} placeholder="e.g. Director of Business Development" />
+                <input style={inputStyle} value={form.repTitle} onChange={(e) => setForm((f) => ({ ...f, repTitle: e.target.value }))} placeholder="e.g. Clinical Liaison" />
               </div>
             )}
             {form.role === "ACCOUNT" && (
@@ -367,22 +223,10 @@ export default function AdminUsersPage() {
         <div style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: 10, padding: 20, color: "#fca5a5" }}>{error}</div>
       ) : users.length === 0 ? (
         <div style={{ textAlign: "center", padding: 48, color: "rgba(237,228,207,0.35)", fontSize: "0.9rem" }}>No accounts yet. Create one above.</div>
-      ) : visibleUsers.length === 0 ? (
-        <div style={{ textAlign: "center", padding: 48, color: "rgba(237,228,207,0.35)", fontSize: "0.9rem" }}>
-          No accounts match your current filters.
-        </div>
       ) : (
         <div style={{ display: "grid", gap: 10 }}>
-          {visibleUsers.map((u) => (
+          {users.map((u) => (
             <div key={u.id} style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(201,168,76,0.12)", borderRadius: 12, padding: "14px 18px", display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
-              <input
-                type="checkbox"
-                checked={selectedIds.includes(u.id)}
-                onChange={() => toggleUserSelection(u.id)}
-                aria-label={`Select ${u.name ?? u.email}`}
-                style={{ width: 16, height: 16, cursor: "pointer", accentColor: "#c9a84c", flexShrink: 0 }}
-              />
-
               {/* Avatar */}
               <div style={{ width: 40, height: 40, borderRadius: "50%", background: "rgba(201,168,76,0.15)", border: "1px solid rgba(201,168,76,0.3)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1rem", fontWeight: 800, color: "#c9a84c", flexShrink: 0 }}>
                 {u.name ? u.name.charAt(0).toUpperCase() : u.email.charAt(0).toUpperCase()}
@@ -422,14 +266,6 @@ export default function AdminUsersPage() {
                   {approving === u.id ? "…" : "Approve"}
                 </button>
               )}
-
-              <button
-                onClick={() => resetPassword(u.id, u.name)}
-                disabled={resetting === u.id}
-                style={{ background: "rgba(96,165,250,0.10)", border: "1px solid rgba(96,165,250,0.25)", borderRadius: 8, color: "#93c5fd", fontWeight: 700, fontSize: "0.75rem", padding: "6px 12px", cursor: "pointer", flexShrink: 0 }}
-              >
-                {resetting === u.id ? "…" : "Reset Password"}
-              </button>
 
               {/* Delete */}
               <button

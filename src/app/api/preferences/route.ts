@@ -29,14 +29,14 @@ type StoredPreferences = {
     focusStatIds?: string[];
     statTargets?: Record<string, number>;
   };
-  onboarding?: {
-    welcomeSeenRoles?: string[];
-    walkthroughCompletedRoles?: string[];
-  };
   territory?: {
     defaultViewId?: string;
     savedViews?: Array<{ id: string; label: string; repFilter: string }>;
     defaultsInitialized?: boolean;
+  };
+  onboarding?: {
+    welcomeSeenRoles?: string[];
+    walkthroughCompletedRoles?: string[];
   };
 };
 
@@ -105,26 +105,6 @@ function sanitizePreferences(input: unknown): StoredPreferences {
     };
   }
 
-  if (value.onboarding !== undefined) {
-    const onboarding = toObject(value.onboarding);
-    next.onboarding = {
-      welcomeSeenRoles: Array.isArray(onboarding.welcomeSeenRoles)
-        ? onboarding.welcomeSeenRoles
-            .filter((item): item is string => typeof item === "string")
-            .map((item) => item.toUpperCase())
-            .filter((item) => item === "ADMIN" || item === "REP" || item === "ACCOUNT")
-            .slice(0, 3)
-        : [],
-      walkthroughCompletedRoles: Array.isArray(onboarding.walkthroughCompletedRoles)
-        ? onboarding.walkthroughCompletedRoles
-            .filter((item): item is string => typeof item === "string")
-            .map((item) => item.toUpperCase())
-            .filter((item) => item === "ADMIN" || item === "REP" || item === "ACCOUNT")
-            .slice(0, 3)
-        : [],
-    };
-  }
-
   if (value.territory !== undefined) {
     const territory = toObject(value.territory);
     const savedViews = Array.isArray(territory.savedViews)
@@ -145,6 +125,26 @@ function sanitizePreferences(input: unknown): StoredPreferences {
       defaultViewId: typeof territory.defaultViewId === "string" ? territory.defaultViewId.slice(0, 40) : "",
       savedViews,
       defaultsInitialized: typeof territory.defaultsInitialized === "boolean" ? territory.defaultsInitialized : false,
+    };
+  }
+
+  if (value.onboarding !== undefined) {
+    const onboarding = toObject(value.onboarding);
+    next.onboarding = {
+      welcomeSeenRoles: Array.isArray(onboarding.welcomeSeenRoles)
+        ? onboarding.welcomeSeenRoles
+            .filter((item): item is string => typeof item === "string")
+            .map((item) => item.toUpperCase())
+            .filter((item) => item === "ADMIN" || item === "REP" || item === "ACCOUNT")
+            .slice(0, 3)
+        : [],
+      walkthroughCompletedRoles: Array.isArray(onboarding.walkthroughCompletedRoles)
+        ? onboarding.walkthroughCompletedRoles
+            .filter((item): item is string => typeof item === "string")
+            .map((item) => item.toUpperCase())
+            .filter((item) => item === "ADMIN" || item === "REP" || item === "ACCOUNT")
+            .slice(0, 3)
+        : [],
     };
   }
 
