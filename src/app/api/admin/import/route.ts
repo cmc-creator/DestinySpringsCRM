@@ -3,7 +3,8 @@ import { randomUUID } from "crypto";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
+import Papa from "papaparse";
 
 export const maxDuration = 60;
 const MAX_IMPORT_BYTES = 8 * 1024 * 1024;
@@ -148,16 +149,20 @@ function extractCandidateNames(raw: unknown): string[] {
   return Array.from(unique.values());
 }
 
+// Excel serial date: serial 25569 = Jan 1 1970 (Unix epoch).
+function excelSerialToDate(serial: number): Date | undefined {
+  if (!Number.isFinite(serial) || serial < 1) return undefined;
+  const date = new Date((serial - 25569) * 86_400_000);
+  return Number.isNaN(date.getTime()) ? undefined : date;
+}
+
 function parseSpreadsheetDate(value: unknown): Date | undefined {
   if (value instanceof Date) {
     return Number.isNaN(value.getTime()) ? undefined : value;
   }
 
   if (typeof value === "number" && Number.isFinite(value)) {
-    const parsed = XLSX.SSF.parse_date_code(value);
-    if (parsed?.y && parsed?.m && parsed?.d) {
-      return new Date(Date.UTC(parsed.y, parsed.m - 1, parsed.d));
-    }
+    return excelSerialToDate(value);
   }
 
   const raw = String(value ?? "").trim();
@@ -165,10 +170,7 @@ function parseSpreadsheetDate(value: unknown): Date | undefined {
 
   const asNumber = Number(raw);
   if (Number.isFinite(asNumber) && asNumber > 20000) {
-    const parsed = XLSX.SSF.parse_date_code(asNumber);
-    if (parsed?.y && parsed?.m && parsed?.d) {
-      return new Date(Date.UTC(parsed.y, parsed.m - 1, parsed.d));
-    }
+    return excelSerialToDate(asNumber);
   }
 
   const parsedDate = new Date(raw);
@@ -315,14 +317,11 @@ function matrixToRows(matrix: unknown[][]): ParsedSheet {
   return { rows, columns: headers };
 }
 
-function bestSheetMatrix(workbook: XLSX.WorkBook): unknown[][] {
+function bestSheetMatrix(sheets: Map<string, unknown[][]>): unknown[][] {
   let best: unknown[][] = [];
   let bestScore = -1;
 
-  for (const sheetName of workbook.SheetNames) {
-    const ws = workbook.Sheets[sheetName];
-    if (!ws) continue;
-    const matrix = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "", raw: false, blankrows: false }) as unknown[][];
+  for (const [, matrix] of sheets) {
     if (!matrix.length) continue;
 
     const nonEmptyRows = matrix.filter((row) => Array.isArray(row) && row.some((v) => hasValue(v))).length;
@@ -341,6 +340,23 @@ function bestSheetMatrix(workbook: XLSX.WorkBook): unknown[][] {
   return best;
 }
 
+function cellToScalar(v: ExcelJS.CellValue): unknown {
+  if (v === null || v === undefined) return "";
+  if (v instanceof Date) return v.toISOString();
+  if (typeof v === "object") {
+    const obj = v as unknown as Record<string, unknown>;
+    // RichText
+    if (Array.isArray(obj.richText)) {
+      return (obj.richText as Array<{ text?: string }>).map((r) => r.text ?? "").join("");
+    }
+    // Formula result
+    if ("result" in obj) return obj.result ?? "";
+    // Hyperlink
+    if ("text" in obj) return obj.text ?? "";
+  }
+  return v;
+}
+
 async function parseSheet(file: File): Promise<ParsedSheet> {
   if (file.size > MAX_IMPORT_BYTES) {
     throw new Error(`File is too large (${Math.round(file.size / (1024 * 1024))} MB). Max is 8 MB.`);
@@ -348,21 +364,38 @@ async function parseSheet(file: File): Promise<ParsedSheet> {
 
   const isCsv = file.name.toLowerCase().endsWith(".csv") || file.type.includes("csv") || file.type.includes("text");
   const arrayBuffer = await file.arrayBuffer();
-  const data = new Uint8Array(arrayBuffer);
 
-  try {
-    const wb = XLSX.read(data, { type: "array", cellText: false, cellNF: false, cellHTML: false, sheetRows: 10000, dense: true, WTF: false });
-    const matrix = bestSheetMatrix(wb);
-    return matrixToRows(matrix);
-  } catch {
-    if (!isCsv) {
-      throw new Error("Could not parse this spreadsheet. Please re-export from Monday as CSV or XLSX.");
-    }
-    const text = Buffer.from(data).toString("utf8");
-    const wb = XLSX.read(text, { type: "string", raw: false, dense: true, WTF: false });
-    const matrix = bestSheetMatrix(wb);
-    return matrixToRows(matrix);
+  if (isCsv) {
+    const text = Buffer.from(arrayBuffer).toString("utf8");
+    const result = Papa.parse<unknown[]>(text, { header: false, skipEmptyLines: true, dynamicTyping: false });
+    return matrixToRows(result.data as unknown[][]);
   }
+
+  if (file.name.toLowerCase().endsWith(".xls")) {
+    throw new Error("Old .xls format is not supported. Please re-save the file as .xlsx or export as CSV from Monday.");
+  }
+
+  // XLSX via ExcelJS
+  const workbook = new ExcelJS.Workbook();
+  try {
+    await workbook.xlsx.load(arrayBuffer);
+  } catch {
+    throw new Error("Could not parse this spreadsheet. Please re-export from Monday as CSV or XLSX.");
+  }
+
+  const sheets = new Map<string, unknown[][]>();
+  workbook.eachSheet((sheet) => {
+    const matrix: unknown[][] = [];
+    sheet.eachRow({ includeEmpty: false }, (row) => {
+      const vals = (row.values as ExcelJS.CellValue[]).slice(1); // row.values is 1-indexed
+      if (vals.some((v) => hasValue(cellToScalar(v)))) {
+        matrix.push(vals.map(cellToScalar));
+      }
+    });
+    if (matrix.length) sheets.set(sheet.name, matrix);
+  });
+
+  return matrixToRows(bestSheetMatrix(sheets));
 }
 
 // ─── individual importers ──────────────────────────────────────────────────────
