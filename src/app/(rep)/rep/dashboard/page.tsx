@@ -36,6 +36,7 @@ export default async function RepDashboard() {
   } = null;
   let overdueLeads: { id: string; hospitalName: string; nextFollowUp: Date | null }[] = [];
   let overdueOpps: { id: string; title: string; nextFollowUp: Date | null; hospital: { hospitalName: string } }[] = [];
+  let weeklyActivityCount = 0;
 
   try {
     rep = await prisma.rep.findUnique({
@@ -69,8 +70,9 @@ export default async function RepDashboard() {
 
   try {
     const now = new Date();
+    const weekStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
     const weekAhead = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-    [overdueLeads, overdueOpps] = await Promise.all([
+    [overdueLeads, overdueOpps, weeklyActivityCount] = await Promise.all([
       prisma.lead.findMany({
         where: { assignedRepId: rep.id, nextFollowUp: { lte: weekAhead } },
         select: { id: true, hospitalName: true, nextFollowUp: true },
@@ -86,6 +88,9 @@ export default async function RepDashboard() {
         select: { id: true, title: true, nextFollowUp: true, hospital: { select: { hospitalName: true } } },
         orderBy: { nextFollowUp: "asc" },
         take: 10,
+      }),
+      prisma.activity.count({
+        where: { repId: rep.id, createdAt: { gte: weekStart } },
       }),
     ]);
   } catch {
@@ -115,6 +120,10 @@ export default async function RepDashboard() {
   const openOpps = rep.opportunities.filter(o => !["DISCHARGED", "DECLINED"].includes(o.stage));
   const closedWon = rep.opportunities.filter(o => o.stage === "DISCHARGED");
   const pipelineValue = openOpps.reduce((s, o) => s + (o.value ? Number(o.value) : 0), 0);
+
+  const activityScore = Math.min(100, weeklyActivityCount * 10);
+  const ringColor = activityScore >= 70 ? "#34d399" : activityScore >= 40 ? "#fbbf24" : "#f87171";
+  const CIRC = 276; // 2π × r44
 
   return (
     <>
@@ -186,6 +195,44 @@ export default async function RepDashboard() {
 
       {/* Quick Actions */}
       <QuickActionsWidget role="REP" />
+
+      {/* Activity Score Widget */}
+      <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 14, padding: "20px 28px", marginBottom: 28, display: "flex", alignItems: "center", gap: 28 }}>
+        {/* SVG Ring Gauge */}
+        <svg width={120} height={120} viewBox="0 0 120 120" style={{ flexShrink: 0, transform: "rotate(-90deg)" }}>
+          <circle cx={60} cy={60} r={44} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth={9} />
+          <circle
+            cx={60} cy={60} r={44} fill="none"
+            stroke={ringColor}
+            strokeWidth={9}
+            strokeLinecap="round"
+            strokeDasharray={`${(activityScore / 100) * CIRC} ${CIRC}`}
+            style={{ filter: `drop-shadow(0 0 6px ${ringColor}99)`, transition: "stroke-dasharray 0.8s ease" }}
+          />
+          <text
+            x={60} y={64} textAnchor="middle"
+            style={{ transform: "rotate(90deg)", transformOrigin: "60px 60px", fill: ringColor, fontSize: "1.5rem", fontWeight: 900 }}
+          >
+            {activityScore}
+          </text>
+        </svg>
+        {/* Score Text */}
+        <div>
+          <p style={{ fontSize: "0.65rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 6 }}>ACTIVITY SCORE</p>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 4, marginBottom: 6 }}>
+            <span style={{ fontSize: "2.2rem", fontWeight: 900, color: ringColor, textShadow: `0 0 20px ${ringColor}66`, lineHeight: 1 }}>{activityScore}</span>
+            <span style={{ fontSize: "1rem", color: TEXT_MUTED, fontWeight: 500 }}>/100</span>
+          </div>
+          <p style={{ fontSize: "0.82rem", color: TEXT, marginBottom: 3 }}>
+            {weeklyActivityCount} {weeklyActivityCount === 1 ? "activity" : "activities"} logged this week
+          </p>
+          <p style={{ fontSize: "0.72rem", color: TEXT_MUTED }}>Each activity = 10 pts · goal: 70+</p>
+          {/* Mini progress bar */}
+          <div style={{ marginTop: 10, height: 5, width: 200, background: "rgba(255,255,255,0.06)", borderRadius: 3, overflow: "hidden" }}>
+            <div style={{ height: "100%", width: `${activityScore}%`, background: ringColor, borderRadius: 3, boxShadow: `0 0 8px ${ringColor}66` }} />
+          </div>
+        </div>
+      </div>
 
       <div className="nyx-page-grid-2col" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
         <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: "20px" }}>

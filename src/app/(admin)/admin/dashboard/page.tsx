@@ -88,6 +88,17 @@ export default async function AdminDashboard() {
     });
   } catch { /* non-fatal */ }
 
+  // Census — most recent snapshot
+  let censusToday: {
+    date: Date; adultTotal: number; adultAvailable: number;
+    adolescentTotal: number; adolescentAvailable: number;
+    geriatricTotal: number; geriatricAvailable: number;
+    dualDxTotal: number; dualDxAvailable: number; note: string | null;
+  } | null = null;
+  try {
+    censusToday = await prisma.censusSnapshot.findFirst({ orderBy: { date: "desc" } });
+  } catch { /* non-fatal */ }
+
   const now = new Date();
 
   const repTerritories = mapReps.map((rep, i) => ({
@@ -170,6 +181,18 @@ export default async function AdminDashboard() {
       repTerritories={repTerritories}
       expiredDocs={serializedExpired}
       soonDocs={serializedSoon}
+      censusToday={censusToday ? {
+        date: censusToday.date.toISOString(),
+        adultTotal: censusToday.adultTotal,
+        adultAvailable: censusToday.adultAvailable,
+        adolescentTotal: censusToday.adolescentTotal,
+        adolescentAvailable: censusToday.adolescentAvailable,
+        geriatricTotal: censusToday.geriatricTotal,
+        geriatricAvailable: censusToday.geriatricAvailable,
+        dualDxTotal: censusToday.dualDxTotal,
+        dualDxAvailable: censusToday.dualDxAvailable,
+        note: censusToday.note,
+      } : null}
       aegisSummary={{
         windowLabel: "Last 7 days",
         replies: 0,

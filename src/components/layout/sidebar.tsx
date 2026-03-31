@@ -134,6 +134,7 @@ const ADMIN_NAV: NavGroup[] = [
     group: "Administration", tint: "red",
     items: [
       { href: "/admin/reps/performance", label: "Rep Performance" },
+      { href: "/admin/leaderboard",      label: "Leaderboard" },
       { href: "/admin/compliance",       label: "Compliance" },
       { href: "/admin/analytics",        label: "Analytics" },
       { href: "/admin/reports",          label: "Reports" },

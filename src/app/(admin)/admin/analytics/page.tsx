@@ -1,6 +1,6 @@
 ﻿import { prisma } from "@/lib/prisma";
 import AnalyticsCharts from "@/components/charts/AnalyticsCharts";
-import type { OppStageRow, LeadRow, RepRow, MonthRow, HospTypeRow } from "@/components/charts/AnalyticsCharts";
+import type { OppStageRow, LeadRow, RepRow, MonthRow, HospTypeRow, VelocityRow } from "@/components/charts/AnalyticsCharts";
 import ActivityHeatmap from "@/components/charts/ActivityHeatmap";
 import type { HeatmapDay } from "@/components/charts/ActivityHeatmap";
 import InvoiceContractPanel from "@/components/invoices/InvoiceContractPanel";
@@ -9,7 +9,7 @@ const TEXT = "var(--nyx-text)";
 const TEXT_MUTED = "var(--nyx-text-muted)";
 
 export default async function AnalyticsPage() {
-const [oppsByStageRaw, leadsByStatusRaw, repStatsRaw, hospitalStatsRaw, paidInvoices, totalRepsCount, totalHospitalsCount, recentActivitiesRaw] = await Promise.all([
+const [oppsByStageRaw, leadsByStatusRaw, repStatsRaw, hospitalStatsRaw, paidInvoices, totalRepsCount, totalHospitalsCount, recentActivitiesRaw, oppsForVelocity] = await Promise.all([
     prisma.opportunity.groupBy({ by: ["stage"], _count: { id: true }, _sum: { value: true } }),
     prisma.lead.groupBy({ by: ["status"], _count: { id: true } }),
     prisma.rep.findMany({
@@ -32,6 +32,9 @@ const [oppsByStageRaw, leadsByStatusRaw, repStatsRaw, hospitalStatsRaw, paidInvo
     prisma.activity.findMany({
       where: { createdAt: { gte: new Date(Date.now() - 91 * 24 * 60 * 60 * 1000) } },
       select: { createdAt: true },
+    }),
+    prisma.opportunity.findMany({
+      select: { stage: true, createdAt: true, updatedAt: true },
     }),
   ]);
 
@@ -91,6 +94,20 @@ const [oppsByStageRaw, leadsByStatusRaw, repStatsRaw, hospitalStatsRaw, paidInvo
   }
   const heatmapData: HeatmapDay[] = Array.from(heatmapMap.entries()).map(([date, count]) => ({ date, count }));
 
+  const velocityMap: Record<string, number[]> = {};
+  for (const o of oppsForVelocity) {
+    const days = (o.updatedAt.getTime() - o.createdAt.getTime()) / 86_400_000;
+    if (!velocityMap[o.stage]) velocityMap[o.stage] = [];
+    velocityMap[o.stage].push(days);
+  }
+  const stageOrder = ["INQUIRY","CLINICAL_REVIEW","INSURANCE_AUTH","ADMITTED","ACTIVE","DISCHARGED","DECLINED","ON_HOLD"];
+  const velocityData: VelocityRow[] = Object.entries(velocityMap)
+    .map(([stage, days]) => ({
+      stage,
+      avgDays: Math.max(1, Math.round(days.reduce((a, b) => a + b, 0) / days.length)),
+    }))
+    .sort((a, b) => stageOrder.indexOf(a.stage) - stageOrder.indexOf(b.stage));
+
   return (
     <div>
       <div style={{ marginBottom: 28 }}>
@@ -110,6 +127,7 @@ const [oppsByStageRaw, leadsByStatusRaw, repStatsRaw, hospitalStatsRaw, paidInvo
         activeLeads={activeLeads}
         totalReps={totalRepsCount}
         totalHospitals={totalHospitalsCount}
+        velocityData={velocityData}
       />
       <div style={{ marginTop: 20 }}>
         <ActivityHeatmap data={heatmapData} weeks={13} />

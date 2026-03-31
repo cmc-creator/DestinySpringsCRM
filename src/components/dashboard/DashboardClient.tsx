@@ -56,6 +56,14 @@ export interface MapHospital { id: string; hospitalName: string; city: string | 
 export interface RepTerritory { id: string; userId?: string; name: string; color: string; states: string[] }
 export interface ComplianceDocItem { id: string; type: string; repName: string; expiresAt: string }
 export interface AegisSummary { windowLabel: string; replies: number; proposals: number; applied: number; dismissed: number; helpful: number; notHelpful: number; topIntent: string | null; lastActivityAt: string | null }
+export interface CensusData {
+  date: string;
+  adultTotal: number; adultAvailable: number;
+  adolescentTotal: number; adolescentAvailable: number;
+  geriatricTotal: number; geriatricAvailable: number;
+  dualDxTotal: number; dualDxAvailable: number;
+  note: string | null;
+}
 
 export interface DashboardClientProps {
   stats: StatItem[];
@@ -66,15 +74,17 @@ export interface DashboardClientProps {
   expiredDocs: ComplianceDocItem[];
   soonDocs: ComplianceDocItem[];
   aegisSummary: AegisSummary;
+  censusToday: CensusData | null;
 }
 
 // ─── Section definitions ──────────────────────────────────────────────────────
-type SectionId = "stats" | "quick-actions" | "compliance" | "aegis-usage" | "ai-insights" | "territory" | "recent-opps" | "recent-activity";
+type SectionId = "stats" | "quick-actions" | "compliance" | "census" | "aegis-usage" | "ai-insights" | "territory" | "recent-opps" | "recent-activity";
 
 const SECTION_LABELS: Record<SectionId, string> = {
   "stats":           "Key Metrics",
   "quick-actions":   "Quick Actions",
   "compliance":      "Compliance Alerts",
+  "census":          "Census Pulse",
   "aegis-usage":     "Aegis Usage",
   "ai-insights":     "Ask Aegis AI",
   "territory":       "Territory Overview",
@@ -83,7 +93,7 @@ const SECTION_LABELS: Record<SectionId, string> = {
 };
 
 const ALL_SECTIONS: SectionId[] = [
-  "stats", "quick-actions", "compliance", "aegis-usage", "ai-insights",
+  "stats", "quick-actions", "census", "compliance", "aegis-usage", "ai-insights",
   "territory", "recent-opps", "recent-activity",
 ];
 
@@ -261,6 +271,60 @@ function RecentActivitySection({ activities }: { activities: ActivityItem[] }) {
   );
 }
 
+// ─── Census Pulse ─────────────────────────────────────────────────────────────
+function CensusBed({ label, occupied, total, color }: { label: string; occupied: number; total: number; color: string }) {
+  const pct = total > 0 ? (occupied / total) * 100 : 0;
+  const avail = total - occupied;
+  return (
+    <div>
+      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
+        <span style={{ fontSize: "0.78rem", fontWeight: 600, color: TEXT }}>{label}</span>
+        <span style={{ fontSize: "0.75rem", fontWeight: 700, color }}>
+          {avail} open <span style={{ color: MUTED, fontWeight: 400 }}>/ {total} total</span>
+        </span>
+      </div>
+      <div style={{ height: 7, background: "rgba(255,255,255,0.06)", borderRadius: 4, overflow: "hidden" }}>
+        <div style={{ height: "100%", width: `${pct}%`, background: color, borderRadius: 4, boxShadow: `0 0 10px ${color}66`, transition: "width 0.6s ease" }} />
+      </div>
+    </div>
+  );
+}
+
+function CensusPulseSection({ census }: { census: CensusData }) {
+  const totalBeds = census.adultTotal + census.adolescentTotal + census.geriatricTotal + census.dualDxTotal;
+  const totalOccupied = (census.adultTotal - census.adultAvailable) + (census.adolescentTotal - census.adolescentAvailable) + (census.geriatricTotal - census.geriatricAvailable) + (census.dualDxTotal - census.dualDxAvailable);
+  const totalAvail = totalBeds - totalOccupied;
+  const overallPct = totalBeds > 0 ? Math.round((totalOccupied / totalBeds) * 100) : 0;
+  const censusDate = new Date(census.date).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+
+  return (
+    <div style={{ marginBottom: 32 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+        <div>
+          <p style={{ fontSize: "0.7rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 2 }}>CENSUS PULSE</p>
+          <p style={{ fontSize: "0.75rem", color: MUTED }}>{censusDate}</p>
+        </div>
+        <Link href="/admin/census" style={{ fontSize: "0.75rem", color: GOLD, textDecoration: "none", opacity: 0.7 }}>Update →</Link>
+      </div>
+      <div className="gold-card" style={{ borderRadius: 12, padding: "18px 20px" }}>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 12 }}>
+          <span style={{ fontSize: "2.6rem", fontWeight: 900, color: GOLD, lineHeight: 1, textShadow: "0 0 24px var(--nyx-accent-str)" }}>{totalAvail}</span>
+          <span style={{ fontSize: "0.85rem", color: MUTED }}>beds available <span style={{ color: TEXT, fontWeight: 600 }}>({overallPct}% occupied)</span></span>
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <CensusBed label="Adult" occupied={census.adultTotal - census.adultAvailable} total={census.adultTotal} color={GOLD} />
+          <CensusBed label="Adolescent" occupied={census.adolescentTotal - census.adolescentAvailable} total={census.adolescentTotal} color="#60a5fa" />
+          <CensusBed label="Geriatric" occupied={census.geriatricTotal - census.geriatricAvailable} total={census.geriatricTotal} color="#a78bfa" />
+          <CensusBed label="Dual Dx" occupied={census.dualDxTotal - census.dualDxAvailable} total={census.dualDxTotal} color="#34d399" />
+        </div>
+        {census.note && (
+          <p style={{ fontSize: "0.76rem", color: MUTED, marginTop: 14, paddingTop: 12, borderTop: `1px solid ${BORDER}` }}>📝 {census.note}</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ─── Customize controls ───────────────────────────────────────────────────────
 function SectionHandle() {
   return (
@@ -283,6 +347,7 @@ export default function DashboardClient({
   expiredDocs,
   soonDocs,
   aegisSummary,
+  censusToday,
 }: DashboardClientProps) {
   const statIds = useMemo(() => stats.map((s) => s.id), [stats]);
   const [order, setOrder]           = useState<SectionId[]>(ALL_SECTIONS);
@@ -515,6 +580,8 @@ export default function DashboardClient({
             })}
           </div>
         );
+      case "census":
+        return censusToday ? <CensusPulseSection census={censusToday} /> : null;
       case "quick-actions":
         return <QuickActionsWidget role="ADMIN" />;
       case "compliance":
@@ -612,6 +679,7 @@ export default function DashboardClient({
         if (mounted && hidden.has(sectionId)) return null;
         // hide compliance when there is nothing to show
         if (sectionId === "compliance" && expiredDocs.length === 0 && soonDocs.length === 0) return null;
+        if (sectionId === "census" && !censusToday) return null;
         const isDragTarget = dragOver === sectionId && dragging !== sectionId;
 
         if (!mounted) {

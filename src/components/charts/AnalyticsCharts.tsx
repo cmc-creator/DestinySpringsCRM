@@ -54,6 +54,7 @@ export type LeadRow      = { status: string; count: number };
 export type RepRow       = { id: string; name: string; opps: number; leads: number; value: number };
 export type MonthRow     = { month: string; value: number };
 export type HospTypeRow  = { type: string; count: number };
+export type VelocityRow  = { stage: string; avgDays: number };
 
 interface Props {
   oppsByStage:  OppStageRow[];
@@ -67,12 +68,13 @@ interface Props {
   activeLeads: number;
   totalReps: number;
   totalHospitals: number;
+  velocityData: VelocityRow[];
 }
 
 export default function AnalyticsCharts({
   oppsByStage, leadsByStatus, topReps, monthlyRevenue,
   hospitalMix, totalPipeline, closedWonValue, winRate,
-  activeLeads, totalReps, totalHospitals,
+  activeLeads, totalReps, totalHospitals, velocityData,
 }: Props) {
   const maxOppValue  = Math.max(...oppsByStage.map(o => o.value), 1);
   const maxLeadCount = Math.max(...leadsByStatus.map(l => l.count), 1);
@@ -272,6 +274,46 @@ export default function AnalyticsCharts({
               </div>
             );
           })()}
+        </div>
+      </div>
+
+      {/* Row 4: Pipeline Velocity — full width */}
+      <div style={{ marginTop: 20 }}>
+        <div className="gold-card" style={{ borderRadius: 12, padding: 20 }}>
+          <p style={{ fontSize: "0.65rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 6 }}>PIPELINE VELOCITY</p>
+          <p style={{ fontSize: "0.75rem", color: TEXT_MUTED, marginBottom: 18 }}>Average days an opportunity spends in each stage — bottleneck highlighted</p>
+          {velocityData.length === 0
+            ? <p style={{ color: TEXT_MUTED, fontSize: "0.85rem" }}>No opportunity data yet.</p>
+            : (() => {
+                const maxDays = Math.max(...velocityData.map(v => v.avgDays), 1);
+                const bottleneckStage = velocityData.reduce((a, b) => b.avgDays > a.avgDays ? b : a, velocityData[0]).stage;
+                return (
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 32px" }}>
+                    {velocityData.map(v => {
+                      const isBottleneck = v.stage === bottleneckStage;
+                      const barColor = isBottleneck ? "#f97316" : (stageColors[v.stage] ?? CYAN);
+                      const pct = Math.max(2, (v.avgDays / maxDays) * 100);
+                      return (
+                        <div key={v.stage} style={{ marginBottom: 14 }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                              <span style={{ fontSize: "0.78rem", color: TEXT, fontWeight: 600 }}>{v.stage.replace(/_/g, " ")}</span>
+                              {isBottleneck && (
+                                <span style={{ fontSize: "0.6rem", fontWeight: 700, color: "#f97316", background: "rgba(249,115,22,0.12)", border: "1px solid rgba(249,115,22,0.3)", borderRadius: 4, padding: "1px 5px", textTransform: "uppercase", letterSpacing: "0.06em" }}>BOTTLENECK</span>
+                              )}
+                            </div>
+                            <span style={{ fontSize: "0.75rem", color: barColor, fontWeight: 700 }}>{v.avgDays}d</span>
+                          </div>
+                          <div style={{ height: 6, background: "rgba(255,255,255,0.06)", borderRadius: 3, overflow: "hidden" }}>
+                            <div style={{ height: "100%", width: `${pct}%`, background: barColor, borderRadius: 3, transition: "width 0.6s ease", boxShadow: isBottleneck ? `0 0 10px #f9731666` : `0 0 8px ${barColor}66` }} />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()
+          }
         </div>
       </div>
     </div>

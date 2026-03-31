@@ -61,6 +61,29 @@ const fmtDate = (d: string) => new Date(d).toLocaleDateString("en-US", { month: 
 const inp: React.CSSProperties = { width: "100%", background: C.input, border: `1px solid ${C.border}`, borderRadius: 7, padding: "8px 12px", color: C.text, fontSize: "0.875rem", outline: "none", boxSizing: "border-box" };
 const sel: React.CSSProperties = { ...inp, appearance: "none" };
 
+// ── Health Score ───────────────────────────────────────────────────────
+function healthScore(h: Hospital): number {
+  const statusPts = h.status === "ACTIVE" ? 40 : h.status === "PROSPECT" ? 20 : h.status === "INACTIVE" ? 10 : 0;
+  const oppPts    = Math.min(30, (h._count?.opportunities ?? 0) * 5);
+  const contactPts = Math.min(20, (h._count?.contacts ?? 0) * 4);
+  const partnerPts = h.isPriorityPartner ? 10 : 0;
+  return Math.min(100, statusPts + oppPts + contactPts + partnerPts);
+}
+
+function HealthBadge({ score }: { score: number }) {
+  const color = score >= 75 ? "#34d399" : score >= 45 ? "#fbbf24" : score >= 20 ? "#f97316" : "#f87171";
+  const label = score >= 75 ? "Strong" : score >= 45 ? "Active" : score >= 20 ? "Weak" : "At Risk";
+  return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+      <span style={{ fontSize: "0.85rem", fontWeight: 800, color }}>{score}</span>
+      <div style={{ height: 3, width: 36, background: "rgba(255,255,255,0.08)", borderRadius: 2, overflow: "hidden" }}>
+        <div style={{ height: "100%", width: `${score}%`, background: color, borderRadius: 2 }} />
+      </div>
+      <span style={{ fontSize: "0.6rem", color, fontWeight: 700, letterSpacing: "0.06em" }}>{label}</span>
+    </div>
+  );
+}
+
 // ── Modal ──────────────────────────────────────────────────────────────
 function HospitalModal({ hospital, onClose, onSave }: {
   hospital: Hospital | null;
@@ -351,7 +374,7 @@ export default function HospitalsClient({ initialHospitals }: { initialHospitals
           <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 700 }}>
             <thead>
               <tr style={{ borderBottom: `1px solid var(--nyx-border)` }}>
-                {["Account", "System", "Type", "Status", "Opportunities", "Contacts", "Added", ""].map(h => (
+                {["Account", "System", "Type", "Status", "Health", "Opportunities", "Contacts", "Added", ""].map(h => (
                   <th key={h} style={{ padding: "12px 16px", textAlign: "left", fontSize: "0.68rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.12em", textTransform: "uppercase", whiteSpace: "nowrap" }}>{h}</th>
                 ))}
               </tr>
@@ -386,6 +409,7 @@ export default function HospitalsClient({ initialHospitals }: { initialHospitals
                   <td style={{ padding: "14px 16px" }}>
                     <span style={{ fontSize: "0.72rem", fontWeight: 700, color: STATUS_COLOR[h.status] ?? "var(--nyx-accent)", background: "rgba(0,0,0,0.3)", padding: "3px 9px", borderRadius: 4 }}>{h.status}</span>
                   </td>
+                  <td style={{ padding: "14px 16px", textAlign: "center" }}><HealthBadge score={healthScore(h)} /></td>
                   <td style={{ padding: "14px 16px", fontSize: "0.85rem", color: C.muted, textAlign: "center" }}>{h._count?.opportunities ?? 0}</td>
                   <td style={{ padding: "14px 16px", fontSize: "0.85rem", color: C.muted, textAlign: "center" }}>{h._count?.contacts ?? 0}</td>
                   <td style={{ padding: "14px 16px", fontSize: "0.8rem", color: C.muted, whiteSpace: "nowrap" }}>{fmtDate(h.createdAt)}</td>
