@@ -78,8 +78,8 @@ export async function POST(req: NextRequest) {
           `,
         }).catch((e: unknown) => console.error("[forgot-password] email failed:", e));
       } else {
-        // Dev fallback — log the reset URL when Resend isn't configured
-        console.log(`[forgot-password] Reset URL for ${email}: ${resetUrl}`);
+        // Dev fallback - never log reset tokens or URLs
+        console.log(`[forgot-password] Reset requested for ${email}; email provider not configured`);
       }
     }
   }
