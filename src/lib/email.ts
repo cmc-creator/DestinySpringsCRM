@@ -161,6 +161,54 @@ export async function sendComplianceExpiredAdminEmail(opts: {
     .catch((e: unknown) => console.error("[email] compliance-expired-admin failed:", e));
 }
 
+// ── Contract: Expiring Soon (to admin) ───────────────────────────────────────
+export async function sendContractExpiringEmail(opts: {
+  to: string;
+  contractTitle: string;
+  hospitalName: string;
+  endsOn: string;
+  daysLeft: number;
+}) {
+  if (!process.env.RESEND_API_KEY || !process.env.RESEND_FROM_EMAIL) return;
+  const urgencyColor = opts.daysLeft <= 14 ? "#f97316" : "#fbbf24";
+  await resend.emails
+    .send({
+      from: FROM,
+      to: opts.to,
+      subject: `Contract Expiring in ${opts.daysLeft} Day${opts.daysLeft === 1 ? "" : "s"}: ${opts.contractTitle}`,
+      html: layout(`
+        <h2 style="margin:0 0 6px;color:${urgencyColor};font-size:17px;font-weight:800;">Contract Expiring Soon</h2>
+        <p style="color:rgba(237,228,207,0.55);margin:0 0 18px;font-size:14px;">The following contract is approaching its end date and may need renewal.</p>
+        ${infoBox(urgencyColor, `${opts.daysLeft}d LEFT`, opts.contractTitle, `Hospital: ${opts.hospitalName} &bull; Ends: ${opts.endsOn}`)}
+        ${btn(`${BASE}/admin/contracts`, "View Contracts", urgencyColor, "#1a1208")}
+      `),
+    })
+    .catch((e: unknown) => console.error("[email] contract-expiring failed:", e));
+}
+
+// ── Contract: Expired (to admin) ─────────────────────────────────────────────
+export async function sendContractExpiredEmail(opts: {
+  to: string;
+  contractTitle: string;
+  hospitalName: string;
+  expiredOn: string;
+}) {
+  if (!process.env.RESEND_API_KEY || !process.env.RESEND_FROM_EMAIL) return;
+  await resend.emails
+    .send({
+      from: FROM,
+      to: opts.to,
+      subject: `Contract Expired: ${opts.contractTitle}`,
+      html: layout(`
+        <h2 style="margin:0 0 6px;color:#f87171;font-size:17px;font-weight:800;">Contract Expired</h2>
+        <p style="color:rgba(237,228,207,0.55);margin:0 0 18px;font-size:14px;">A contract has passed its end date and its status has been automatically set to Expired.</p>
+        ${infoBox("#f87171", "EXPIRED", opts.contractTitle, `Hospital: ${opts.hospitalName} &bull; Expired: ${opts.expiredOn}`)}
+        ${btn(`${BASE}/admin/contracts`, "View Contracts", "#f87171", "#fff")}
+      `),
+    })
+    .catch((e: unknown) => console.error("[email] contract-expired failed:", e));
+}
+
 // ── Opportunity: Admitted ────────────────────────────────────────────────────
 export async function sendAdmissionEmail(opts: {
   to: string;
