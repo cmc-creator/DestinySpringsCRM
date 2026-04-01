@@ -5,6 +5,7 @@ import AIChatWidget from "@/components/ai/AIChatWidget";
 import QuickLogWidget from "@/components/activities/QuickLogWidget";
 import FirstLoginCelebration from "@/components/onboarding/FirstLoginCelebration";
 import OnboardingWalkthrough from "@/components/onboarding/OnboardingWalkthrough";
+import SessionTracker from "@/components/analytics/SessionTracker";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -31,6 +32,7 @@ export default async function RepLayout({ children }: { children: React.ReactNod
       <OnboardingWalkthrough role="REP" />
       <AIChatWidget />
       <QuickLogWidget role="REP" repId={rep?.id} />
+      <SessionTracker />
     </div>
   );
 }

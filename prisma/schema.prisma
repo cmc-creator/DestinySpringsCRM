@@ -69,7 +69,8 @@ model User {
   rep       Rep?
   hospital  Hospital?
 
-  createdActivities Activity[] @relation("ActivityCreatedBy")
+  createdActivities Activity[]   @relation("ActivityCreatedBy")
+  userSessions      UserSession[]
 
   @@map("users")
 }
@@ -1015,6 +1016,43 @@ model MedworxsImport {
   createdAt DateTime @default(now())
 
   @@map("medworxs_imports")
+}
+
+// ─────────────────────────────────────────
+// USER SESSIONS — login tracking & analytics
+// ─────────────────────────────────────────
+
+model UserSession {
+  id           String    @id @default(cuid())
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  loginAt      DateTime  @default(now())
+  logoutAt     DateTime?
+  durationSecs Int?
+  ipAddress    String?
+  userAgent    String?
+  deviceType   String?   // "mobile" | "tablet" | "desktop"
+  createdAt    DateTime  @default(now())
+
+  pageViews PageView[]
+
+  @@index([userId])
+  @@index([loginAt])
+  @@map("user_sessions")
+}
+
+model PageView {
+  id        String      @id @default(cuid())
+  sessionId String
+  session   UserSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  userId    String
+  path      String
+  visitedAt DateTime    @default(now())
+
+  @@index([userId])
+  @@index([sessionId])
+  @@index([path])
+  @@map("page_views")
 }
 
 // ─────────────────────────────────────────

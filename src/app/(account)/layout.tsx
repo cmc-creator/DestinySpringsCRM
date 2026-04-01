@@ -4,6 +4,7 @@ import { Sidebar } from "@/components/layout/sidebar";
 import AIChatWidget from "@/components/ai/AIChatWidget";
 import FirstLoginCelebration from "@/components/onboarding/FirstLoginCelebration";
 import OnboardingWalkthrough from "@/components/onboarding/OnboardingWalkthrough";
+import SessionTracker from "@/components/analytics/SessionTracker";
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +22,7 @@ export default async function AccountLayout({ children }: { children: React.Reac
       <FirstLoginCelebration role="ACCOUNT" userName={session.user.name} userEmail={session.user.email} />
       <OnboardingWalkthrough role="ACCOUNT" />
       <AIChatWidget />
+      <SessionTracker />
     </div>
   );
 }
