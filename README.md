@@ -160,6 +160,36 @@ Daily enterprise validation:
 Default local mirror path:
 - `C:\DSH-Aegis\DestinySpringsCRM-local`
 
+## Release Operations (Enterprise)
+
+Customers should never use git, terminals, or deployment tooling. They only use the hosted application URL.
+
+Internal release flow:
+1. Open PRs into `staging` for integration testing.
+2. `staging` auto-deploys to preview/staging environment.
+3. Promote to `main` only after staging validation.
+4. `main` deploys to production with GitHub Environment approval.
+
+GitHub Actions included:
+- `.github/workflows/deploy.yml`
+  - Validate: install, Prisma generate, TypeScript check, production build.
+  - Deploy Preview (PRs).
+  - Deploy Staging (push to `staging`).
+  - Deploy Production (push to `main`, protected via `production` environment).
+- `.github/workflows/rollback-production.yml`
+  - Manual one-click rollback via `workflow_dispatch`.
+  - Input `git_ref` (tag, SHA, or branch) and redeploys that revision to production.
+
+Post-deploy smoke checks:
+- Run: `pwsh -ExecutionPolicy Bypass -File scripts/post-deploy-smoke.ps1 -BaseUrl https://your-production-url`
+
+Required GitHub settings (one-time):
+1. Create branch `staging`.
+2. Add branch protections for `staging` and `main`.
+3. Add GitHub Environments: `staging`, `production`.
+4. Configure required reviewers on `production` environment for manual approval.
+5. Ensure repository secrets are set: `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`.
+
 ---
 
 © 2026 NyxCollective LLC - Hospital BD Platform
