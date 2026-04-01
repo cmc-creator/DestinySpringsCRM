@@ -1,6 +1,6 @@
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 const FROM = `Destiny Springs Hub <${process.env.RESEND_FROM_EMAIL}>`;
 const BASE = process.env.NEXTAUTH_URL ?? "https://destinyspringshub.com";
 
@@ -47,7 +47,7 @@ export async function sendTaskDueSoonEmail(opts: {
   taskTitle: string;
   dueDate: string;
 }) {
-  if (!process.env.RESEND_API_KEY || !process.env.RESEND_FROM_EMAIL) return;
+  if (!resend || !process.env.RESEND_FROM_EMAIL) return;
   await resend.emails
     .send({
       from: FROM,
@@ -70,7 +70,7 @@ export async function sendTaskOverdueEmail(opts: {
   taskTitle: string;
   dueDate: string;
 }) {
-  if (!process.env.RESEND_API_KEY || !process.env.RESEND_FROM_EMAIL) return;
+  if (!resend || !process.env.RESEND_FROM_EMAIL) return;
   await resend.emails
     .send({
       from: FROM,
@@ -94,7 +94,7 @@ export async function sendOpportunityAssignedEmail(opts: {
   hospitalName: string;
   stage: string;
 }) {
-  if (!process.env.RESEND_API_KEY || !process.env.RESEND_FROM_EMAIL) return;
+  if (!resend || !process.env.RESEND_FROM_EMAIL) return;
   const stageLabel = opts.stage.replace(/_/g, " ");
   await resend.emails
     .send({
@@ -119,7 +119,7 @@ export async function sendComplianceExpiringSoonEmail(opts: {
   docType: string;
   expiresOn: string;
 }) {
-  if (!process.env.RESEND_API_KEY || !process.env.RESEND_FROM_EMAIL) return;
+  if (!resend || !process.env.RESEND_FROM_EMAIL) return;
   const typeLabel = opts.docType.replace(/_/g, " ");
   await resend.emails
     .send({
@@ -144,7 +144,7 @@ export async function sendComplianceExpiredAdminEmail(opts: {
   docType: string;
   expiredOn: string;
 }) {
-  if (!process.env.RESEND_API_KEY || !process.env.RESEND_FROM_EMAIL) return;
+  if (!resend || !process.env.RESEND_FROM_EMAIL) return;
   const typeLabel = opts.docType.replace(/_/g, " ");
   await resend.emails
     .send({
@@ -169,7 +169,7 @@ export async function sendContractExpiringEmail(opts: {
   endsOn: string;
   daysLeft: number;
 }) {
-  if (!process.env.RESEND_API_KEY || !process.env.RESEND_FROM_EMAIL) return;
+  if (!resend || !process.env.RESEND_FROM_EMAIL) return;
   const urgencyColor = opts.daysLeft <= 14 ? "#f97316" : "#fbbf24";
   await resend.emails
     .send({
@@ -193,7 +193,7 @@ export async function sendContractExpiredEmail(opts: {
   hospitalName: string;
   expiredOn: string;
 }) {
-  if (!process.env.RESEND_API_KEY || !process.env.RESEND_FROM_EMAIL) return;
+  if (!resend || !process.env.RESEND_FROM_EMAIL) return;
   await resend.emails
     .send({
       from: FROM,
@@ -216,7 +216,7 @@ export async function sendAdmissionEmail(opts: {
   oppTitle: string;
   hospitalName: string;
 }) {
-  if (!process.env.RESEND_API_KEY || !process.env.RESEND_FROM_EMAIL) return;
+  if (!resend || !process.env.RESEND_FROM_EMAIL) return;
   await resend.emails
     .send({
       from: FROM,
