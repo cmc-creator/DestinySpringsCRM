@@ -17,12 +17,23 @@ const inp: React.CSSProperties = {
 };
 const sel: React.CSSProperties = { ...inp, appearance: "none" };
 
-// ─── Audit log types ───────────────────────────────────────────────────────────
 const ACTION_CLR: Record<string, string> = {
   CREATE: "#34d399",
   UPDATE: "#60a5fa",
   DELETE: "#f87171",
   LOGIN_SUCCESS: "#a78bfa",
+};
+
+const DEVICE_CLR: Record<string, string> = {
+  mobile: "#f59e0b",
+  tablet: "#a78bfa",
+  desktop: "var(--nyx-accent)",
+};
+
+const DEVICE_ICON: Record<string, string> = {
+  mobile: "📱",
+  tablet: "📟",
+  desktop: "🖥",
 };
 
 interface AuditEntry {
@@ -36,6 +47,17 @@ interface AuditEntry {
   diff?: { _meta?: { source?: string; intent?: string }; before?: unknown; after?: unknown } | null;
   ip?: string | null;
   createdAt: string;
+}
+
+interface SessionDetail {
+  id: string;
+  loginAt: string;
+  logoutAt: string | null;
+  durationSecs: number | null;
+  deviceType: string | null;
+  ipAddress: string | null;
+  userAgent: string | null;
+  topPaths: { path: string; count: number }[];
 }
 
 // ─── Analytics types ───────────────────────────────────────────────────────────
@@ -92,7 +114,8 @@ const fmtDuration = (secs: number | null): string => {
 const fmtDateTime = (iso: string | null): string => {
   if (!iso) return "—";
   return new Date(iso).toLocaleString(undefined, {
-    month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
+    weekday: "short", month: "short", day: "numeric",
+    hour: "numeric", minute: "2-digit",
   });
 };
 
@@ -105,12 +128,103 @@ function HeatCell({ count, max }: { count: number; max: number }) {
   return (
     <td
       title={`${count} login${count !== 1 ? "s" : ""}`}
-      style={{
-        width: 22, height: 22, background: bg, borderRadius: 3,
-        cursor: count > 0 ? "default" : undefined,
-        transition: "background 0.2s",
-      }}
+      style={{ width: 22, height: 22, background: bg, borderRadius: 3, transition: "background 0.2s" }}
     />
+  );
+}
+
+// ─── Login session detail panel ───────────────────────────────────────────────
+function LoginDetail({ entry }: { entry: AuditEntry }) {
+  const [sessionData, setSessionData] = useState<SessionDetail | null | "loading" | "none">("loading");
+
+  useEffect(() => {
+    fetch(`/api/sessions/for-audit?userId=${entry.userId}&loginAt=${encodeURIComponent(entry.createdAt)}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => setSessionData(data?.session ?? "none"))
+      .catch(() => setSessionData("none"));
+  }, [entry.userId, entry.createdAt]);
+
+  const loginDate = new Date(entry.createdAt);
+  const dayLabel = loginDate.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" });
+  const timeLabel = loginDate.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit", second: "2-digit" });
+
+  const s = sessionData === "loading" || sessionData === "none" ? null : sessionData;
+
+  return (
+    <div style={{ padding: "14px 20px", background: "rgba(167,139,250,0.05)", borderTop: "1px solid rgba(167,139,250,0.15)" }}>
+      {/* ── Row 1: when + device + duration ─────────────────────────────── */}
+      <div style={{ display: "flex", gap: 32, flexWrap: "wrap", marginBottom: s?.topPaths.length ? 16 : 0 }}>
+        {/* Login time */}
+        <div>
+          <div style={{ fontSize: "0.6rem", fontWeight: 700, color: "#a78bfa", letterSpacing: "0.1em", marginBottom: 4 }}>LOGIN TIME</div>
+          <div style={{ fontSize: "0.88rem", fontWeight: 700, color: C.text }}>{timeLabel}</div>
+          <div style={{ fontSize: "0.7rem", color: C.muted }}>{dayLabel}</div>
+        </div>
+
+        {/* Device */}
+        <div>
+          <div style={{ fontSize: "0.6rem", fontWeight: 700, color: "#a78bfa", letterSpacing: "0.1em", marginBottom: 4 }}>DEVICE</div>
+          {sessionData === "loading" ? (
+            <div style={{ fontSize: "0.78rem", color: C.muted }}>Fetching…</div>
+          ) : s ? (
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ fontSize: "1rem" }}>{DEVICE_ICON[s.deviceType ?? "desktop"] ?? "🖥"}</span>
+              <span style={{ fontSize: "0.82rem", fontWeight: 700, color: DEVICE_CLR[s.deviceType ?? "desktop"] ?? C.cyan, textTransform: "capitalize" }}>
+                {s.deviceType ?? "Unknown"}
+              </span>
+            </div>
+          ) : (
+            <div style={{ fontSize: "0.78rem", color: C.muted }}>No session data</div>
+          )}
+        </div>
+
+        {/* Session duration */}
+        {s && (
+          <div>
+            <div style={{ fontSize: "0.6rem", fontWeight: 700, color: "#a78bfa", letterSpacing: "0.1em", marginBottom: 4 }}>SESSION DURATION</div>
+            <div style={{ fontSize: "0.88rem", fontWeight: 700, color: C.text }}>{fmtDuration(s.durationSecs)}</div>
+            {s.logoutAt && <div style={{ fontSize: "0.7rem", color: C.muted }}>Ended {fmtDateTime(s.logoutAt)}</div>}
+            {!s.logoutAt && <div style={{ fontSize: "0.7rem", color: "#f59e0b" }}>Session still open</div>}
+          </div>
+        )}
+
+        {/* IP */}
+        <div>
+          <div style={{ fontSize: "0.6rem", fontWeight: 700, color: "#a78bfa", letterSpacing: "0.1em", marginBottom: 4 }}>IP ADDRESS</div>
+          <div style={{ fontSize: "0.82rem", color: C.text, fontFamily: "monospace" }}>
+            {s?.ipAddress ?? entry.ip ?? "—"}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Row 2: pages visited ─────────────────────────────────────────── */}
+      {s && s.topPaths.length > 0 && (
+        <div>
+          <div style={{ fontSize: "0.6rem", fontWeight: 700, color: "#a78bfa", letterSpacing: "0.1em", marginBottom: 8 }}>
+            PAGES VISITED THIS SESSION ({s.topPaths.reduce((a, p) => a + p.count, 0)} total)
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+            {s.topPaths.map(({ path, count }) => {
+              const pct = Math.round((count / (s.topPaths[0]?.count || 1)) * 100);
+              return (
+                <div key={path} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <span style={{ fontSize: "0.72rem", color: C.text, fontFamily: "monospace", minWidth: 220 }}>{path}</span>
+                  <div style={{ flex: 1, maxWidth: 100, height: 4, background: "rgba(0,0,0,0.2)", borderRadius: 2 }}>
+                    <div style={{ height: 4, width: `${pct}%`, background: "#a78bfa", borderRadius: 2 }} />
+                  </div>
+                  <span style={{ fontSize: "0.68rem", color: C.muted }}>{count}×</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ── No page data notice ──────────────────────────────────────────── */}
+      {s && s.topPaths.length === 0 && (
+        <div style={{ fontSize: "0.72rem", color: C.muted, marginTop: 4 }}>No page view data for this session yet.</div>
+      )}
+    </div>
   );
 }
 
@@ -133,7 +247,6 @@ export default function AuditLogPage() {
   const [analyticsDays, setAnalyticsDays] = useState(30);
   const [expandedUser, setExpandedUser] = useState<string | null>(null);
 
-  // ── Load audit log ─────────────────────────────────────────────────────────
   const loadLog = useCallback(async (pg = 1, res = resource, src = source) => {
     setLogLoading(true);
     try {
@@ -154,7 +267,6 @@ export default function AuditLogPage() {
     if (tab === "log") loadLog(1, resource, source);
   }, [resource, source, tab]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Load analytics ─────────────────────────────────────────────────────────
   const loadAnalytics = useCallback(async (days = analyticsDays) => {
     setAnalyticsLoading(true);
     try {
@@ -167,7 +279,6 @@ export default function AuditLogPage() {
     if (tab === "activity") loadAnalytics(analyticsDays);
   }, [tab, analyticsDays]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Tab bar ────────────────────────────────────────────────────────────────
   const tabStyle = (active: boolean): React.CSSProperties => ({
     padding: "8px 20px", borderRadius: 8, fontWeight: 700, fontSize: "0.82rem",
     cursor: "pointer", border: "none", letterSpacing: "0.04em",
@@ -200,7 +311,6 @@ export default function AuditLogPage() {
       {/* ── TAB: Audit Log ─────────────────────────────────────────────────── */}
       {tab === "log" && (
         <>
-          {/* Filters */}
           <div style={{ display: "flex", gap: 10, alignItems: "flex-end", flexWrap: "wrap", marginBottom: 16 }}>
             <div>
               <label style={{ fontSize: "0.68rem", color: C.muted, display: "block", marginBottom: 4 }}>FILTER BY RESOURCE</label>
@@ -218,7 +328,6 @@ export default function AuditLogPage() {
             </div>
           </div>
 
-          {/* Table */}
           <div className="gold-card" style={{ borderRadius: 12 }}>
             <div style={{ background: C.card, borderRadius: 12, overflow: "hidden" }}>
               <div className="nyx-table-scroll">
@@ -237,63 +346,87 @@ export default function AuditLogPage() {
                     {!logLoading && entries.length === 0 && (
                       <tr><td colSpan={7} style={{ padding: 32, textAlign: "center", color: C.muted }}>No audit events recorded yet.</td></tr>
                     )}
-                    {entries.map(entry => (
-                      <Fragment key={entry.id}>
-                        <tr
-                          style={{ borderBottom: `1px solid var(--nyx-accent-dim)`, cursor: entry.diff ? "pointer" : "default" }}
-                          onClick={() => entry.diff && setExpanded(expanded === entry.id ? null : entry.id)}
-                          onMouseEnter={e => (e.currentTarget.style.background = "var(--nyx-accent-dim)")}
-                          onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
-                          <td style={{ padding: "12px 14px", fontSize: "0.75rem", color: C.muted, whiteSpace: "nowrap" }}>
-                            <span title={new Date(entry.createdAt).toLocaleString()}>{relTime(entry.createdAt)}</span>
-                          </td>
-                          <td style={{ padding: "12px 14px" }}>
-                            <div style={{ fontSize: "0.82rem", color: C.text, fontWeight: 600 }}>{entry.userName ?? "System"}</div>
-                            {entry.userEmail && <div style={{ fontSize: "0.68rem", color: C.muted }}>{entry.userEmail}</div>}
-                          </td>
-                          <td style={{ padding: "12px 14px" }}>
-                            <span style={{ fontSize: "0.68rem", fontWeight: 800, color: ACTION_CLR[entry.action] ?? C.muted, background: "rgba(0,0,0,0.3)", padding: "2px 9px", borderRadius: 4, letterSpacing: "0.06em" }}>
-                              {entry.action}
-                            </span>
-                          </td>
-                          <td style={{ padding: "12px 14px", fontSize: "0.82rem", color: C.text }}>{entry.resource}</td>
-                          <td style={{ padding: "12px 14px", fontSize: "0.7rem", color: C.muted, fontFamily: "monospace" }}>
-                            {entry.resourceId ? entry.resourceId.slice(0, 12) + "..." : "-"}
-                          </td>
-                          <td style={{ padding: "12px 14px", fontSize: "0.72rem", color: C.muted }}>{entry.ip ?? "-"}</td>
-                          <td style={{ padding: "12px 14px", fontSize: "0.72rem", color: C.cyan }}>
-                            {(entry.diff?._meta?.source === "AEGIS_AI") && (
-                              <span style={{ display: "inline-block", marginRight: 8, color: "#a78bfa", fontWeight: 700 }}>Aegis</span>
-                            )}
-                            {entry.diff ? (expanded === entry.id ? "Hide ▲" : "Show ▼") : "-"}
-                          </td>
-                        </tr>
-                        {expanded === entry.id && entry.diff && (
-                          <tr>
-                            <td colSpan={7} style={{ padding: "0 14px 14px", background: "rgba(0,0,0,0.25)" }}>
-                              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, padding: "12px 0" }}>
-                                {entry.diff.before !== undefined && (
-                                  <div>
-                                    <div style={{ fontSize: "0.6rem", fontWeight: 700, color: "#f87171", letterSpacing: "0.1em", marginBottom: 6 }}>BEFORE</div>
-                                    <pre style={{ fontSize: "0.72rem", color: C.muted, background: "rgba(248,113,113,0.06)", border: "1px solid rgba(248,113,113,0.15)", borderRadius: 6, padding: 10, overflow: "auto", maxHeight: 200, margin: 0 }}>
-                                      {JSON.stringify(entry.diff.before, null, 2)}
-                                    </pre>
-                                  </div>
-                                )}
-                                {entry.diff.after !== undefined && (
-                                  <div>
-                                    <div style={{ fontSize: "0.6rem", fontWeight: 700, color: "#34d399", letterSpacing: "0.1em", marginBottom: 6 }}>AFTER</div>
-                                    <pre style={{ fontSize: "0.72rem", color: C.muted, background: "rgba(52,211,153,0.06)", border: "1px solid rgba(52,211,153,0.15)", borderRadius: 6, padding: 10, overflow: "auto", maxHeight: 200, margin: 0 }}>
-                                      {JSON.stringify(entry.diff.after, null, 2)}
-                                    </pre>
-                                  </div>
-                                )}
+                    {entries.map(entry => {
+                      const isLogin = entry.action === "LOGIN_SUCCESS";
+                      const isExpanded = expanded === entry.id;
+                      return (
+                        <Fragment key={entry.id}>
+                          <tr
+                            style={{ borderBottom: isExpanded ? "none" : `1px solid var(--nyx-accent-dim)`, cursor: "pointer" }}
+                            onClick={() => setExpanded(isExpanded ? null : entry.id)}
+                            onMouseEnter={e => (e.currentTarget.style.background = "var(--nyx-accent-dim)")}
+                            onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
+                            <td style={{ padding: "12px 14px", whiteSpace: "nowrap" }}>
+                              <div style={{ fontSize: "0.75rem", color: C.muted }} title={new Date(entry.createdAt).toLocaleString()}>
+                                {relTime(entry.createdAt)}
                               </div>
+                              {isLogin && (
+                                <div style={{ fontSize: "0.68rem", color: "#a78bfa", marginTop: 2 }}>
+                                  {new Date(entry.createdAt).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}
+                                  {" · "}
+                                  {new Date(entry.createdAt).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}
+                                </div>
+                              )}
+                            </td>
+                            <td style={{ padding: "12px 14px" }}>
+                              <div style={{ fontSize: "0.82rem", color: C.text, fontWeight: 600 }}>{entry.userName ?? "System"}</div>
+                              {entry.userEmail && <div style={{ fontSize: "0.68rem", color: C.muted }}>{entry.userEmail}</div>}
+                            </td>
+                            <td style={{ padding: "12px 14px" }}>
+                              <span style={{ fontSize: "0.68rem", fontWeight: 800, color: ACTION_CLR[entry.action] ?? C.muted, background: "rgba(0,0,0,0.3)", padding: "2px 9px", borderRadius: 4, letterSpacing: "0.06em" }}>
+                                {entry.action}
+                              </span>
+                            </td>
+                            <td style={{ padding: "12px 14px", fontSize: "0.82rem", color: C.text }}>{entry.resource}</td>
+                            <td style={{ padding: "12px 14px", fontSize: "0.7rem", color: C.muted, fontFamily: "monospace" }}>
+                              {entry.resourceId ? entry.resourceId.slice(0, 12) + "..." : "-"}
+                            </td>
+                            <td style={{ padding: "12px 14px", fontSize: "0.72rem", color: C.muted }}>{entry.ip ?? "-"}</td>
+                            <td style={{ padding: "12px 14px", fontSize: "0.72rem", color: isLogin ? "#a78bfa" : C.cyan }}>
+                              {entry.diff?._meta?.source === "AEGIS_AI" && (
+                                <span style={{ display: "inline-block", marginRight: 8, color: "#a78bfa", fontWeight: 700 }}>Aegis</span>
+                              )}
+                              {isLogin ? (isExpanded ? "Hide ▲" : "Details ▼") : (entry.diff ? (isExpanded ? "Hide ▲" : "Show ▼") : "-")}
                             </td>
                           </tr>
-                        )}
-                      </Fragment>
-                    ))}
+
+                          {/* ── Expanded: LOGIN_SUCCESS ── */}
+                          {isExpanded && isLogin && (
+                            <tr style={{ borderBottom: `1px solid var(--nyx-accent-dim)` }}>
+                              <td colSpan={7} style={{ padding: 0 }}>
+                                <LoginDetail entry={entry} />
+                              </td>
+                            </tr>
+                          )}
+
+                          {/* ── Expanded: diff (non-login) ── */}
+                          {isExpanded && !isLogin && entry.diff && (
+                            <tr style={{ borderBottom: `1px solid var(--nyx-accent-dim)` }}>
+                              <td colSpan={7} style={{ padding: "0 14px 14px", background: "rgba(0,0,0,0.25)" }}>
+                                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, padding: "12px 0" }}>
+                                  {entry.diff.before !== undefined && (
+                                    <div>
+                                      <div style={{ fontSize: "0.6rem", fontWeight: 700, color: "#f87171", letterSpacing: "0.1em", marginBottom: 6 }}>BEFORE</div>
+                                      <pre style={{ fontSize: "0.72rem", color: C.muted, background: "rgba(248,113,113,0.06)", border: "1px solid rgba(248,113,113,0.15)", borderRadius: 6, padding: 10, overflow: "auto", maxHeight: 200, margin: 0 }}>
+                                        {JSON.stringify(entry.diff.before, null, 2)}
+                                      </pre>
+                                    </div>
+                                  )}
+                                  {entry.diff.after !== undefined && (
+                                    <div>
+                                      <div style={{ fontSize: "0.6rem", fontWeight: 700, color: "#34d399", letterSpacing: "0.1em", marginBottom: 6 }}>AFTER</div>
+                                      <pre style={{ fontSize: "0.72rem", color: C.muted, background: "rgba(52,211,153,0.06)", border: "1px solid rgba(52,211,153,0.15)", borderRadius: 6, padding: 10, overflow: "auto", maxHeight: 200, margin: 0 }}>
+                                        {JSON.stringify(entry.diff.after, null, 2)}
+                                      </pre>
+                                    </div>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                        </Fragment>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -316,28 +449,21 @@ export default function AuditLogPage() {
       {/* ── TAB: User Activity ─────────────────────────────────────────────── */}
       {tab === "activity" && (
         <div>
-          {/* Days filter */}
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20, flexWrap: "wrap" }}>
             <span style={{ fontSize: "0.75rem", color: C.muted, fontWeight: 700 }}>TIME RANGE</span>
             {DAYS_OPTS.map(d => (
-              <button
-                key={d}
-                onClick={() => setAnalyticsDays(d)}
-                style={{
-                  padding: "6px 14px", borderRadius: 6, fontSize: "0.78rem", fontWeight: 700,
-                  cursor: "pointer", border: `1px solid ${analyticsDays === d ? C.cyan : C.border}`,
-                  background: analyticsDays === d ? "var(--nyx-accent-dim)" : "transparent",
-                  color: analyticsDays === d ? C.cyan : C.muted,
-                }}>
-                {d}d
-              </button>
+              <button key={d} onClick={() => setAnalyticsDays(d)} style={{
+                padding: "6px 14px", borderRadius: 6, fontSize: "0.78rem", fontWeight: 700, cursor: "pointer",
+                border: `1px solid ${analyticsDays === d ? C.cyan : C.border}`,
+                background: analyticsDays === d ? "var(--nyx-accent-dim)" : "transparent",
+                color: analyticsDays === d ? C.cyan : C.muted,
+              }}>{d}d</button>
             ))}
             {analyticsLoading && <span style={{ fontSize: "0.75rem", color: C.muted }}>Loading…</span>}
           </div>
 
           {analytics && (
             <>
-              {/* ── Summary Cards ─────────────────────────────────────────── */}
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 12, marginBottom: 24 }}>
                 {[
                   { label: "SESSIONS", value: analytics.summary.totalSessions.toLocaleString() },
@@ -353,9 +479,7 @@ export default function AuditLogPage() {
                 ))}
               </div>
 
-              {/* ── Login Heatmap + Top Pages ──────────────────────────────── */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 24 }}>
-
                 {/* Heatmap */}
                 <div className="gold-card" style={{ borderRadius: 12, padding: 20 }}>
                   <div style={{ fontSize: "0.65rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.12em", marginBottom: 14 }}>LOGIN HEATMAP — DAY × HOUR</div>
@@ -395,9 +519,7 @@ export default function AuditLogPage() {
                 {/* Top Pages */}
                 <div className="gold-card" style={{ borderRadius: 12, padding: 20 }}>
                   <div style={{ fontSize: "0.65rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.12em", marginBottom: 14 }}>TOP VISITED PAGES</div>
-                  {analytics.topPages.length === 0 && (
-                    <p style={{ color: C.muted, fontSize: "0.8rem" }}>No page views tracked yet.</p>
-                  )}
+                  {analytics.topPages.length === 0 && <p style={{ color: C.muted, fontSize: "0.8rem" }}>No page views tracked yet.</p>}
                   <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                     {analytics.topPages.slice(0, 15).map(({ path, count }) => {
                       const pct = Math.round((count / (analytics.topPages[0]?.count || 1)) * 100);
@@ -417,7 +539,7 @@ export default function AuditLogPage() {
                 </div>
               </div>
 
-              {/* ── Device Split ──────────────────────────────────────────── */}
+              {/* Device split */}
               <div className="gold-card" style={{ borderRadius: 12, padding: 16, marginBottom: 24 }}>
                 <div style={{ fontSize: "0.65rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.12em", marginBottom: 12 }}>DEVICE BREAKDOWN</div>
                 <div style={{ display: "flex", gap: 32, flexWrap: "wrap" }}>
@@ -441,7 +563,7 @@ export default function AuditLogPage() {
                 </div>
               </div>
 
-              {/* ── Per-User Table ─────────────────────────────────────────── */}
+              {/* Per-user table */}
               <div className="gold-card" style={{ borderRadius: 12, overflow: "hidden" }}>
                 <div style={{ padding: "16px 20px", borderBottom: `1px solid ${C.border}` }}>
                   <div style={{ fontSize: "0.65rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.12em" }}>PER-USER ACTIVITY</div>
@@ -476,9 +598,7 @@ export default function AuditLogPage() {
                               </span>
                             </td>
                             <td style={{ padding: "11px 14px", fontSize: "0.78rem", color: C.muted, whiteSpace: "nowrap" }}>
-                              {u.lastLoginAt ? (
-                                <span title={new Date(u.lastLoginAt).toLocaleString()}>{fmtDateTime(u.lastLoginAt)}</span>
-                              ) : "—"}
+                              {u.lastLoginAt ? <span title={new Date(u.lastLoginAt).toLocaleString()}>{fmtDateTime(u.lastLoginAt)}</span> : "—"}
                             </td>
                             <td style={{ padding: "11px 14px", fontSize: "0.82rem", color: C.text, fontWeight: 700, textAlign: "center" }}>{u.sessionCount}</td>
                             <td style={{ padding: "11px 14px", fontSize: "0.78rem", color: C.muted }}>{fmtDuration(u.avgDurationSecs)}</td>
