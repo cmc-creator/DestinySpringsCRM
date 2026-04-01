@@ -137,6 +137,29 @@ prisma/
 3. Set environment variables
 4. Deploy - Vercel will run `prisma migrate deploy && next build`
 
+## Enterprise Workflow (Recommended)
+
+If your source repository is on a network share, use a local mirror for reliable installs and builds.
+
+Why this matters:
+- Native Node modules (Next.js SWC, Prisma engines) can fail or lock under UNC/network paths.
+- A local mirror avoids random module resolution failures and keeps validation stable.
+
+Standard workflow:
+1. Keep network repo as source of truth for your team.
+2. Use local mirror for install, type-check, build, and dev server.
+3. Commit and push from local mirror.
+4. Pull updates into network repo only when needed.
+
+One-time setup:
+- Run: `pwsh -ExecutionPolicy Bypass -File scripts/bootstrap-local-mirror.ps1`
+
+Daily enterprise validation:
+- Run: `pwsh -ExecutionPolicy Bypass -File scripts/validate-enterprise.ps1`
+
+Default local mirror path:
+- `C:\DSH-Aegis\DestinySpringsCRM-local`
+
 ---
 
 © 2026 NyxCollective LLC - Hospital BD Platform
