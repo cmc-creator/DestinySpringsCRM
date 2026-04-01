@@ -13,6 +13,8 @@ const statusColors: Record<string, string> = {
   PENDING: "#fbbf24", PROCESSING: "#60a5fa", PAID: "#34d399", FAILED: "#f87171", CANCELLED: "#94a3b8",
 };
 
+export const dynamic = "force-dynamic";
+
 export default async function RepPaymentsPage() {
   const session = await auth();
   if (!session) redirect("/login");

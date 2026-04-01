@@ -12,6 +12,17 @@ export async function PATCH(
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id } = await params;
+
+  // Verify ownership before allowing edit
+  const existing = await prisma.activity.findUnique({
+    where: { id },
+    select: { createdByUserId: true },
+  });
+  if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (session.user.role !== "ADMIN" && existing.createdByUserId !== session.user.id) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   const data = await req.json();
 
   // Build update payload — only allow certain fields

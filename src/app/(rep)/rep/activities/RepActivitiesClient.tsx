@@ -85,6 +85,10 @@ export default function RepActivitiesClient({
   const [editForm, setEditForm] = useState({ type: "", title: "", notes: "", hospitalId: "", completedAt: "" });
   const [editSaving, setEditSaving] = useState(false);
 
+  // Track modal open state in a ref so the interval can read it without causing restarts
+  const modalOpenRef = React.useRef(false);
+  React.useEffect(() => { modalOpenRef.current = showModal || editActivity !== null; }, [showModal, editActivity])
+
   const load = useCallback(async () => {
     setLoading(true);
     try {
@@ -99,7 +103,7 @@ export default function RepActivitiesClient({
   useEffect(() => { load(); }, [load]);
 
   useEffect(() => {
-    const id = setInterval(() => load(), 30000);
+    const id = setInterval(() => { if (!modalOpenRef.current) load(); }, 30000);
     return () => clearInterval(id);
   }, [load]);
 

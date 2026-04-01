@@ -112,7 +112,12 @@ export default function RepTasksPage() {
         setShowModal(false);
         setForm(EMPTY_FORM);
         load();
+      } else {
+        const err = await res.json().catch(() => ({})) as { error?: string };
+        alert(`Failed to create task: ${err?.error ?? res.statusText}`);
       }
+    } catch (e) {
+      alert(`Network error: ${e instanceof Error ? e.message : String(e)}`);
     } finally {
       setSaving(false);
     }

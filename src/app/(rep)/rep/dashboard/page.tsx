@@ -198,8 +198,8 @@ export default async function RepDashboard() {
 
       {/* Activity Score Widget */}
       <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 14, padding: "20px 28px", marginBottom: 28, display: "flex", alignItems: "center", gap: 28 }}>
-        {/* SVG Ring Gauge */}
-        <svg width={120} height={120} viewBox="0 0 120 120" style={{ flexShrink: 0, transform: "rotate(-90deg)" }}>
+        {/* SVG Ring Gauge — circles rotated via SVG transform attr; text stays upright */}
+        <svg width={120} height={120} viewBox="0 0 120 120" style={{ flexShrink: 0 }}>
           <circle cx={60} cy={60} r={44} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth={9} />
           <circle
             cx={60} cy={60} r={44} fill="none"
@@ -207,11 +207,15 @@ export default async function RepDashboard() {
             strokeWidth={9}
             strokeLinecap="round"
             strokeDasharray={`${(activityScore / 100) * CIRC} ${CIRC}`}
+            transform="rotate(-90 60 60)"
             style={{ filter: `drop-shadow(0 0 6px ${ringColor}99)`, transition: "stroke-dasharray 0.8s ease" }}
           />
           <text
-            x={60} y={64} textAnchor="middle"
-            style={{ transform: "rotate(90deg)", transformOrigin: "60px 60px", fill: ringColor, fontSize: "1.5rem", fontWeight: 900 }}
+            x={60} y={66} textAnchor="middle"
+            fill={ringColor}
+            fontSize="22"
+            fontWeight="900"
+            fontFamily="inherit"
           >
             {activityScore}
           </text>

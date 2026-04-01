@@ -9,6 +9,8 @@ const BORDER = "var(--nyx-accent-dim)";
 const TEXT = "var(--nyx-text)";
 const TEXT_MUTED = "var(--nyx-text-muted)";
 
+export const dynamic = "force-dynamic";
+
 export default async function RepTerritoryPage() {
   const session = await auth();
   if (!session) redirect("/login");

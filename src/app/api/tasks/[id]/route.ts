@@ -10,6 +10,17 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id } = await params;
+
+  // Verify ownership before allowing edit
+  const existing = await prisma.task.findUnique({
+    where: { id },
+    select: { createdByUserId: true },
+  });
+  if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (session.user.role !== "ADMIN" && existing.createdByUserId !== session.user.id) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   const body = await req.json();
 
   // If marking done, auto-set completedAt
@@ -38,11 +49,16 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 // DELETE /api/tasks/[id] — delete a task
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
-  if (!session || session.user.role === "ACCOUNT") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id } = await params;
+
+  const existing = await prisma.task.findUnique({ where: { id }, select: { createdByUserId: true } });
+  if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (session.user.role !== "ADMIN" && existing.createdByUserId !== session.user.id) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   await prisma.task.delete({ where: { id } });
   return NextResponse.json({ ok: true });
 }

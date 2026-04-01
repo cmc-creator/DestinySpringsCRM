@@ -14,7 +14,12 @@ export default async function RepLayout({ children }: { children: React.ReactNod
   try { session = await auth(); } catch { redirect("/login"); }
   if (!session || (session.user.role !== "REP" && session.user.role !== "ADMIN")) redirect("/login");
 
-  const rep = await prisma.rep.findUnique({ where: { userId: session.user.id }, select: { id: true } });
+  let rep: { id: string } | null = null;
+  try {
+    rep = await prisma.rep.findUnique({ where: { userId: session.user.id }, select: { id: true } });
+  } catch {
+    // non-fatal — layout still renders; quick log widget will be disabled
+  }
 
   return (
     <div className="flex min-h-screen" style={{ color: "var(--nyx-text)" }}>
