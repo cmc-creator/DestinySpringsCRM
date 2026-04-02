@@ -127,6 +127,28 @@ export default function AdminUsersPage() {
       : false;
   }
 
+  function getStatusBadgeStyle(status: string): React.CSSProperties {
+    const normalized = status.toUpperCase();
+    if (normalized === "ACTIVE") {
+      return {
+        background: "linear-gradient(180deg, rgba(34,197,94,0.24) 0%, rgba(22,163,74,0.2) 100%)",
+        border: "1px solid rgba(74,222,128,0.75)",
+        color: "#dcfce7",
+        boxShadow: "0 0 0 1px rgba(34,197,94,0.25), 0 0 14px rgba(34,197,94,0.35)",
+        fontSize: "0.74rem",
+        padding: "5px 10px",
+      };
+    }
+
+    return {
+      background: "rgba(255,255,255,0.06)",
+      border: "1px solid rgba(255,255,255,0.12)",
+      color: "rgba(237,228,207,0.58)",
+      fontSize: "0.68rem",
+      padding: "4px 8px",
+    };
+  }
+
   const inputStyle: React.CSSProperties = {
     width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(201,168,76,0.25)",
     borderRadius: 8, padding: "11px 13px", color: "#d8e8f4", fontSize: "0.9rem", outline: "none",
@@ -247,7 +269,7 @@ export default function AdminUsersPage() {
 
               {/* Sub-status */}
               {getApprovalStatus(u) && (
-                <span style={{ background: "rgba(255,255,255,0.06)", color: "rgba(237,228,207,0.5)", fontWeight: 600, fontSize: "0.68rem", padding: "4px 8px", borderRadius: 999, letterSpacing: "0.06em" }}>
+                <span style={{ ...getStatusBadgeStyle(getApprovalStatus(u) ?? ""), fontWeight: 800, borderRadius: 999, letterSpacing: "0.06em" }}>
                   {getApprovalStatus(u)?.replace("_", " ")}
                 </span>
               )}
