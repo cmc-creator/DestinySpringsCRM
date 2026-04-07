@@ -57,6 +57,10 @@ export async function PATCH(
       createdByUser: { select: { id: true, name: true, email: true } },
     },
   });
+  // Audit log
+  await prisma.auditLog.create({
+    data: { userId: session.user.id, userEmail: session.user.email ?? undefined, userName: session.user.name ?? undefined, action: "UPDATE", resource: "Activity", resourceId: activity.id },
+  });
 
   return NextResponse.json(activity);
 }
@@ -82,5 +86,9 @@ export async function DELETE(
   }
 
   await prisma.activity.delete({ where: { id } });
+  // Audit log
+  await prisma.auditLog.create({
+    data: { userId: session.user.id, userEmail: session.user.email ?? undefined, userName: session.user.name ?? undefined, action: "DELETE", resource: "Activity", resourceId: id },
+  });
   return NextResponse.json({ ok: true });
 }

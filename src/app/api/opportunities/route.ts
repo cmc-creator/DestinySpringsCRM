@@ -32,6 +32,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "lostReason is required when an opportunity is declined" }, { status: 400 });
   }
   const opp = await prisma.opportunity.create({ data });
+  // Audit log
+  await prisma.auditLog.create({
+    data: { userId: session.user.id, userEmail: session.user.email ?? undefined, userName: session.user.name ?? undefined, action: "CREATE", resource: "Opportunity", resourceId: opp.id },
+  });
 
   if (opp.assignedRepId && opp.stage === "ADMITTED") {
     await prisma.notification.create({

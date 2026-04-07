@@ -34,6 +34,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     });
   }
 
+  // Audit log
+  await prisma.auditLog.create({
+    data: { userId: session.user.id, userEmail: session.user.email ?? undefined, userName: session.user.name ?? undefined, action: "UPDATE", resource: "Lead", resourceId: lead.id },
+  });
   return NextResponse.json(lead);
 }
 
@@ -42,5 +46,9 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
   if (!session || session.user.role !== "ADMIN") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { id } = await params;
   await prisma.lead.delete({ where: { id } });
+  // Audit log
+  await prisma.auditLog.create({
+    data: { userId: session.user.id, userEmail: session.user.email ?? undefined, userName: session.user.name ?? undefined, action: "DELETE", resource: "Lead", resourceId: id },
+  });
   return NextResponse.json({ ok: true });
 }

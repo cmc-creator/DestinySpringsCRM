@@ -507,7 +507,18 @@ export function Sidebar({ role, userName, userEmail }: SidebarProps) {
           Ask Aegis AI
         </button>
         <button
-          onClick={() => signOut({ callbackUrl: "/login" })}
+          onClick={async () => {
+            try {
+              const sessionId = sessionStorage.getItem("nyx_session_id");
+              if (sessionId) {
+                await fetch(`/api/sessions/${sessionId}`, { method: "PATCH", headers: { "Content-Type": "application/json" } });
+                sessionStorage.removeItem("nyx_session_id");
+              }
+            } catch {
+              // best-effort: still sign out even if session close fails
+            }
+            signOut({ callbackUrl: "/login" });
+          }}
           style={{ width: "100%", background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.12)", borderRadius: 6, padding: "11px 7px", minHeight: 44, fontSize: "0.78rem", color: "#f87171", cursor: "pointer", fontWeight: 500 }}
         >
           Sign Out

@@ -88,6 +88,10 @@ export async function POST(req: NextRequest) {
         createdByUserId: session.user.id,
       },
     });
+    // Audit log
+    await prisma.auditLog.create({
+      data: { userId: session.user.id, userEmail: session.user.email ?? undefined, userName: session.user.name ?? undefined, action: "CREATE", resource: "Activity", resourceId: activity.id },
+    });
     return NextResponse.json(activity, { status: 201 });
   } catch (e) {
     console.error("Activity create error:", e);
