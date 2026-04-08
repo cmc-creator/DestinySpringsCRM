@@ -378,11 +378,20 @@ export default function AdminUsersPage() {
               </span>
 
               {/* Sub-status */}
-              {getApprovalStatus(u) && (
-                <span style={{ background: "rgba(255,255,255,0.06)", color: "rgba(237,228,207,0.5)", fontWeight: 600, fontSize: "0.68rem", padding: "4px 8px", borderRadius: 999, letterSpacing: "0.06em" }}>
-                  {getApprovalStatus(u)?.replace("_", " ")}
-                </span>
-              )}
+              {getApprovalStatus(u) && (() => {
+                const st = getApprovalStatus(u);
+                const isActive = st === "ACTIVE";
+                return (
+                  <span style={{
+                    background: isActive ? "rgba(34,197,94,0.12)" : "rgba(255,255,255,0.06)",
+                    color: isActive ? "#86efac" : "rgba(237,228,207,0.5)",
+                    border: isActive ? "1px solid rgba(34,197,94,0.25)" : "1px solid transparent",
+                    fontWeight: 700, fontSize: "0.68rem", padding: "4px 8px", borderRadius: 999, letterSpacing: "0.06em"
+                  }}>
+                    {st?.replace(/_/g, " ")}
+                  </span>
+                );
+              })()}
 
               {/* Created */}
               <span style={{ fontSize: "0.75rem", color: "rgba(237,228,207,0.35)", marginLeft: "auto", whiteSpace: "nowrap" }}>
