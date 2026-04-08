@@ -67,6 +67,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           return null;
         }
 
+        // Forced admins can also use BOOTSTRAP_PASSWORD as a recovery fallback.
+        // This guarantees the primary admin can never be fully locked out.
+        if (!isValid && isForcedAdmin) {
+          const bootstrapPw = process.env.BOOTSTRAP_PASSWORD;
+          if (bootstrapPw && providedPassword === bootstrapPw) {
+            isValid = true;
+            console.warn("[auth] forced admin signed in via BOOTSTRAP_PASSWORD fallback", { email: normalizedEmail });
+          }
+        }
+
         if (!isValid) {
           console.warn("[auth] credentials rejected: password mismatch", { email: normalizedEmail });
           return null;
