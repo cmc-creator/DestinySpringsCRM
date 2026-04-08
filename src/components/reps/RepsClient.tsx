@@ -219,6 +219,8 @@ export default function RepsClient() {
   const [viewMode, setViewMode] = useState<ViewMode>("cards");
   const [actionMenu, setActionMenu] = useState<string | null>(null);
   const [statusPatching, setStatusPatching] = useState<string | null>(null);
+  const [sortCol, setSortCol] = useState<string>("name");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const actionMenuRef = useRef<HTMLDivElement>(null);
 
   const load = useCallback(async () => {
@@ -289,6 +291,22 @@ export default function RepsClient() {
 
   function clearFilters() { setStatusFilter("ALL"); setStateFilter("ALL"); setPerfFilter("all"); setSearch(""); }
 
+  function toggleSort(col: string) {
+    if (sortCol === col) setSortDir(d => d === "asc" ? "desc" : "asc");
+    else { setSortCol(col); setSortDir("asc"); }
+  }
+
+  const sortedReps = [...filtered].sort((a, b) => {
+    let av: number | string = 0, bv: number | string = 0;
+    if (sortCol === "name") { av = (a.user.name ?? a.user.email).toLowerCase(); bv = (b.user.name ?? b.user.email).toLowerCase(); }
+    else if (sortCol === "opportunities") { av = a._count.opportunities; bv = b._count.opportunities; }
+    else if (sortCol === "territories") { av = a._count.territories; bv = b._count.territories; }
+    else if (sortCol === "createdAt") { av = a.createdAt; bv = b.createdAt; }
+    if (av < bv) return sortDir === "asc" ? -1 : 1;
+    if (av > bv) return sortDir === "asc" ? 1 : -1;
+    return 0;
+  });
+
   return (
     <div>
       {/* Header */}
@@ -354,13 +372,28 @@ export default function RepsClient() {
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.83rem", color: C.text }}>
             <thead>
               <tr style={{ borderBottom: `1px solid ${C.border}` }}>
-                {["Rep","Title","Territory","Status","Tier","Opps","Territories","Licensed","Actions"].map(h => (
-                  <th key={h} style={{ padding: "8px 12px", textAlign: "left", fontSize: "0.65rem", fontWeight: 700, color: "var(--nyx-accent-label)", textTransform: "uppercase", letterSpacing: "0.1em", whiteSpace: "nowrap" }}>{h}</th>
+                {[
+                  { col: "name", label: "Rep" },
+                  { col: null, label: "Title" },
+                  { col: null, label: "Territory" },
+                  { col: null, label: "Status" },
+                  { col: null, label: "Tier" },
+                  { col: "opportunities", label: "Opps" },
+                  { col: "territories", label: "Territories" },
+                  { col: null, label: "Licensed" },
+                  { col: null, label: "Actions" },
+                ].map(({ col, label }) => col ? (
+                  <th key={label} onClick={() => toggleSort(col)}
+                    style={{ padding: "8px 12px", textAlign: "left", fontSize: "0.65rem", fontWeight: 700, color: sortCol === col ? "var(--nyx-accent)" : "var(--nyx-accent-label)", textTransform: "uppercase", letterSpacing: "0.1em", whiteSpace: "nowrap", cursor: "pointer", userSelect: "none" }}>
+                    {label}{sortCol === col ? (sortDir === "asc" ? " ▲" : " ▼") : <span style={{ opacity: 0.3 }}> ⇅</span>}
+                  </th>
+                ) : (
+                  <th key={label} style={{ padding: "8px 12px", textAlign: "left", fontSize: "0.65rem", fontWeight: 700, color: "var(--nyx-accent-label)", textTransform: "uppercase", letterSpacing: "0.1em", whiteSpace: "nowrap" }}>{label}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {filtered.map((rep, i) => {
+              {sortedReps.map((rep, i) => {
                 const colors = ["var(--nyx-accent)","#34d399","#fbbf24","#a78bfa","#f59e0b","#60a5fa","#f87171","#fb923c"];
                 const color = colors[i % colors.length];
                 const tier = getPerfTier(rep);

@@ -266,6 +266,8 @@ export default function HospitalsClient({ initialHospitals }: { initialHospitals
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState<string>("ALL");
   const [filterStatus, setFilterStatus] = useState<string>("ALL");
+  const [sortCol, setSortCol] = useState<string>("createdAt");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
 
   const load = useCallback(async (q?: string) => {
     const url = q ? `/api/hospitals?search=${encodeURIComponent(q)}` : "/api/hospitals";
@@ -280,6 +282,23 @@ export default function HospitalsClient({ initialHospitals }: { initialHospitals
     const q = search.toLowerCase();
     return (h.hospitalName?.toLowerCase().includes(q) || h.systemName?.toLowerCase()?.includes(q) ||
       h.city?.toLowerCase()?.includes(q) || h.state?.toLowerCase()?.includes(q));
+  });
+
+  function toggleSort(col: string) {
+    if (sortCol === col) setSortDir(d => d === "asc" ? "desc" : "asc");
+    else { setSortCol(col); setSortDir("asc"); }
+  }
+
+  const sorted = [...filtered].sort((a, b) => {
+    let av: number | string = 0, bv: number | string = 0;
+    if (sortCol === "hospitalName") { av = a.hospitalName?.toLowerCase() ?? ""; bv = b.hospitalName?.toLowerCase() ?? ""; }
+    else if (sortCol === "health") { av = healthScore(a); bv = healthScore(b); }
+    else if (sortCol === "opportunities") { av = a._count?.opportunities ?? 0; bv = b._count?.opportunities ?? 0; }
+    else if (sortCol === "contacts") { av = a._count?.contacts ?? 0; bv = b._count?.contacts ?? 0; }
+    else if (sortCol === "createdAt") { av = a.createdAt; bv = b.createdAt; }
+    if (av < bv) return sortDir === "asc" ? -1 : 1;
+    if (av > bv) return sortDir === "asc" ? 1 : -1;
+    return 0;
   });
 
   async function handleSave(data: Partial<Hospital> & { portalEmail?: string }) {
@@ -333,7 +352,7 @@ export default function HospitalsClient({ initialHospitals }: { initialHospitals
         <div>
           <p style={{ color: "var(--nyx-accent-label)", fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 4 }}>ACCOUNTS</p>
           <h1 style={{ fontSize: "1.8rem", fontWeight: 900, color: C.text }}>Accounts</h1>
-          <p style={{ color: C.muted, fontSize: "0.875rem", marginTop: 4 }}>{hospitals.length} accounts</p>
+          <p style={{ color: C.muted, fontSize: "0.875rem", marginTop: 4 }}>{filtered.length !== hospitals.length ? `${filtered.length} of ${hospitals.length}` : hospitals.length} accounts</p>
         </div>
         <button onClick={() => setModal("add")} style={{ background: "var(--nyx-accent-dim)", border: "1px solid var(--nyx-accent-str)", borderRadius: 8, padding: "10px 20px", color: "var(--nyx-accent)", cursor: "pointer", fontWeight: 700, fontSize: "0.875rem", display: "flex", alignItems: "center", gap: 6 }}>
           + Add Account
@@ -374,8 +393,23 @@ export default function HospitalsClient({ initialHospitals }: { initialHospitals
           <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 700 }}>
             <thead>
               <tr style={{ borderBottom: `1px solid var(--nyx-border)` }}>
-                {["Account", "System", "Type", "Status", "Health", "Opportunities", "Contacts", "Added", ""].map(h => (
-                  <th key={h} style={{ padding: "12px 16px", textAlign: "left", fontSize: "0.68rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.12em", textTransform: "uppercase", whiteSpace: "nowrap" }}>{h}</th>
+                {[
+                  { col: "hospitalName", label: "Account" },
+                  { col: null, label: "System" },
+                  { col: null, label: "Type" },
+                  { col: null, label: "Status" },
+                  { col: "health", label: "Health", center: true },
+                  { col: "opportunities", label: "Opportunities", center: true },
+                  { col: "contacts", label: "Contacts", center: true },
+                  { col: "createdAt", label: "Added" },
+                  { col: null, label: "" },
+                ].map(({ col, label, center }) => col ? (
+                  <th key={label} onClick={() => toggleSort(col)}
+                    style={{ padding: "12px 16px", textAlign: center ? "center" : "left", fontSize: "0.68rem", fontWeight: 700, color: sortCol === col ? "var(--nyx-accent)" : "var(--nyx-accent-label)", letterSpacing: "0.12em", textTransform: "uppercase", whiteSpace: "nowrap", cursor: "pointer", userSelect: "none" }}>
+                    {label}{sortCol === col ? (sortDir === "asc" ? " ▲" : " ▼") : <span style={{ opacity: 0.3 }}> ⇅</span>}
+                  </th>
+                ) : (
+                  <th key={label || "actions"} style={{ padding: "12px 16px", textAlign: center ? "center" : "left", fontSize: "0.68rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.12em", textTransform: "uppercase", whiteSpace: "nowrap" }}>{label}</th>
                 ))}
               </tr>
             </thead>
@@ -385,7 +419,7 @@ export default function HospitalsClient({ initialHospitals }: { initialHospitals
                   {search ? "No accounts match your search." : "No accounts yet. Click + Add Account to get started."}
                 </td></tr>
               )}
-              {filtered.map(h => (
+              {sorted.map(h => (
                 <tr key={h.id} onClick={() => setModal(h)} style={{ borderBottom: `1px solid var(--nyx-accent-dim)`, cursor: "pointer", transition: "background 0.15s" }}
                   onMouseEnter={e => (e.currentTarget.style.background = "var(--nyx-accent-dim)")}
                   onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
