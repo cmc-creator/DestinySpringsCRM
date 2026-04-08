@@ -14,7 +14,8 @@ export async function GET(req: NextRequest) {
   const redirectUri = `${appUrl}/api/integrations/oauth/microsoft/callback`;
 
   if (!clientId) {
-    return NextResponse.json({ error: "MICROSOFT_CLIENT_ID not configured" }, { status: 500 });
+    const msg = encodeURIComponent("Microsoft 365 is not configured. Add MICROSOFT_CLIENT_ID and MICROSOFT_CLIENT_SECRET to your Vercel environment variables, then redeploy.");
+    return NextResponse.redirect(`${appUrl}/admin/communications?oauth_error=${msg}`);
   }
 
   // Accept an optional returnTo param (must be a relative /admin or /rep path)

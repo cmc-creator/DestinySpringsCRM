@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 
 type Message = {
   id: string;
@@ -138,6 +139,7 @@ export default function AIChatWidget() {
   const [speechSupported, setSpeechSupported] = useState(false);
   const [ttsEnabled, setTtsEnabled] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [confirmAIDelete, setConfirmAIDelete] = useState(false);
   const pathname = usePathname();
   const bottomRef               = useRef<HTMLDivElement>(null);
   const inputRef                = useRef<HTMLTextAreaElement>(null);
@@ -318,10 +320,15 @@ export default function AIChatWidget() {
 
     const deleting = proposal.intent.startsWith("delete_");
     if (deleting) {
-      const ok = window.confirm("Confirm delete action? This cannot be undone.");
-      if (!ok) return;
+      setConfirmAIDelete(true);
+      return;
     }
 
+    await doExecuteProposal(false);
+  };
+
+  const doExecuteProposal = async (isDelete: boolean) => {
+    if (!proposal || loading) return;
     setLoading(true);
     void logAegisEvent("PROPOSAL_ACCEPTED", {
       intent: proposal.intent,
@@ -333,7 +340,7 @@ export default function AIChatWidget() {
       const res = await fetch("/api/ai/execute", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...proposal, confirmedDelete: deleting }),
+        body: JSON.stringify({ ...proposal, confirmedDelete: isDelete }),
       });
       const data = await res.json() as { summary?: string; error?: string };
       const message: Message = {
@@ -427,6 +434,15 @@ export default function AIChatWidget() {
 
   return (
     <>
+      {confirmAIDelete && (
+        <ConfirmDialog
+          message="Confirm delete action?"
+          subtext="This cannot be undone."
+          confirmLabel="Delete"
+          onConfirm={() => { setConfirmAIDelete(false); void doExecuteProposal(true); }}
+          onCancel={() => setConfirmAIDelete(false)}
+        />
+      )}
       <style>{`
         @keyframes aegis-dot {
           0%, 80%, 100% { opacity: 0.2; transform: scale(0.8); }

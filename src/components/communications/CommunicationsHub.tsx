@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback, useRef } from "react";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
 const CYAN       = "var(--nyx-accent)";
@@ -223,6 +224,7 @@ export default function CommunicationsHub({ role: _role }: Props) {
   const [tplBody, setTplBody]                 = useState("");
   const [tplCategory, setTplCategory]         = useState("OTHER");
   const [savingTpl, setSavingTpl]             = useState(false);
+  const [confirmDisconnect, setConfirmDisconnect] = useState<string | null>(null);
 
   // ── Load data ────────────────────────────────────────────────────────────────
   const loadAll = useCallback(async () => {
@@ -261,7 +263,10 @@ export default function CommunicationsHub({ role: _role }: Props) {
   }
 
   async function disconnectProvider(provider: string) {
-    if (!confirm(`Disconnect ${provider}? You'll need to re-authorize to send emails through it.`)) return;
+    setConfirmDisconnect(provider);
+  }
+  async function confirmDisconnectProvider(provider: string) {
+    setConfirmDisconnect(null);
     await fetch(`/api/integrations/tokens?provider=${provider}`, { method: "DELETE" });
     setTokens((prev) => prev.filter((t) => t.provider !== provider));
   }
@@ -454,6 +459,16 @@ export default function CommunicationsHub({ role: _role }: Props) {
   // ── Render ────────────────────────────────────────────────────────────────────
   return (
     <div style={{ padding: "28px 32px", maxWidth: 1200, margin: "0 auto" }}>
+      {confirmDisconnect && (
+        <ConfirmDialog
+          message={`Disconnect ${confirmDisconnect}?`}
+          subtext="You'll need to re-authorize to send emails through it."
+          confirmLabel="Disconnect"
+          confirmColor="#c9a84c"
+          onConfirm={() => confirmDisconnectProvider(confirmDisconnect)}
+          onCancel={() => setConfirmDisconnect(null)}
+        />
+      )}
 
       {/* Page header */}
       <div style={{ marginBottom: 28 }}>

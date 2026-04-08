@@ -1394,6 +1394,50 @@ img[data-nimg] {
 :root[data-theme="glacial"]   .stat-value,
 :root[data-theme="peak"]      .stat-value { text-shadow: none; }
 
+/* ── Skeleton loading shimmer ──────────────────────────────────────────────── */
+@keyframes nyx-shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+.nyx-skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(255,255,255,0.04) 25%,
+    rgba(255,255,255,0.10) 50%,
+    rgba(255,255,255,0.04) 75%
+  );
+  background-size: 200% 100%;
+  animation: nyx-shimmer 1.4s ease-in-out infinite;
+  border-radius: 6px;
+}
+:root[data-theme="light"]     .nyx-skeleton,
+:root[data-theme="blush"]     .nyx-skeleton,
+:root[data-theme="ivory"]     .nyx-skeleton,
+:root[data-theme="alabaster"] .nyx-skeleton,
+:root[data-theme="glacial"]   .nyx-skeleton,
+:root[data-theme="peak"]      .nyx-skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(0,0,0,0.05) 25%,
+    rgba(0,0,0,0.12) 50%,
+    rgba(0,0,0,0.05) 75%
+  );
+  background-size: 200% 100%;
+  animation: nyx-shimmer 1.4s ease-in-out infinite;
+}
+
+/* ── Row actions — hide until hover (desktop only) ──────────────────────────── */
+@media (min-width: 769px) {
+  .nyx-row-actions {
+    opacity: 0;
+    transition: opacity 0.15s ease;
+  }
+  tr:hover .nyx-row-actions {
+    opacity: 1;
+  }
+}
+
+
 /* card-glow hover shadow — soften the dark drop-shadow on light bg */
 :root[data-theme="light"]     .card-glow:hover,
 :root[data-theme="blush"]     .card-glow:hover,

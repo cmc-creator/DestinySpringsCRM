@@ -1,6 +1,7 @@
 ﻿"use client";
 import { useState, useEffect, useCallback, useRef } from "react";
 import AIInsightsPanel from "@/components/ai/AIInsightsPanel";
+import TableSkeleton from "@/components/ui/TableSkeleton";
 
 // ── Types ───────────────────────────────────────────────
 type LeadStatus = "NEW"|"CONTACTED"|"QUALIFIED"|"PROPOSAL_SENT"|"NEGOTIATING"|"WON"|"LOST"|"UNQUALIFIED";
@@ -527,8 +528,14 @@ export default function LeadsClient({ reps }: { reps: Rep[] }) {
             </tr>
           </thead>
           <tbody>
-            {loading && <tr><td colSpan={10} style={{ padding: 32, textAlign: "center", color: C.muted }}>Loading…</td></tr>}
-            {!loading && filtered.length === 0 && <tr><td colSpan={10} style={{ padding: 32, textAlign: "center", color: C.muted }}>No leads match your filters.</td></tr>}
+            {loading && <TableSkeleton cols={10} rows={8} />}
+            {!loading && filtered.length === 0 && (
+              <tr><td colSpan={10} style={{ padding: "48px 32px", textAlign: "center" }}>
+                <div style={{ fontSize: "2rem", marginBottom: 10 }}>🔍</div>
+                <p style={{ margin: 0, color: "var(--nyx-text)", fontWeight: 600 }}>No leads found</p>
+                <p style={{ margin: "6px 0 0", color: "var(--nyx-text-muted)", fontSize: "0.82rem" }}>Try adjusting your filters or import new leads</p>
+              </td></tr>
+            )}
             {sorted.map(lead => (
               <tr key={lead.id} onClick={() => setModal(lead)}
                 style={{ borderBottom: `1px solid var(--nyx-accent-dim)`, cursor: "pointer", background: selected.has(lead.id) ? "var(--nyx-accent-dim)" : "transparent", transition: "background 0.15s" }}
@@ -563,7 +570,7 @@ export default function LeadsClient({ reps }: { reps: Rep[] }) {
                   {lead.nextFollowUp ? fmtDate(lead.nextFollowUp) : <span style={{ opacity: 0.4 }}>--</span>}
                 </td>
                 <td style={{ padding: "13px 14px", fontSize: "0.75rem", color: C.muted, whiteSpace: "nowrap" }}>{fmtDate(lead.createdAt)}</td>
-                <td style={{ padding: "13px 10px" }} onClick={e => e.stopPropagation()}>
+                <td style={{ padding: "13px 10px" }} className="nyx-row-actions" onClick={e => e.stopPropagation()}>
                   <button onClick={() => setActivityLead(lead)} title="Activity feed"
                     style={{ width: 28, height: 28, borderRadius: 6, background: "rgba(96,165,250,0.1)", border: "1px solid rgba(96,165,250,0.22)", cursor: "pointer", fontSize: "0.82rem", display: "flex", alignItems: "center", justifyContent: "center" }}>
                     💬

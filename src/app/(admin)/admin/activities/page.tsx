@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect, useCallback } from "react";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 
 const ACT_ICON: Record<string, string> = {
   CALL: "📞", EMAIL: "✉️", NOTE: "📝", MEETING: "🤝", TASK: "☑️",
@@ -86,6 +87,8 @@ export default function ActivitiesPage() {
   const [editForm, setEditForm] = useState({ type: "", title: "", notes: "", hospitalId: "", completedAt: "" });
   const [editSaving, setEditSaving] = useState(false);
   const [accounts, setAccounts] = useState<AccountOption[]>([]);
+  const [confirmDelete, setConfirmDelete] = useState<{ id: string } | null>(null);
+  const [confirmBulk, setConfirmBulk] = useState(false);
 
   // Load accounts list once for the edit dropdown
   useEffect(() => {
@@ -161,7 +164,10 @@ export default function ActivitiesPage() {
   });
 
   async function handleDelete(id: string) {
-    if (!confirm("Delete this activity?")) return;
+    setConfirmDelete({ id });
+  }
+  async function confirmDeleteActivity(id: string) {
+    setConfirmDelete(null);
     setDeleting((prev) => new Set(prev).add(id));
     try {
       await fetch("/api/activities/" + id, { method: "DELETE" });
@@ -172,7 +178,10 @@ export default function ActivitiesPage() {
   }
   async function handleBulkDelete() {
     if (selected.size === 0) return;
-    if (!confirm(`Delete ${selected.size} selected activit${selected.size === 1 ? "y" : "ies"}? This cannot be undone.`)) return;
+    setConfirmBulk(true);
+  }
+  async function confirmBulkDelete() {
+    setConfirmBulk(false);
     setBulkDeleting(true);
     try {
       const res = await fetch("/api/admin/activities/bulk-delete", {
@@ -239,11 +248,30 @@ export default function ActivitiesPage() {
 
   return (
     <div style={{ maxWidth: 1100, margin: "0 auto" }}>
+      {confirmDelete && (
+        <ConfirmDialog
+          message="Delete this activity?"
+          subtext="This cannot be undone."
+          confirmLabel="Delete"
+          onConfirm={() => confirmDeleteActivity(confirmDelete.id)}
+          onCancel={() => setConfirmDelete(null)}
+        />
+      )}
+      {confirmBulk && (
+        <ConfirmDialog
+          message={`Delete ${selected.size} selected activit${selected.size === 1 ? "y" : "ies"}?`}
+          subtext="This cannot be undone."
+          confirmLabel={`Delete ${selected.size}`}
+          onConfirm={() => confirmBulkDelete()}
+          onCancel={() => setConfirmBulk(false)}
+        />
+      )}
       {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: "1.6rem", fontWeight: 800, color: C.text }}>Activity Log</h1>
-          <p style={{ margin: "3px 0 0", fontSize: "0.82rem", color: C.muted }}>
+          <p style={{ color: "var(--nyx-accent-label)", fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 4 }}>TEAM</p>
+          <h1 style={{ margin: 0, fontSize: "1.8rem", fontWeight: 900, color: C.text }}>Activity Log</h1>
+          <p style={{ margin: "4px 0 0", fontSize: "0.875rem", color: C.muted }}>
             {activities.length} total activities
           </p>
         </div>

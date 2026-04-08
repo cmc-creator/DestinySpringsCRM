@@ -415,8 +415,10 @@ export default function HospitalsClient({ initialHospitals }: { initialHospitals
             </thead>
             <tbody>
               {filtered.length === 0 && (
-                <tr><td colSpan={7} style={{ padding: 32, textAlign: "center", color: C.muted, fontSize: "0.9rem" }}>
-                  {search ? "No accounts match your search." : "No accounts yet. Click + Add Account to get started."}
+                <tr><td colSpan={7} style={{ padding: "48px 32px", textAlign: "center" }}>
+                  <div style={{ fontSize: "2rem", marginBottom: 10 }}>{search ? "🔍" : "🏥"}</div>
+                  <p style={{ margin: 0, color: C.text, fontWeight: 600 }}>{search ? "No accounts match your search" : "No accounts yet"}</p>
+                  <p style={{ margin: "6px 0 0", color: C.muted, fontSize: "0.82rem" }}>{search ? "Try a different search term or clear the filter" : "Click + Add Account to get started"}</p>
                 </td></tr>
               )}
               {sorted.map(h => (
@@ -447,7 +449,7 @@ export default function HospitalsClient({ initialHospitals }: { initialHospitals
                   <td style={{ padding: "14px 16px", fontSize: "0.85rem", color: C.muted, textAlign: "center" }}>{h._count?.opportunities ?? 0}</td>
                   <td style={{ padding: "14px 16px", fontSize: "0.85rem", color: C.muted, textAlign: "center" }}>{h._count?.contacts ?? 0}</td>
                   <td style={{ padding: "14px 16px", fontSize: "0.8rem", color: C.muted, whiteSpace: "nowrap" }}>{fmtDate(h.createdAt)}</td>
-                  <td style={{ padding: "14px 8px" }}>
+                  <td style={{ padding: "14px 8px" }} className="nyx-row-actions">
                     {h.isPriorityPartner && (
                       <button
                         onClick={(e) => { e.stopPropagation(); void handleGrantTrialSeat(h); }}

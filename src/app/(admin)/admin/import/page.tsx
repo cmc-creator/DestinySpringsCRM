@@ -148,8 +148,9 @@ export default function AdminImportPage() {
     <div style={{ maxWidth: 760, margin: "0 auto" }}>
       <div style={{ marginBottom: 24, display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: "1.6rem", fontWeight: 800, color: "#ede4cf" }}>Import Data</h1>
-          <p style={{ margin: "4px 0 0", fontSize: "0.85rem", color: "rgba(237,228,207,0.5)" }}>
+          <p style={{ color: "var(--nyx-accent-label)", fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 4 }}>ADMIN TOOLS</p>
+          <h1 style={{ margin: 0, fontSize: "1.8rem", fontWeight: 900, color: "#ede4cf" }}>Import Data</h1>
+          <p style={{ margin: "4px 0 0", fontSize: "0.875rem", color: "rgba(237,228,207,0.5)" }}>
             Upload Excel (.xlsx) or CSV files to populate accounts, contacts, and activity history.
             Import Accounts first, then Contacts, then Activities.
           </p>

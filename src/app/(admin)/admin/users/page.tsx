@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect, useCallback } from "react";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 
 type UserRow = {
   id: string;
@@ -40,6 +41,7 @@ export default function AdminUsersPage() {
   // Invite link state
   const [inviting, setInviting]       = useState<string | null>(null);
   const [inviteLink, setInviteLink]   = useState<string | null>(null);
+  const [confirmDeleteUser, setConfirmDeleteUser] = useState<{ id: string; name: string | null } | null>(null);
 
   // Form state
   const [form, setForm] = useState({
@@ -93,7 +95,10 @@ export default function AdminUsersPage() {
   }
 
   async function deleteUser(id: string, name: string | null) {
-    if (!confirm(`Delete account for ${name ?? id}? This cannot be undone.`)) return;
+    setConfirmDeleteUser({ id, name });
+  }
+  async function confirmDeleteUserAction(id: string) {
+    setConfirmDeleteUser(null);
     setDeleting(id);
     try {
       const res = await fetch(`/api/admin/users?id=${id}`, { method: "DELETE" });
@@ -195,6 +200,15 @@ export default function AdminUsersPage() {
 
   return (
     <div style={{ maxWidth: 1100, margin: "0 auto" }}>
+      {confirmDeleteUser && (
+        <ConfirmDialog
+          message={`Delete account for ${confirmDeleteUser.name ?? confirmDeleteUser.id}?`}
+          subtext="This cannot be undone."
+          confirmLabel="Delete Account"
+          onConfirm={() => confirmDeleteUserAction(confirmDeleteUser.id)}
+          onCancel={() => setConfirmDeleteUser(null)}
+        />
+      )}
       {/* Invite link fallback modal (shown when email is not configured) */}
       {inviteLink && (
         <div style={{ position: "fixed", inset: 0, zIndex: 9998, background: "rgba(0,0,0,0.65)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }} onClick={() => setInviteLink(null)}>
@@ -279,10 +293,11 @@ export default function AdminUsersPage() {
       )}
 
       {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: "1.6rem", fontWeight: 800, color: "#ede4cf" }}>User Accounts</h1>
-          <p style={{ margin: "4px 0 0", fontSize: "0.85rem", color: "rgba(237,228,207,0.5)" }}>
+          <p style={{ color: "var(--nyx-accent-label)", fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 4 }}>ADMIN</p>
+          <h1 style={{ margin: 0, fontSize: "1.8rem", fontWeight: 900, color: "#ede4cf" }}>User Accounts</h1>
+          <p style={{ margin: "4px 0 0", fontSize: "0.875rem", color: "rgba(237,228,207,0.5)" }}>
             Create and manage login accounts for your team. Self-signups stay pending until you approve them.
           </p>
         </div>

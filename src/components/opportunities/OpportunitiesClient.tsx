@@ -258,7 +258,7 @@ export default function OpportunitiesClient({ hospitals, reps }: { hospitals: Ho
         )}
       </div>
 
-      {loading && <div style={{ color: C.muted, padding: 40, textAlign: "center" }}>Loading…</div>}
+      {loading && <div style={{ color: C.muted, padding: 40, textAlign: "center" }}></div>}
 
       {!loading && view === "kanban" && (
         <div style={{ position: "relative" }}>
@@ -335,7 +335,13 @@ export default function OpportunitiesClient({ hospitals, reps }: { hospitals: Ho
               </tr>
             </thead>
             <tbody>
-              {opps.length === 0 && <tr><td colSpan={8} style={{ padding: 32, textAlign: "center", color: C.muted }}>No opportunities yet.</td></tr>}
+              {opps.length === 0 && (
+                <tr><td colSpan={8} style={{ padding: "48px 32px", textAlign: "center" }}>
+                  <div style={{ fontSize: "2rem", marginBottom: 10 }}>💼</div>
+                  <p style={{ margin: 0, color: "var(--nyx-text)", fontWeight: 600 }}>No opportunities yet</p>
+                  <p style={{ margin: "6px 0 0", color: "var(--nyx-text-muted)", fontSize: "0.82rem" }}>Add your first opportunity to start tracking deals</p>
+                </td></tr>
+              )}
               {sorted.map(opp => (
                 <tr key={opp.id} onClick={() => setModal(opp)} style={{ borderBottom: `1px solid var(--nyx-accent-dim)`, cursor: "pointer" }}
                   onMouseEnter={e => (e.currentTarget.style.background = "var(--nyx-accent-dim)")}

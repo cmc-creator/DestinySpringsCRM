@@ -1,5 +1,6 @@
 ﻿"use client";
 import { useState, useEffect, useCallback } from "react";
+import TableSkeleton from "@/components/ui/TableSkeleton";
 
 type ContractStatus = "DRAFT"|"SENT"|"SIGNED"|"ACTIVE"|"EXPIRED"|"TERMINATED";
 interface Hospital { id: string; hospitalName: string; isPriorityPartner?: boolean; priorityDiscountPercent?: number | null }
@@ -407,8 +408,14 @@ export default function ContractsClient({ hospitals, reps }: { hospitals: Hospit
             </tr>
           </thead>
           <tbody>
-            {loading && <tr><td colSpan={8} style={{ padding: 32, textAlign: "center", color: C.muted }}>Loading…</td></tr>}
-            {!loading && filtered.length === 0 && <tr><td colSpan={8} style={{ padding: 32, textAlign: "center", color: C.muted }}>No contracts match your filters.</td></tr>}
+            {loading && <TableSkeleton cols={8} rows={6} />}
+            {!loading && filtered.length === 0 && (
+              <tr><td colSpan={8} style={{ padding: "48px 32px", textAlign: "center" }}>
+                <div style={{ fontSize: "2rem", marginBottom: 10 }}>📋</div>
+                <p style={{ margin: 0, color: "var(--nyx-text)", fontWeight: 600 }}>No contracts found</p>
+                <p style={{ margin: "6px 0 0", color: "var(--nyx-text-muted)", fontSize: "0.82rem" }}>Try adjusting your filters or add a new contract</p>
+              </td></tr>
+            )}
             {sorted.map(c => (
               <tr key={c.id} onClick={() => setModal(c)} style={{ borderBottom: `1px solid var(--nyx-accent-dim)`, cursor: "pointer" }}
                 onMouseEnter={e => (e.currentTarget.style.background = "var(--nyx-accent-dim)")}
@@ -422,7 +429,7 @@ export default function ContractsClient({ hospitals, reps }: { hospitals: Hospit
                 <td style={{ padding: "12px 14px", fontSize: "0.78rem", color: C.muted }}>{fmtDate(c.startDate)}</td>
                 <td style={{ padding: "12px 14px", fontSize: "0.78rem", color: c.status === "EXPIRED" ? "#fbbf24" : C.muted }}>{fmtDate(c.endDate)}</td>
                 <td style={{ padding: "12px 14px", fontSize: "0.78rem", color: C.muted }}>{c.assignedRep?.user.name ?? "-"}</td>
-                <td style={{ padding: "12px 14px", fontSize: "0.75rem", color: C.cyan }}>Edit →</td>
+                <td style={{ padding: "12px 14px", fontSize: "0.75rem", color: C.cyan }} className="nyx-row-actions">Edit →</td>
               </tr>
             ))}
           </tbody>

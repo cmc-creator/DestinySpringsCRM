@@ -1,5 +1,6 @@
 ﻿"use client";
 import { useState, useEffect, useCallback, useRef } from "react";
+import TableSkeleton from "@/components/ui/TableSkeleton";
 
 type RepStatus = "ACTIVE"|"INACTIVE"|"PENDING_REVIEW"|"SUSPENDED";
 type PerfTier = "all"|"top"|"mid"|"low";
@@ -364,10 +365,10 @@ export default function RepsClient() {
         )}
       </div>
 
-      {loading && <div style={{ color: C.muted, padding: 40, textAlign: "center" }}>Loading…</div>}
+      {loading && <div style={{ color: C.muted, padding: 40, textAlign: "center" }}></div>}
 
       {/* ── TABLE VIEW ── */}
-      {!loading && viewMode === "table" && (
+      {viewMode === "table" && (
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.83rem", color: C.text }}>
             <thead>
@@ -393,7 +394,8 @@ export default function RepsClient() {
               </tr>
             </thead>
             <tbody>
-              {sortedReps.map((rep, i) => {
+              {loading && <TableSkeleton cols={9} rows={8} />}
+              {!loading && sortedReps.map((rep, i) => {
                 const colors = ["var(--nyx-accent)","#34d399","#fbbf24","#a78bfa","#f59e0b","#60a5fa","#f87171","#fb923c"];
                 const color = colors[i % colors.length];
                 const tier = getPerfTier(rep);
@@ -429,7 +431,7 @@ export default function RepsClient() {
                     </td>
                     <td style={{ padding: "10px 12px", color }}>{rep._count.territories}</td>
                     <td style={{ padding: "10px 12px", color: C.muted, fontSize: "0.72rem" }}>{rep.licensedStates.slice(0,4).join(", ")}{rep.licensedStates.length > 4 ? ` +${rep.licensedStates.length-4}` : ""}</td>
-                    <td style={{ padding: "10px 12px" }}>
+                    <td style={{ padding: "10px 12px" }} className="nyx-row-actions">
                       <div style={{ display: "flex", gap: 5, alignItems: "center" }}>
                         {rep.phone && (
                           <a href={`tel:${rep.phone}`} title={`Call ${rep.user.name}`}
@@ -463,8 +465,12 @@ export default function RepsClient() {
                   </tr>
                 );
               })}
-              {filtered.length === 0 && (
-                <tr><td colSpan={9} style={{ padding: 40, textAlign: "center", color: C.muted }}>No reps match the current filters.</td></tr>
+              {!loading && filtered.length === 0 && (
+                <tr><td colSpan={9} style={{ padding: "48px 32px", textAlign: "center" }}>
+                  <div style={{ fontSize: "2rem", marginBottom: 10 }}>👥</div>
+                  <p style={{ margin: 0, color: C.text, fontWeight: 600 }}>No reps found</p>
+                  <p style={{ margin: "6px 0 0", color: C.muted, fontSize: "0.82rem" }}>Try adjusting your filters</p>
+                </td></tr>
               )}
             </tbody>
           </table>

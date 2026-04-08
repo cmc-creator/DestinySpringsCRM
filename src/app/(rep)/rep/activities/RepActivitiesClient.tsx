@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect, useCallback } from "react";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 
 const ACT_ICON: Record<string, string> = {
   CALL: "📞", EMAIL: "✉️", NOTE: "📝", MEETING: "🤝", TASK: "☑️",
@@ -81,6 +82,7 @@ export default function RepActivitiesClient({
   const [form, setForm] = useState({ type: "CALL", title: "", notes: "", hospitalId: "", completedAt: "" });
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState<Set<string>>(new Set());
+  const [confirmDeleteActivityId, setConfirmDeleteActivityId] = useState<string | null>(null);
   const [editActivity, setEditActivity] = useState<Activity | null>(null);
   const [editForm, setEditForm] = useState({ type: "", title: "", notes: "", hospitalId: "", completedAt: "" });
   const [editSaving, setEditSaving] = useState(false);
@@ -143,7 +145,10 @@ export default function RepActivitiesClient({
   }
 
   async function handleDelete(id: string) {
-    if (!confirm("Delete this activity?")) return;
+    setConfirmDeleteActivityId(id);
+  }
+  async function confirmDeleteActivity(id: string) {
+    setConfirmDeleteActivityId(null);
     setDeleting((prev) => new Set(prev).add(id));
     try {
       await fetch("/api/activities/" + id, { method: "DELETE" });
@@ -204,6 +209,15 @@ export default function RepActivitiesClient({
 
   return (
     <div style={{ maxWidth: 1000, margin: "0 auto" }}>
+      {confirmDeleteActivityId && (
+        <ConfirmDialog
+          message="Delete this activity?"
+          subtext="This cannot be undone."
+          confirmLabel="Delete"
+          onConfirm={() => confirmDeleteActivity(confirmDeleteActivityId)}
+          onCancel={() => setConfirmDeleteActivityId(null)}
+        />
+      )}
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
         <div>
