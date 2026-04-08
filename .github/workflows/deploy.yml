@@ -9,12 +9,13 @@ on:
 env:
   VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
   VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+  VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
 
 jobs:
   deploy-preview:
     name: Deploy Preview
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
     permissions:
       contents: read
     steps:
@@ -23,11 +24,19 @@ jobs:
         with:
           node-version: "22"
           cache: "npm"
+      - name: Skip if no Vercel token
+        if: env.VERCEL_TOKEN == ''
+        run: echo "VERCEL_TOKEN is not set; skipping Vercel deployment."
       - run: npm ci
+        if: env.VERCEL_TOKEN != ''
       - run: npm install --global vercel@latest
-      - run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
-      - run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
-      - run: vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }}
+        if: env.VERCEL_TOKEN != ''
+      - run: vercel pull --yes --environment=preview --token=$VERCEL_TOKEN
+        if: env.VERCEL_TOKEN != ''
+      - run: vercel build --token=$VERCEL_TOKEN
+        if: env.VERCEL_TOKEN != ''
+      - run: vercel deploy --prebuilt --token=$VERCEL_TOKEN
+        if: env.VERCEL_TOKEN != ''
 
   deploy-production:
     name: Deploy Production
@@ -41,8 +50,16 @@ jobs:
         with:
           node-version: "22"
           cache: "npm"
+      - name: Skip if no Vercel token
+        if: env.VERCEL_TOKEN == ''
+        run: echo "VERCEL_TOKEN is not set; skipping Vercel deployment."
       - run: npm ci
+        if: env.VERCEL_TOKEN != ''
       - run: npm install --global vercel@latest
-      - run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
-      - run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
-      - run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
+        if: env.VERCEL_TOKEN != ''
+      - run: vercel pull --yes --environment=production --token=$VERCEL_TOKEN
+        if: env.VERCEL_TOKEN != ''
+      - run: vercel build --prod --token=$VERCEL_TOKEN
+        if: env.VERCEL_TOKEN != ''
+      - run: vercel deploy --prebuilt --prod --token=$VERCEL_TOKEN
+        if: env.VERCEL_TOKEN != ''
