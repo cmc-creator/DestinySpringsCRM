@@ -1836,7 +1836,7 @@ export default function SettingsClient({ personalMode = false }: { personalMode?
       )}
 
       {/*  DEV TOOLS  */}
-      {!personalMode && <Section title="Developer Tools">
+      {!personalMode && !isProduction && <Section title="Developer Tools">
         {/* Admin-only warning banner */}
         <div style={{ background: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.30)", borderRadius: 9, padding: "12px 16px", marginBottom: 16, display: "flex", alignItems: "flex-start", gap: 10 }}>
           <span style={{ fontSize: "1.1rem", lineHeight: "1.3", flexShrink: 0 }}>⚠️</span>

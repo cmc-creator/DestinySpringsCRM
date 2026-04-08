@@ -4,10 +4,6 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { authConfig } from "@/lib/auth.config";
 
-// Emails that are always granted ADMIN role on login, regardless of the stored role.
-// Used to recover admin access when a user's DB role is incorrect.
-const FORCE_ADMIN_EMAILS = new Set(["ccooper@destinysprings.com"]);
-
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
   trustHost: true,
@@ -25,7 +21,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         const normalizedEmail = String(credentials.email).toLowerCase().trim();
         const providedPassword = String(credentials.password);
-        const isForcedAdmin = FORCE_ADMIN_EMAILS.has(normalizedEmail);
 
         let user;
         try {
@@ -46,12 +41,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           return null;
         }
 
-        if (!isForcedAdmin && user.role === "REP" && user.rep?.status !== "ACTIVE") {
+        if (user.role === "REP" && user.rep?.status !== "ACTIVE") {
           console.warn("[auth] credentials rejected: REP not active", { email: normalizedEmail, repStatus: user.rep?.status ?? null });
           return null;
         }
 
-        if (!isForcedAdmin && user.role === "ACCOUNT" && user.hospital?.status !== "ACTIVE") {
+        if (user.role === "ACCOUNT" && user.hospital?.status !== "ACTIVE") {
           console.warn("[auth] credentials rejected: ACCOUNT hospital not active", { email: normalizedEmail, hospitalStatus: user.hospital?.status ?? null });
           return null;
         }
@@ -100,8 +95,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           console.warn("[auth] failed to write login audit event", err);
         }
 
-        const effectiveRole = isForcedAdmin ? "ADMIN" : user.role;
-        return { id: user.id, email: user.email, name: user.name, role: effectiveRole, organizationId: user.organizationId ?? null };
+        return { id: user.id, email: user.email, name: user.name, role: user.role, organizationId: user.organizationId ?? null };
       },
     }),
   ],

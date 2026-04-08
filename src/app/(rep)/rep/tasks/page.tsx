@@ -56,7 +56,7 @@ const inp: React.CSSProperties = {
   borderRadius: 8,
   padding: "8px 12px",
   color: C.text,
-  fontSize: "0.82rem",
+  fontSize: "1rem",
   outline: "none",
 };
 
@@ -294,7 +294,7 @@ export default function RepTasksPage() {
                 value={task.status}
                 disabled={updating.has(task.id)}
                 onChange={(e) => setStatus(task.id, e.target.value as TaskStatus)}
-                style={{ ...inp, fontSize: "0.75rem", padding: "4px 8px" }}
+                style={{ ...inp, fontSize: "1rem", padding: "4px 8px" }}
               >
                 {(["OPEN", "IN_PROGRESS", "DONE", "CANCELLED"] as TaskStatus[]).map((s) => (
                   <option key={s} value={s}>{STATUS_LABELS[s]}</option>
