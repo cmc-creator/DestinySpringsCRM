@@ -13,7 +13,30 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const { toEmail, toName, subject, body: messageBody, channel, teamsWebhook,
-            hospitalId, leadId, opportunityId, contactId, templateId } = body;
+            hospitalId, leadId, opportunityId, contactId, templateId,
+            ccEmails, bccEmails, scheduledAt } = body;
+
+    // If scheduled for the future, save as SCHEDULED and return without sending
+    if (scheduledAt && new Date(scheduledAt) > new Date()) {
+      const log = await prisma.communicationLog.create({
+        data: {
+          fromUserId:    session.user.id,
+          toEmail:       toEmail   ?? null,
+          toName:        toName    ?? null,
+          subject:       subject   ?? null,
+          body:          messageBody,
+          channel:       channel   ?? "INTERNAL",
+          status:        "SCHEDULED",
+          scheduledAt:   new Date(scheduledAt),
+          hospitalId:    hospitalId    ?? null,
+          leadId:        leadId        ?? null,
+          opportunityId: opportunityId ?? null,
+          contactId:     contactId     ?? null,
+          templateId:    templateId    ?? null,
+        },
+      });
+      return NextResponse.json({ success: true, scheduled: true, log }, { status: 201 });
+    }
 
     if (!messageBody) {
       return NextResponse.json({ error: "Message body is required" }, { status: 400 });
@@ -49,6 +72,8 @@ export async function POST(req: NextRequest) {
             subject: subject ?? "(No subject)",
             body: { contentType: "HTML", content: messageBody.replace(/\n/g, "<br>") },
             toRecipients: [{ emailAddress: { address: toEmail, name: toName ?? toEmail } }],
+            ccRecipients:  (ccEmails  as string[] | undefined ?? []).filter(Boolean).map((e: string) => ({ emailAddress: { address: e } })),
+            bccRecipients: (bccEmails as string[] | undefined ?? []).filter(Boolean).map((e: string) => ({ emailAddress: { address: e } })),
           },
           saveToSentItems: true,
         }),

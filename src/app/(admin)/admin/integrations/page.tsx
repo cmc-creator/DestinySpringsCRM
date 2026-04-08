@@ -1,4 +1,5 @@
 ﻿import Link from "next/link";
+import LiveIntegrationStatus from "@/components/integrations/LiveIntegrationStatus";
 
 const CYAN = "var(--nyx-accent)";
 const CARD = "var(--nyx-card)";
@@ -112,6 +113,9 @@ export default function IntegrationsPage() {
         <h1 style={{ fontSize: "1.8rem", fontWeight: 900, color: TEXT }}>Integrations</h1>
         <p style={{ color: TEXT_MUTED, fontSize: "0.875rem", marginTop: 4 }}>Connect NyxAegis with your existing healthcare tech stack</p>
       </div>
+
+      {/* ── Live connection status ── */}
+      <LiveIntegrationStatus />
 
       {/* ── Featured Integrations ── */}
       <div style={{ display: "flex", flexDirection: "column", gap: 16, marginBottom: 32 }}>

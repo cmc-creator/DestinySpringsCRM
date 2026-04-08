@@ -48,6 +48,18 @@ export type Rep = { id: string; user: { name?: string | null; email: string } };
 
 type View = "month" | "week" | "list";
 
+type ExtCalEvent = {
+  id: string;
+  title: string;
+  start: string;
+  end: string;
+  location?: string;
+  organizer?: string;
+  url?: string;
+  provider: "microsoft" | "google";
+  isAllDay: boolean;
+};
+
 // ─── Constants ───────────────────────────────────────────────────────────────
 
 const C = {
@@ -143,6 +155,32 @@ function groupByDay(activities: Activity[]): Map<string, Activity[]> {
     map.get(key)!.push(a);
   }
   return map;
+}
+
+// ─── Ext Calendar Event Chip ─────────────────────────────────────────────────
+
+function ExtCalEventChip({ event, small }: { event: ExtCalEvent; small?: boolean }) {
+  const color = event.provider === "microsoft" ? "#0078D4" : "#1A73E8";
+  const label = event.provider === "microsoft" ? "Outlook" : "Google";
+  return (
+    <a
+      href={event.url ?? "#"}
+      target="_blank"
+      rel="noopener noreferrer"
+      onClick={(e) => e.stopPropagation()}
+      title={`${event.title}\n${label}${event.location ? " · " + event.location : ""}`}
+      style={{
+        display: "block", fontSize: small ? "0.62rem" : "0.72rem",
+        background: `${color}22`, color, borderRadius: 4,
+        padding: small ? "1px 5px" : "2px 7px",
+        fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis",
+        whiteSpace: "nowrap", textDecoration: "none",
+        border: `1px solid ${color}44`, marginTop: 1,
+      }}
+    >
+      {small ? "" : `[${label}] `}{event.title}
+    </a>
+  );
 }
 
 // ─── Event Chip ──────────────────────────────────────────────────────────────
@@ -581,11 +619,13 @@ function ActivityModal({ activity, defaultDate, hospitals, reps, onSave, onDelet
 function MonthView({
   currentDate,
   activities,
+  extCalEvents,
   onDayClick,
   onEventClick,
 }: {
   currentDate: Date;
   activities: Activity[];
+  extCalEvents: ExtCalEvent[];
   onDayClick: (date: Date) => void;
   onEventClick: (a: Activity) => void;
 }) {
@@ -594,6 +634,12 @@ function MonthView({
   const month = currentDate.getMonth();
   const grid  = buildMonthGrid(year, month);
   const byDay = groupByDay(activities);
+  const extByDay = new Map<string, ExtCalEvent[]>();
+  for (const ev of extCalEvents) {
+    const key = toDateKey(new Date(ev.start));
+    if (!extByDay.has(key)) extByDay.set(key, []);
+    extByDay.get(key)!.push(ev);
+  }
 
   return (
     <div>
@@ -616,8 +662,11 @@ function MonthView({
           const isToday     = isSameDay(day, today);
           const key         = toDateKey(day);
           const dayEvents   = byDay.get(key) ?? [];
+          const dayExtEvents = extByDay.get(key) ?? [];
           const showCount   = 3;
+          const extShowCount = Math.max(0, showCount - dayEvents.length);
           const overflow    = dayEvents.length - showCount;
+          const extOverflow = dayExtEvents.length - extShowCount;
 
           return (
             <div
@@ -651,9 +700,12 @@ function MonthView({
                 {dayEvents.slice(0, showCount).map(a => (
                   <EventChip key={a.id} activity={a} onClick={() => onEventClick(a)} small />
                 ))}
-                {overflow > 0 && (
+                {dayExtEvents.slice(0, extShowCount).map(e => (
+                  <ExtCalEventChip key={e.id} event={e} small />
+                ))}
+                {(overflow > 0 || extOverflow > 0) && (
                   <span style={{ fontSize:"0.6rem", color:C.muted, fontWeight:600, paddingLeft:2 }}>
-                    +{overflow} more
+                    +{overflow + Math.max(0, extOverflow)} more
                   </span>
                 )}
               </div>
@@ -670,24 +722,33 @@ function MonthView({
 function WeekView({
   currentDate,
   activities,
+  extCalEvents,
   onDayClick,
   onEventClick,
 }: {
   currentDate: Date;
   activities: Activity[];
+  extCalEvents: ExtCalEvent[];
   onDayClick: (date: Date) => void;
   onEventClick: (a: Activity) => void;
 }) {
   const today  = new Date();
   const week   = buildWeekDays(currentDate);
   const byDay  = groupByDay(activities);
+  const extByDay = new Map<string, ExtCalEvent[]>();
+  for (const ev of extCalEvents) {
+    const key = toDateKey(new Date(ev.start));
+    if (!extByDay.has(key)) extByDay.set(key, []);
+    extByDay.get(key)!.push(ev);
+  }
 
   return (
     <div style={{ display:"grid", gridTemplateColumns:"repeat(7,1fr)", gap:8 }}>
       {week.map((day, i) => {
-        const isToday   = isSameDay(day, today);
-        const key       = toDateKey(day);
-        const dayEvents = byDay.get(key) ?? [];
+        const isToday    = isSameDay(day, today);
+        const key        = toDateKey(day);
+        const dayEvents  = byDay.get(key) ?? [];
+        const dayExtEvts = extByDay.get(key) ?? [];
 
         return (
           <div key={i}
@@ -713,13 +774,16 @@ function WeekView({
             </div>
 
             <div style={{ display:"flex", flexDirection:"column", gap:4 }}>
-              {dayEvents.length === 0 && (
+              {dayEvents.length === 0 && dayExtEvts.length === 0 && (
                 <div style={{ fontSize:"0.65rem", color:C.dim, textAlign:"center", paddingTop:8 }}>
                   -
                 </div>
               )}
               {dayEvents.map(a => (
                 <EventChip key={a.id} activity={a} onClick={() => onEventClick(a)} />
+              ))}
+              {dayExtEvts.map(e => (
+                <ExtCalEventChip key={e.id} event={e} />
               ))}
             </div>
           </div>
@@ -733,9 +797,11 @@ function WeekView({
 
 function ListView({
   activities,
+  extCalEvents,
   onEventClick,
 }: {
   activities: Activity[];
+  extCalEvents: ExtCalEvent[];
   onEventClick: (a: Activity) => void;
 }) {
   const today = new Date();
@@ -875,6 +941,50 @@ function ListView({
           </div>
         </div>
       )}
+
+      {extCalEvents.length > 0 && (
+        <div style={{ marginTop:24 }}>
+          <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:12 }}>
+            <span style={{ fontSize:"0.65rem", fontWeight:700, color:"#0078D4", letterSpacing:"0.1em", textTransform:"uppercase" }}>Calendar Events</span>
+            <div style={{ flex:1, height:1, background:"rgba(0,120,212,0.3)" }} />
+          </div>
+          <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
+            {extCalEvents.sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime()).map(ev => {
+              const color = ev.provider === "microsoft" ? "#0078D4" : "#1A73E8";
+              return (
+                <a key={ev.id} href={ev.url ?? "#"} target="_blank" rel="noopener noreferrer"
+                  style={{ background:C.card, border:`1px solid ${color}44`, borderLeft:`3px solid ${color}`,
+                           borderRadius:"0 8px 8px 0", padding:"10px 14px",
+                           display:"flex", justifyContent:"space-between", alignItems:"center",
+                           textDecoration:"none", gap:12 }}>
+                  <div style={{ flex:1, minWidth:0 }}>
+                    <div style={{ fontSize:"0.62rem", fontWeight:700, color, letterSpacing:"0.08em",
+                                   background:`${color}18`, padding:"1px 6px", borderRadius:3,
+                                   display:"inline-block", marginBottom:4 }}>
+                      {ev.provider === "microsoft" ? "Outlook" : "Google"}
+                    </div>
+                    <div style={{ fontSize:"0.875rem", fontWeight:600, color:C.text,
+                                   overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+                      {ev.title}
+                    </div>
+                    {ev.location && (
+                      <div style={{ fontSize:"0.72rem", color:C.muted, marginTop:2 }}>📍 {ev.location}</div>
+                    )}
+                  </div>
+                  <div style={{ textAlign:"right", flexShrink:0 }}>
+                    <div style={{ fontSize:"0.78rem", color:C.muted }}>
+                      {ev.isAllDay ? "All day" : new Date(ev.start).toLocaleTimeString("en-US", { hour:"numeric", minute:"2-digit" })}
+                    </div>
+                    <div style={{ fontSize:"0.68rem", color:C.dim, marginTop:2 }}>
+                      {new Date(ev.start).toLocaleDateString("en-US", { month:"short", day:"numeric" })}
+                    </div>
+                  </div>
+                </a>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -895,6 +1005,9 @@ export default function CalendarClient({
   const [modalOpen,    setModalOpen]  = useState(false);
   const [editActivity, setEditActivity] = useState<Partial<Activity> | undefined>();
   const [defaultDate,  setDefaultDate] = useState<string | undefined>();
+  const [showExtCal,   setShowExtCal]   = useState(false);
+  const [extCalEvents, setExtCalEvents] = useState<ExtCalEvent[]>([]);
+  const [extCalLoading, setExtCalLoading] = useState(false);
 
   // ── Load activities ─────────────────────────────────────────────────────────
   const loadActivities = useCallback(async () => {
@@ -911,6 +1024,24 @@ export default function CalendarClient({
   }, [currentDate]);
 
   useEffect(() => { loadActivities(); }, [loadActivities]);
+
+  // ── Load external calendar events ───────────────────────────────────────
+  const loadExtCalEvents = useCallback(async () => {
+    setExtCalLoading(true);
+    const from = new Date(currentDate.getFullYear(), currentDate.getMonth() - 3, 1);
+    const to   = new Date(currentDate.getFullYear(), currentDate.getMonth() + 4, 0);
+    const res  = await fetch(`/api/calendar/events?from=${from.toISOString()}&to=${to.toISOString()}`);
+    if (res.ok) {
+      const data = await res.json();
+      setExtCalEvents(data.events ?? []);
+    }
+    setExtCalLoading(false);
+  }, [currentDate]);
+
+  useEffect(() => {
+    if (showExtCal) loadExtCalEvents();
+    else setExtCalEvents([]);
+  }, [showExtCal, loadExtCalEvents]);
 
   // ── Navigation ──────────────────────────────────────────────────────────────
   function prev() {
@@ -1032,8 +1163,20 @@ export default function CalendarClient({
           ))}
         </div>
 
-        {/* Right: today count + add */}
-        <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+        {/* Right: ext cal toggle + today count + add */}
+        <div style={{ display:"flex", alignItems:"center", gap:10, flexWrap:"wrap" }}>
+          <button
+            onClick={() => setShowExtCal(v => !v)}
+            disabled={extCalLoading}
+            style={{
+              ...btnBase,
+              borderColor: showExtCal ? "#0078D4" : C.border,
+              color: showExtCal ? "#0078D4" : C.muted,
+              background: showExtCal ? "rgba(0,120,212,0.1)" : "none",
+            }}
+          >
+            {extCalLoading ? "⏳" : "📅"} Outlook
+          </button>
           {todayCount > 0 && (
             <span style={{ fontSize:"0.72rem", color:C.cyan, background:"var(--nyx-accent-dim)",
                            border:`1px solid var(--nyx-accent-str)`, borderRadius:6,
@@ -1062,6 +1205,7 @@ export default function CalendarClient({
         <MonthView
           currentDate={currentDate}
           activities={activities}
+          extCalEvents={extCalEvents}
           onDayClick={date => openAdd(date)}
           onEventClick={openEdit}
         />
@@ -1070,6 +1214,7 @@ export default function CalendarClient({
         <WeekView
           currentDate={currentDate}
           activities={activities}
+          extCalEvents={extCalEvents}
           onDayClick={date => openAdd(date)}
           onEventClick={openEdit}
         />
@@ -1077,6 +1222,7 @@ export default function CalendarClient({
       {!loading && view === "list" && (
         <ListView
           activities={activities}
+          extCalEvents={extCalEvents}
           onEventClick={openEdit}
         />
       )}
