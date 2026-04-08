@@ -31,6 +31,12 @@ export default function AdminUsersPage() {
   const [approving, setApproving] = useState<string | null>(null);
   const [toast, setToast]         = useState("");
 
+  // Password reset modal
+  const [resetTarget, setResetTarget] = useState<{ id: string; name: string | null } | null>(null);
+  const [resetPw, setResetPw]         = useState("");
+  const [resetting, setResetting]     = useState(false);
+  const [resetError, setResetError]   = useState("");
+
   // Form state
   const [form, setForm] = useState({
     name: "", email: "", password: "", role: "REP", repTitle: "", hospitalName: "",
@@ -98,6 +104,29 @@ export default function AdminUsersPage() {
     }
   }
 
+  async function resetPassword(e: React.FormEvent) {
+    e.preventDefault();
+    if (!resetTarget) return;
+    setResetting(true);
+    setResetError("");
+    try {
+      const res = await fetch(`/api/admin/users?id=${resetTarget.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: resetPw }),
+      });
+      const data = await res.json() as { ok?: boolean; error?: string };
+      if (!res.ok) throw new Error(data.error ?? "Reset failed");
+      showToast(`✓ Password updated for ${resetTarget.name ?? resetTarget.id}`);
+      setResetTarget(null);
+      setResetPw("");
+    } catch (e) {
+      setResetError(e instanceof Error ? e.message : "Reset failed");
+    } finally {
+      setResetting(false);
+    }
+  }
+
   async function approveUser(id: string, name: string | null) {
     setApproving(id);
     try {
@@ -116,7 +145,7 @@ export default function AdminUsersPage() {
   function getApprovalStatus(user: UserRow) {
     if (user.role === "REP") return user.rep?.status ?? null;
     if (user.role === "ACCOUNT") return user.hospital?.status ?? null;
-    return null;
+    return "ACTIVE"; // ADMIN users are always active
   }
 
   function needsApproval(user: UserRow) {
@@ -139,6 +168,53 @@ export default function AdminUsersPage() {
 
   return (
     <div style={{ maxWidth: 1100, margin: "0 auto" }}>
+      {/* Password reset modal */}
+      {resetTarget && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 9998, background: "rgba(0,0,0,0.65)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }} onClick={() => { setResetTarget(null); setResetPw(""); setResetError(""); }}>
+          <div style={{ background: "#1a120a", border: "1px solid rgba(201,168,76,0.3)", borderRadius: 16, padding: "28px 28px 24px", width: "100%", maxWidth: 420, boxShadow: "0 24px 60px rgba(0,0,0,0.6)" }} onClick={(e) => e.stopPropagation()}>
+            <h3 style={{ margin: "0 0 6px", fontSize: "1.05rem", fontWeight: 800, color: "#ede4cf" }}>Reset Password</h3>
+            <p style={{ margin: "0 0 18px", fontSize: "0.82rem", color: "rgba(237,228,207,0.5)" }}>
+              Set a new password for <strong style={{ color: "#c9a84c" }}>{resetTarget.name ?? resetTarget.id}</strong>
+            </p>
+            {resetError && (
+              <div style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.25)", borderRadius: 8, padding: "9px 13px", marginBottom: 14, color: "#fca5a5", fontSize: "0.82rem" }}>{resetError}</div>
+            )}
+            <form onSubmit={resetPassword}>
+              <div style={{ marginBottom: 16 }}>
+                <label style={labelStyle}>New Password *</label>
+                <input
+                  required
+                  type="password"
+                  minLength={8}
+                  autoFocus
+                  autoComplete="new-password"
+                  style={inputStyle}
+                  value={resetPw}
+                  onChange={(e) => setResetPw(e.target.value)}
+                  placeholder="Minimum 8 characters"
+                />
+              </div>
+              <div style={{ display: "flex", gap: 10 }}>
+                <button
+                  type="submit"
+                  disabled={resetting}
+                  style={{ background: "#c9a84c", color: "#100805", fontWeight: 800, fontSize: "0.85rem", border: "none", borderRadius: 9, padding: "10px 20px", cursor: resetting ? "not-allowed" : "pointer", opacity: resetting ? 0.7 : 1 }}
+                >
+                  {resetting ? "Saving…" : "Save Password"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setResetTarget(null); setResetPw(""); setResetError(""); }}
+                  style={{ background: "rgba(255,255,255,0.05)", color: "rgba(237,228,207,0.6)", fontWeight: 700, fontSize: "0.85rem", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 9, padding: "10px 18px", cursor: "pointer" }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Toast */}
       {toast && (
         <div style={{ position: "fixed", top: 20, right: 24, zIndex: 9999, background: "rgba(34,197,94,0.15)", border: "1px solid rgba(34,197,94,0.35)", borderRadius: 10, padding: "12px 18px", color: "#86efac", fontWeight: 700, fontSize: "0.9rem" }}>
@@ -266,6 +342,14 @@ export default function AdminUsersPage() {
                   {approving === u.id ? "…" : "Approve"}
                 </button>
               )}
+
+              {/* Reset Password */}
+              <button
+                onClick={() => { setResetTarget({ id: u.id, name: u.name }); setResetPw(""); setResetError(""); }}
+                style={{ background: "rgba(201,168,76,0.08)", border: "1px solid rgba(201,168,76,0.22)", borderRadius: 8, color: "#c9a84c", fontWeight: 700, fontSize: "0.75rem", padding: "6px 12px", cursor: "pointer", flexShrink: 0 }}
+              >
+                Reset PW
+              </button>
 
               {/* Delete */}
               <button
