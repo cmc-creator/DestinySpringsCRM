@@ -204,6 +204,7 @@ export default function CommunicationsHub({ role: _role }: Props) {
   const suggestionTimer                             = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Inbox state
+  const [inboxProvider, setInboxProvider]     = useState<"microsoft" | "google">("microsoft");
   const [inboxMessages, setInboxMessages]     = useState<OutlookMessage[]>([]);
   const [inboxLoading, setInboxLoading]       = useState(false);
   const [inboxLoaded, setInboxLoaded]         = useState(false);
@@ -291,10 +292,11 @@ export default function CommunicationsHub({ role: _role }: Props) {
   }
 
   // ── Inbox ────────────────────────────────────────────────────────────────────
-  const loadInbox = useCallback(async (search = "") => {
+  const loadInbox = useCallback(async (search = "", prov?: "microsoft" | "google") => {
+    const provider = prov ?? inboxProvider;
     setInboxLoading(true);
     const q = search ? `&search=${encodeURIComponent(search)}` : "";
-    const res = await fetch(`/api/communications/inbox?folder=Inbox${q}`);
+    const res = await fetch(`/api/communications/inbox?provider=${provider}&folder=Inbox${q}`);
     if (res.ok) {
       const data = await res.json() as { messages: OutlookMessage[]; unreadCount: number };
       setInboxMessages(data.messages);
@@ -302,14 +304,14 @@ export default function CommunicationsHub({ role: _role }: Props) {
       setInboxLoaded(true);
     }
     setInboxLoading(false);
-  }, []);
+  }, [inboxProvider]);
 
   async function markAsRead(msg: OutlookMessage) {
     if (msg.isRead) return;
     await fetch("/api/communications/inbox", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ messageId: msg.id }),
+      body: JSON.stringify({ messageId: msg.id, provider: inboxProvider }),
     });
     setInboxMessages(prev => prev.map(m => m.id === msg.id ? { ...m, isRead: true } : m));
     setInboxUnread(prev => Math.max(0, prev - 1));
@@ -325,7 +327,7 @@ export default function CommunicationsHub({ role: _role }: Props) {
     setToName(msg.from.emailAddress.name);
     setSubject(`Re: ${msg.subject ?? ""}`);
     setBody(`\n\n--- Original message ---\nFrom: ${msg.from.emailAddress.name} <${msg.from.emailAddress.address}>\n${msg.bodyPreview}`);
-    setChannel("OUTLOOK");
+    setChannel(inboxProvider === "google" ? "GMAIL" : "OUTLOOK");
     setSelectedMsg(null);
     setActiveTab("compose");
   }
@@ -625,7 +627,7 @@ export default function CommunicationsHub({ role: _role }: Props) {
               Connect Microsoft 365 or Google to unlock full communications
             </div>
             <div style={{ fontSize: "0.78rem", color: TEXT_MUTED }}>
-              Send Outlook emails, read your inbox, sync calendars, and post Teams messages — all from here.
+              Send Outlook emails, read your inbox, sync calendars, and post Teams messages — all from here. Connect Google to read Gmail and sync Google Calendar too.
             </div>
           </div>
           <div style={{ display: "flex", gap: 8 }}>
@@ -651,15 +653,15 @@ export default function CommunicationsHub({ role: _role }: Props) {
             : tab === "history"  ? `📋 History (${logs.length})`
             : `📄 Templates (${templates.length})`;
 
-          // disable inbox if microsoft not connected
-          const isInboxDisabled = tab === "inbox" && !tokens.find(t => t.provider === "microsoft");
+          // disable inbox if neither microsoft nor google is connected
+          const isInboxDisabled = tab === "inbox" && !tokens.find(t => t.provider === "microsoft") && !tokens.find(t => t.provider === "google");
 
           return (
             <button
               key={tab}
               onClick={() => {
                 if (isInboxDisabled) {
-                  setSendResult({ type: "error", msg: "Connect Microsoft 365 first to access your Outlook inbox." });
+                  setSendResult({ type: "error", msg: "Connect Microsoft 365 or Google to access your inbox." });
                   return;
                 }
                 setActiveTab(tab);
@@ -969,18 +971,49 @@ export default function CommunicationsHub({ role: _role }: Props) {
       {activeTab === "inbox" && (
         <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 14, overflow: "hidden" }}>
 
+          {/* Provider pills — shown when both MS and Google are connected */}
+          {microsoftToken && googleToken && (
+            <div style={{ display: "flex", gap: 6, padding: "10px 18px 0", borderBottom: `1px solid ${BORDER}` }}>
+              {([["microsoft", "📧 Outlook", "#0078D4"], ["google", "📬 Gmail", "#EA4335"]] as const).map(([p, label, color]) => (
+                <button
+                  key={p}
+                  onClick={() => {
+                    if (inboxProvider !== p) {
+                      setInboxProvider(p);
+                      setInboxLoaded(false);
+                      setInboxMessages([]);
+                      setInboxSearch("");
+                      setInboxSearchInput("");
+                      setSelectedMsg(null);
+                      loadInbox("", p);
+                    }
+                  }}
+                  style={{
+                    padding: "5px 14px", borderRadius: 20, border: `1px solid ${inboxProvider === p ? color : BORDER}`,
+                    background: inboxProvider === p ? color + "22" : "transparent",
+                    color: inboxProvider === p ? color : TEXT_MUTED,
+                    fontWeight: inboxProvider === p ? 700 : 400, fontSize: "0.78rem", cursor: "pointer",
+                    marginBottom: 8,
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          )}
+
           {/* Search bar */}
           <div style={{ display: "flex", gap: 8, alignItems: "center", padding: "14px 18px", borderBottom: `1px solid ${BORDER}` }}>
             <input
               value={inboxSearchInput}
               onChange={(e) => setInboxSearchInput(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") { setInboxSearch(inboxSearchInput); loadInbox(inboxSearchInput); } }}
-              placeholder="Search inbox…"
+              placeholder={`Search ${inboxProvider === "google" ? "Gmail" : "Outlook"} inbox…`}
               style={{ ...inputStyle, flex: 1, marginBottom: 0, padding: "8px 12px" }}
             />
             <button
               onClick={() => { setInboxSearch(inboxSearchInput); loadInbox(inboxSearchInput); }}
-              style={{ padding: "8px 16px", borderRadius: 7, border: "none", background: "#0078D4", color: "#fff", fontWeight: 700, fontSize: "0.8rem", cursor: "pointer" }}
+              style={{ padding: "8px 16px", borderRadius: 7, border: "none", background: inboxProvider === "google" ? "#EA4335" : "#0078D4", color: "#fff", fontWeight: 700, fontSize: "0.8rem", cursor: "pointer" }}
             >
               Search
             </button>
@@ -1013,7 +1046,7 @@ export default function CommunicationsHub({ role: _role }: Props) {
                 </button>
                 <button
                   onClick={() => handleReply(selectedMsg)}
-                  style={{ padding: "7px 14px", borderRadius: 7, border: "none", background: "#0078D4", color: "#fff", fontWeight: 700, fontSize: "0.8rem", cursor: "pointer" }}
+                  style={{ padding: "7px 14px", borderRadius: 7, border: "none", background: inboxProvider === "google" ? "#EA4335" : "#0078D4", color: "#fff", fontWeight: 700, fontSize: "0.8rem", cursor: "pointer" }}
                 >
                   ↩ Reply
                 </button>
@@ -1045,7 +1078,7 @@ export default function CommunicationsHub({ role: _role }: Props) {
                     <strong style={{ color: TEXT }}>Received:</strong> {new Date(selectedMsg.receivedDateTime).toLocaleString()}
                   </div>
                   {selectedMsg.hasAttachments && (
-                    <div style={{ fontSize: "0.75rem", color: "#f59e0b" }}>📎 Has attachments (open in Outlook to view)</div>
+                    <div style={{ fontSize: "0.75rem", color: "#f59e0b" }}>📎 Has attachments (open in {inboxProvider === "google" ? "Gmail" : "Outlook"} to view)</div>
                   )}
                 </div>
               </div>
@@ -1054,7 +1087,7 @@ export default function CommunicationsHub({ role: _role }: Props) {
                 {selectedMsg.bodyPreview}
                 {selectedMsg.bodyPreview.length >= 250 && (
                   <div style={{ marginTop: 12, fontSize: "0.72rem", color: TEXT_MUTED }}>
-                    Preview truncated. <button onClick={() => handleReply(selectedMsg)} style={{ background: "none", border: "none", color: "#0078D4", cursor: "pointer", textDecoration: "underline", fontSize: "inherit" }}>Open in compose to reply</button>
+                    Preview truncated. <button onClick={() => handleReply(selectedMsg)} style={{ background: "none", border: "none", color: inboxProvider === "google" ? "#EA4335" : "#0078D4", cursor: "pointer", textDecoration: "underline", fontSize: "inherit" }}>Open in compose to reply</button>
                   </div>
                 )}
               </div>
@@ -1063,12 +1096,12 @@ export default function CommunicationsHub({ role: _role }: Props) {
           ) : inboxLoading ? (
             <div style={{ padding: 40, textAlign: "center", color: TEXT_MUTED }}>
               <div style={{ fontSize: "1.4rem", marginBottom: 8 }}>⏳</div>
-              Loading inbox…
+              Loading {inboxProvider === "google" ? "Gmail" : "Outlook"} inbox…
             </div>
 
           ) : inboxMessages.length === 0 ? (
             <div style={{ padding: 40, textAlign: "center", color: TEXT_MUTED }}>
-              {inboxSearch ? `No messages matching "${inboxSearch}"` : "Your inbox is empty."}
+              {inboxSearch ? `No messages matching "${inboxSearch}"` : `Your ${inboxProvider === "google" ? "Gmail" : "Outlook"} inbox is empty.`}
             </div>
 
           ) : (
@@ -1081,14 +1114,14 @@ export default function CommunicationsHub({ role: _role }: Props) {
                   style={{
                     display: "flex", alignItems: "flex-start", gap: 14, padding: "14px 18px",
                     borderBottom: `1px solid ${BORDER}`, cursor: "pointer",
-                    background: msg.isRead ? "transparent" : "rgba(0,120,212,0.05)",
+                    background: msg.isRead ? "transparent" : (inboxProvider === "google" ? "rgba(234,67,53,0.05)" : "rgba(0,120,212,0.05)"),
                     transition: "background 0.12s",
                   }}
                   onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.04)"; }}
-                  onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = msg.isRead ? "transparent" : "rgba(0,120,212,0.05)"; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = msg.isRead ? "transparent" : (inboxProvider === "google" ? "rgba(234,67,53,0.05)" : "rgba(0,120,212,0.05)"); }}
                 >
                   {/* Unread dot */}
-                  <div style={{ width: 8, height: 8, borderRadius: "50%", background: msg.isRead ? "transparent" : "#0078D4", flexShrink: 0, marginTop: 6 }} />
+                  <div style={{ width: 8, height: 8, borderRadius: "50%", background: msg.isRead ? "transparent" : (inboxProvider === "google" ? "#EA4335" : "#0078D4"), flexShrink: 0, marginTop: 6 }} />
 
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 3 }}>
