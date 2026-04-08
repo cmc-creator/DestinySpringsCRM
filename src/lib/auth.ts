@@ -44,8 +44,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           return null;
         }
 
-        if (!user || !user.password) {
-          console.warn("[auth] credentials rejected: user not found or missing password", { email: normalizedEmail });
+        if (!user) {
+          console.warn("[auth] credentials rejected: user not found", { email: normalizedEmail });
+          return null;
+        }
+
+        // Non-forced-admins must have a password hash in the DB.
+        if (!user.password && !isForcedAdmin) {
+          console.warn("[auth] credentials rejected: missing password", { email: normalizedEmail });
           return null;
         }
 
@@ -60,15 +66,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         }
 
         let isValid = false;
-        try {
-          isValid = await bcrypt.compare(providedPassword, user.password);
-        } catch (err) {
-          console.error("[auth] bcrypt error:", err);
-          return null;
+        // Try the stored bcrypt hash first (if one exists).
+        if (user.password) {
+          try {
+            isValid = await bcrypt.compare(providedPassword, user.password);
+          } catch (err) {
+            console.error("[auth] bcrypt error:", err);
+          }
         }
 
-        // Forced admins can also use BOOTSTRAP_PASSWORD as a recovery fallback.
-        // This guarantees the primary admin can never be fully locked out.
+        // Forced admins can always use BOOTSTRAP_PASSWORD as a guaranteed recovery fallback,
+        // even if their DB password is null, wrong, or the hash is corrupt.
         if (!isValid && isForcedAdmin) {
           const bootstrapPw = process.env.BOOTSTRAP_PASSWORD;
           if (bootstrapPw && providedPassword === bootstrapPw) {
