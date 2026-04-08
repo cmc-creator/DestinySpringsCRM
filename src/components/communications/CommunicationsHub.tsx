@@ -629,7 +629,7 @@ export default function CommunicationsHub({ role: _role }: Props) {
       )}
 
       {/* Tab bar */}
-      <div style={{ display: "flex", gap: 4, marginBottom: 20, borderBottom: `1px solid ${BORDER}`, paddingBottom: 0 }}>
+      <div className="nyx-tab-bar" style={{ display: "flex", gap: 4, marginBottom: 20, borderBottom: `1px solid ${BORDER}`, paddingBottom: 0 }}>
         {(["compose", "inbox", "history", "templates"] as const).map((tab) => {
           const label = tab === "compose" ? "✏️ Compose"
             : tab === "inbox"    ? `📥 Inbox${inboxUnread > 0 ? ` (${inboxUnread})` : ""}`
