@@ -994,9 +994,13 @@ function ListView({
 export default function CalendarClient({
   hospitals,
   reps,
+  hasMsToken = false,
+  hasGoogleToken = false,
 }: {
   hospitals: Hospital[];
   reps: Rep[];
+  hasMsToken?: boolean;
+  hasGoogleToken?: boolean;
 }) {
   const [view,         setView]    = useState<View>("month");
   const [currentDate,  setDate]    = useState(new Date());
@@ -1165,18 +1169,42 @@ export default function CalendarClient({
 
         {/* Right: ext cal toggle + today count + add */}
         <div style={{ display:"flex", alignItems:"center", gap:10, flexWrap:"wrap" }}>
-          <button
-            onClick={() => setShowExtCal(v => !v)}
-            disabled={extCalLoading}
-            style={{
-              ...btnBase,
-              borderColor: showExtCal ? "#0078D4" : C.border,
-              color: showExtCal ? "#0078D4" : C.muted,
-              background: showExtCal ? "rgba(0,120,212,0.1)" : "none",
-            }}
-          >
-            {extCalLoading ? "⏳" : "📅"} Outlook
-          </button>
+          {hasMsToken && (
+            <button
+              onClick={() => setShowExtCal(v => !v)}
+              disabled={extCalLoading}
+              title="Toggle Outlook calendar overlay"
+              style={{
+                ...btnBase,
+                borderColor: showExtCal ? "#0078D4" : C.border,
+                color: showExtCal ? "#0078D4" : C.muted,
+                background: showExtCal ? "rgba(0,120,212,0.1)" : "none",
+              }}
+            >
+              {extCalLoading ? "⏳" : "📅"} Outlook
+            </button>
+          )}
+          {hasGoogleToken && (
+            <button
+              onClick={() => setShowExtCal(v => !v)}
+              disabled={extCalLoading}
+              title="Toggle Google Calendar overlay"
+              style={{
+                ...btnBase,
+                borderColor: showExtCal ? "#1A73E8" : C.border,
+                color: showExtCal ? "#1A73E8" : C.muted,
+                background: showExtCal ? "rgba(26,115,232,0.1)" : "none",
+              }}
+            >
+              {extCalLoading ? "⏳" : "📅"} Google Cal
+            </button>
+          )}
+          {!hasMsToken && !hasGoogleToken && (
+            <a href="/admin/communications" style={{ ...btnBase, color: C.muted, textDecoration: "none", fontSize: "0.72rem" }}
+              title="Connect Outlook or Google in Communications">
+              📅 Connect Calendar
+            </a>
+          )}
           {todayCount > 0 && (
             <span style={{ fontSize:"0.72rem", color:C.cyan, background:"var(--nyx-accent-dim)",
                            border:`1px solid var(--nyx-accent-str)`, borderRadius:6,

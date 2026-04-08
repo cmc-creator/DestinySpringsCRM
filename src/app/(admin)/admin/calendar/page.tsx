@@ -1,8 +1,12 @@
 ﻿import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
 import CalendarClient from "@/components/calendar/CalendarClient";
 
 export default async function CalendarPage() {
-  const [hospitals, reps, overdueLeads, overdueOpps] = await Promise.all([
+  const session = await auth();
+  const userId = session?.user?.id;
+
+  const [hospitals, reps, overdueLeads, overdueOpps, msToken, googleToken] = await Promise.all([
     prisma.hospital.findMany({
       select: { id: true, hospitalName: true },
       orderBy: { hospitalName: "asc" },
@@ -24,6 +28,8 @@ export default async function CalendarPage() {
       orderBy: { updatedAt: "asc" },
       take: 20,
     }),
+    userId ? prisma.integrationToken.findUnique({ where: { userId_provider: { userId, provider: "microsoft" } }, select: { id: true } }) : null,
+    userId ? prisma.integrationToken.findUnique({ where: { userId_provider: { userId, provider: "google" } }, select: { id: true } }) : null,
   ]);
 
   const TEXT = "var(--nyx-text)";
@@ -50,7 +56,7 @@ export default async function CalendarPage() {
           </div>
         </div>
       )}
-      <CalendarClient hospitals={hospitals} reps={reps} />
+      <CalendarClient hospitals={hospitals} reps={reps} hasMsToken={!!msToken} hasGoogleToken={!!googleToken} />
     </div>
   );
 }
