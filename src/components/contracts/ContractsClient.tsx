@@ -363,7 +363,7 @@ export default function ContractsClient({ hospitals, reps }: { hospitals: Hospit
         Buyout matrix: Lite <strong style={{ color: C.text }}>${BUYOUT_PACKAGES.LITE.value.toLocaleString()}</strong>, Standard <strong style={{ color: C.text }}>${BUYOUT_PACKAGES.STANDARD.value.toLocaleString()}</strong>, Full Transfer <strong style={{ color: C.text }}>${BUYOUT_PACKAGES.FULL_TRANSFER.value.toLocaleString()}</strong>. Priority defaults apply {Math.round(PRIORITY_PARTNER_DISCOUNT * 100)}% off standard.
       </div>
 
-      <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap", alignItems: "center" }}>
+      <div className="nyx-filter-bar" style={{ marginBottom: 16 }}>
         {["ALL",...STATUSES].map(s => (
           <button key={s} onClick={() => setFilterStatus(s)} style={{ background: filterStatus === s ? "var(--nyx-accent-dim)" : C.card, border: `1px solid ${filterStatus === s ? "var(--nyx-accent-str)" : C.border}`, borderRadius: 6, padding: "5px 14px", color: filterStatus === s ? C.cyan : C.muted, cursor: "pointer", fontSize: "0.75rem", fontWeight: filterStatus === s ? 700 : 400 }}>{s}</button>
         ))}

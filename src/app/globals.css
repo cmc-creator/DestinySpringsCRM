@@ -1419,3 +1419,53 @@ img[data-nimg] {
     0 2px 14px rgba(0,0,0,0.10);
   animation: none;
 }
+
+/* ══════════════════════════════════════════════════════════════
+   Filter Bars and Chip Rows — base styles and mobile overrides
+   ══════════════════════════════════════════════════════════════ */
+
+/* Horizontal scrolling chip rows (status pills, account-type pills) */
+.nyx-filter-chips {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* Search + filter/sort control bars */
+.nyx-filter-bar {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+@media (max-width: 768px) {
+  /* Chip rows become horizontally scrollable — no multi-row wrapping on phone */
+  .nyx-filter-chips {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 4px;
+    scrollbar-width: none;
+    -webkit-mask-image: linear-gradient(to right, black 85%, transparent 100%);
+    mask-image: linear-gradient(to right, black 85%, transparent 100%);
+  }
+  .nyx-filter-chips::-webkit-scrollbar { display: none; }
+  .nyx-filter-chips > * { flex-shrink: 0; }
+
+  /* Inputs and selects inside filter bars go full-width with touch-friendly height */
+  .nyx-filter-bar input,
+  .nyx-filter-bar select {
+    flex: 1 1 100% !important;
+    max-width: 100% !important;
+    min-height: 42px;
+    font-size: 1rem;
+  }
+
+  /* Sortable column headers — slightly taller tap targets */
+  .nyx-table-scroll th {
+    padding-top: 13px !important;
+    padding-bottom: 13px !important;
+  }
+}

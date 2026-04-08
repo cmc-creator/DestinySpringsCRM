@@ -212,29 +212,12 @@ export default function OpportunitiesClient({ hospitals, reps }: { hospitals: Ho
         <AIInsightsPanel role="admin" />
       </div>
 
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20, flexWrap: "wrap", gap: 12 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12, flexWrap: "wrap", gap: 12 }}>
         <div>
           <p style={{ color: "var(--nyx-accent-label)", fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 4 }}>PIPELINE</p>
           <h2 style={{ fontSize: "1.8rem", fontWeight: 900, color: C.text }}>Admissions</h2>
         </div>
-        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-          {/* Search + Stage filter */}
-          <input
-            style={{ ...inp, width: 240 }}
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="🔍 Search title, hospital…"
-          />
-          <select style={{ ...sel, width: "auto", minWidth: 150 }} value={filterStage} onChange={e => setFilterStage(e.target.value)}>
-            <option value="ALL">All Stages</option>
-            {STAGES.map(s => <option key={s} value={s}>{lbl(s)}</option>)}
-          </select>
-          {(search || filterStage !== "ALL") && (
-            <button onClick={() => { setSearch(""); setFilterStage("ALL"); }}
-              style={{ background: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.2)", borderRadius: 7, padding: "7px 12px", color: "#f87171", cursor: "pointer", fontSize: "0.78rem", fontWeight: 600, whiteSpace: "nowrap" }}>
-              ✕ Clear
-            </button>
-          )}
+        <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
           <div style={{ display: "flex", gap: 8 }}>
             <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 8, padding: "8px 14px", textAlign: "center" }}>
               <div style={{ fontSize: "1rem", fontWeight: 900, color: C.cyan }}>{fmt(pipeline)}</div>
@@ -252,6 +235,27 @@ export default function OpportunitiesClient({ hospitals, reps }: { hospitals: Ho
           </div>
           <button onClick={() => setModal("add")} style={{ background: "var(--nyx-accent-dim)", border: "1px solid var(--nyx-accent-str)", borderRadius: 8, padding: "9px 18px", color: C.cyan, cursor: "pointer", fontWeight: 700, fontSize: "0.875rem" }}>+ New</button>
         </div>
+      </div>
+
+      {/* Search + Stage filter — own row, mobile-friendly */}
+      <div className="nyx-filter-bar" style={{ marginBottom: 20 }}>
+        <input
+          className="nyx-filter-input"
+          style={{ ...inp, flex: "1 1 200px", maxWidth: 340, minWidth: 0 }}
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder="🔍 Search title, hospital…"
+        />
+        <select className="nyx-filter-select" style={{ ...sel, width: "auto", minWidth: 150 }} value={filterStage} onChange={e => setFilterStage(e.target.value)}>
+          <option value="ALL">All Stages</option>
+          {STAGES.map(s => <option key={s} value={s}>{lbl(s)}</option>)}
+        </select>
+        {(search || filterStage !== "ALL") && (
+          <button onClick={() => { setSearch(""); setFilterStage("ALL"); }}
+            style={{ background: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.2)", borderRadius: 7, padding: "7px 12px", color: "#f87171", cursor: "pointer", fontSize: "0.78rem", fontWeight: 600, whiteSpace: "nowrap" }}>
+            ✕ Clear
+          </button>
+        )}
       </div>
 
       {loading && <div style={{ color: C.muted, padding: 40, textAlign: "center" }}>Loading…</div>}

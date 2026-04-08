@@ -337,7 +337,7 @@ export default function RepsClient() {
       </div>
 
       {/* Search + Filters bar */}
-      <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 20, alignItems: "center" }}>
+      <div className="nyx-filter-bar" style={{ marginBottom: 20 }}>
         <input style={{ ...inp, maxWidth: 280, flex: "1 1 200px" }} value={search} onChange={e => setSearch(e.target.value)} placeholder="Search name, email, territory…" />
 
         <select style={{ ...sel, width: "auto", minWidth: 140 }} value={statusFilter} onChange={e => setStatusFilter(e.target.value as RepStatus | "ALL")}>

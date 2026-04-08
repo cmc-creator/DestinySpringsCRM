@@ -474,7 +474,7 @@ export default function LeadsClient({ reps }: { reps: Rep[] }) {
       </div>
 
       {/* Search + Filters */}
-      <div style={{ display: "flex", gap: 10, marginBottom: 16, flexWrap: "wrap", alignItems: "center" }}>
+      <div className="nyx-filter-bar" style={{ marginBottom: 16 }}>
         <input style={{ ...inp, maxWidth: 320, flex: "1 1 200px" }} value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍 Search hospital, contact, state…" />
         <select style={{ ...sel, width: "auto", minWidth: 140 }} value={filterSource} onChange={e => setFilterSource(e.target.value)}>
           <option value="ALL">All Sources</option>

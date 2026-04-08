@@ -343,7 +343,7 @@ export default function HospitalsClient({ initialHospitals }: { initialHospitals
     }
   }
 
-  const inp2: React.CSSProperties = { background: C.input, border: `1px solid ${C.border}`, borderRadius: 7, padding: "8px 12px", color: C.text, fontSize: "0.875rem", outline: "none", width: 300 };
+  const inp2: React.CSSProperties = { background: C.input, border: `1px solid ${C.border}`, borderRadius: 7, padding: "8px 12px", color: C.text, fontSize: "0.875rem", outline: "none", width: "100%", maxWidth: 380, boxSizing: "border-box" };
 
   return (
     <div>
@@ -360,7 +360,7 @@ export default function HospitalsClient({ initialHospitals }: { initialHospitals
       </div>
 
       {/* Status filters */}
-      <div style={{ display: "flex", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
+      <div className="nyx-filter-chips" style={{ marginBottom: 10 }}>
         {(["ALL", ...STATUSES] as const).map(s => (
           <button key={s} onClick={() => setFilterStatus(s)}
             style={{ fontSize: "0.72rem", fontWeight: 700, padding: "4px 12px", borderRadius: 20, border: `1px solid ${filterStatus === s ? STATUS_COLOR[s as HospitalStatus] ?? "var(--nyx-accent)" : C.border}`, background: filterStatus === s ? "rgba(0,0,0,0.3)" : "transparent", color: filterStatus === s ? STATUS_COLOR[s as HospitalStatus] ?? "var(--nyx-accent)" : C.muted, cursor: "pointer", whiteSpace: "nowrap" }}>
@@ -370,7 +370,7 @@ export default function HospitalsClient({ initialHospitals }: { initialHospitals
       </div>
 
       {/* Account type filters */}
-      <div style={{ display: "flex", gap: 6, marginBottom: 14, flexWrap: "wrap" }}>
+      <div className="nyx-filter-chips" style={{ marginBottom: 14 }}>
         <button onClick={() => setFilterType("ALL")}
           style={{ fontSize: "0.7rem", padding: "3px 10px", borderRadius: 16, border: `1px solid ${filterType === "ALL" ? "var(--nyx-accent-str)" : C.border}`, background: filterType === "ALL" ? "var(--nyx-accent-dim)" : "transparent", color: filterType === "ALL" ? "var(--nyx-accent)" : C.muted, cursor: "pointer", whiteSpace: "nowrap" }}>
           All Types
@@ -383,8 +383,8 @@ export default function HospitalsClient({ initialHospitals }: { initialHospitals
         ))}
       </div>
 
-      <div style={{ marginBottom: 16 }}>
-        <input style={inp2} value={search} onChange={e => setSearch(e.target.value)} placeholder="Search accounts, city, state…" />
+      <div className="nyx-filter-bar" style={{ marginBottom: 16 }}>
+        <input style={{ ...inp2, maxWidth: "100%" }} value={search} onChange={e => setSearch(e.target.value)} placeholder="Search accounts, city, state…" />
       </div>
 
       {/* Table */}
