@@ -546,7 +546,7 @@ export default function DashboardClient({
                   }}
                 >
                   <Link href={s.href} style={{ textDecoration: "none" }}>
-                    <div className="gold-card" style={{ borderRadius: 12, padding: "20px 18px", cursor: "pointer", transition: "box-shadow 0.2s" }}>
+                    <div className="gold-card" style={{ borderRadius: 12, padding: "20px 18px", cursor: "pointer", transition: "box-shadow 0.2s", minHeight: 130, display: "flex", flexDirection: "column" }}>
                       <div style={{ marginBottom: 10, opacity: 0.85 }}><Icon id={s.icon} color="var(--nyx-accent)" /></div>
                       <div style={{ fontSize: "1.8rem", fontWeight: 900, color: TEXT, lineHeight: 1, marginBottom: 4 }}>{s.value}</div>
                       <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>

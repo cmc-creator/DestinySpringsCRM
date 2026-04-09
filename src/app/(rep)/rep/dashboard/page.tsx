@@ -5,10 +5,9 @@ import { redirect } from "next/navigation";
 import { formatCurrency, formatRelativeTime } from "@/lib/utils";
 import AIInsightsPanel from "@/components/ai/AIInsightsPanel";
 import QuickActionsWidget from "@/components/dashboard/QuickActionsWidget";
-import BedAvailabilityWidget from "@/components/dashboard/BedAvailabilityWidget";
 import CadenceAlertWidget from "@/components/dashboard/CadenceAlertWidget";
 import TurnaroundWidget from "@/components/dashboard/TurnaroundWidget";
-import DischargeDestinationWidget from "@/components/dashboard/DischargeDestinationWidget";
+import BedboardAndDischargesWidget from "@/components/dashboard/BedboardAndDischargesWidget";
 
 const CYAN = "var(--nyx-accent)";
 const CARD = "var(--nyx-card)";
@@ -179,17 +178,14 @@ export default async function RepDashboard() {
         <p style={{ color: TEXT_MUTED, fontSize: "0.875rem", marginTop: 4 }}>{rep.title} · {rep.territory ?? "No territory set"}</p>
       </div>
 
-      {/* Bed Availability */}
-      <BedAvailabilityWidget />
+      {/* Bedboard & Discharges */}
+      <BedboardAndDischargesWidget repId={rep.id} />
 
       {/* Tier 1 Cadence Alerts */}
       <CadenceAlertWidget repId={rep.id} />
 
       {/* Referral Turnaround Time */}
       <TurnaroundWidget repId={rep.id} />
-
-      {/* Discharge Destinations */}
-      <DischargeDestinationWidget repId={rep.id} />
 
       {/* Follow-up alerts */}
       {pastDue.length > 0 && (
@@ -251,7 +247,7 @@ export default async function RepDashboard() {
             sub: `${rep._count.leads} lead${rep._count.leads !== 1 ? "s" : ""} assigned`,
           },
         ].map((s) => (
-          <div key={s.label} style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: "20px 18px" }}>
+          <div key={s.label} style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: "20px 18px", minHeight: 130, display: "flex", flexDirection: "column" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
               <div style={{ fontSize: "1.3rem" }}>{s.icon}</div>
               {"delta" in s && s.delta !== 0 && (() => {
