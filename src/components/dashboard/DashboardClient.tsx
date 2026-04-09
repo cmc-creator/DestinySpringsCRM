@@ -75,6 +75,7 @@ export interface DashboardClientProps {
   soonDocs: ComplianceDocItem[];
   aegisSummary: AegisSummary;
   censusToday: CensusData | null;
+  censusTrend: CensusData[];
 }
 
 // ─── Section definitions ──────────────────────────────────────────────────────
@@ -290,7 +291,70 @@ function CensusBed({ label, occupied, total, color }: { label: string; occupied:
   );
 }
 
-function CensusPulseSection({ census }: { census: CensusData }) {
+function CensusTrendSparkline({ trend }: { trend: CensusData[] }) {
+  if (trend.length < 2) return null;
+
+  const points = trend.map((s) => ({
+    date: new Date(s.date).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+    occupied: (s.adultTotal - s.adultAvailable) + (s.adolescentTotal - s.adolescentAvailable) + (s.geriatricTotal - s.geriatricAvailable) + (s.dualDxTotal - s.dualDxAvailable),
+    total: s.adultTotal + s.adolescentTotal + s.geriatricTotal + s.dualDxTotal,
+    available: s.adultAvailable + s.adolescentAvailable + s.geriatricAvailable + s.dualDxAvailable,
+  }));
+
+  const maxOcc = Math.max(...points.map((p) => p.total), 1);
+  const W = 420; const H = 64; const pad = 8;
+  const innerW = W - pad * 2; const innerH = H - pad * 2;
+
+  const toX = (i: number) => pad + (i / (points.length - 1)) * innerW;
+  const toY = (v: number) => pad + innerH - (v / maxOcc) * innerH;
+
+  const occPath  = points.map((p, i) => `${i === 0 ? "M" : "L"}${toX(i).toFixed(1)},${toY(p.occupied).toFixed(1)}`).join(" ");
+  const availPath = points.map((p, i) => `${i === 0 ? "M" : "L"}${toX(i).toFixed(1)},${toY(p.available).toFixed(1)}`).join(" ");
+
+  const lastPoint = points[points.length - 1];
+
+  return (
+    <div style={{ marginTop: 16, paddingTop: 14, borderTop: `1px solid ${BORDER}` }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+        <p style={{ fontSize: "0.66rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.1em", textTransform: "uppercase" }}>14-Day Census Trend</p>
+        <div style={{ display: "flex", gap: 12 }}>
+          <span style={{ fontSize: "0.66rem", color: MUTED }}><span style={{ display: "inline-block", width: 8, height: 2, background: GOLD, marginRight: 4, verticalAlign: "middle" }} />Occupied</span>
+          <span style={{ fontSize: "0.66rem", color: MUTED }}><span style={{ display: "inline-block", width: 8, height: 2, background: "#34d399", marginRight: 4, verticalAlign: "middle" }} />Available</span>
+        </div>
+      </div>
+      <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ display: "block", overflow: "visible" }}>
+        {/* gridlines */}
+        {[0, 0.5, 1].map((f) => (
+          <line key={f} x1={pad} x2={W - pad} y1={pad + innerH * (1 - f)} y2={pad + innerH * (1 - f)}
+            stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
+        ))}
+        {/* occupied area fill */}
+        <path
+          d={`${occPath} L${toX(points.length - 1).toFixed(1)},${H - pad} L${pad},${H - pad} Z`}
+          fill="rgba(201,168,76,0.08)"
+        />
+        {/* occupied line */}
+        <path d={occPath} fill="none" stroke={GOLD} strokeWidth="1.8" strokeLinejoin="round" strokeLinecap="round" style={{ filter: "drop-shadow(0 0 4px rgba(201,168,76,0.5))" }} />
+        {/* available line */}
+        <path d={availPath} fill="none" stroke="#34d399" strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" strokeDasharray="4 3" style={{ filter: "drop-shadow(0 0 3px rgba(52,211,153,0.4))" }} />
+        {/* today dot */}
+        <circle cx={toX(points.length - 1)} cy={toY(lastPoint.occupied)} r="3.5" fill={GOLD} style={{ filter: "drop-shadow(0 0 4px rgba(201,168,76,0.8))" }} />
+        {/* date labels — first, mid, last */}
+        {[0, Math.floor(points.length / 2), points.length - 1].map((idx) => (
+          <text key={idx} x={toX(idx)} y={H + 2} textAnchor="middle" fontSize="8" fill="rgba(216,232,244,0.35)">
+            {points[idx].date}
+          </text>
+        ))}
+      </svg>
+      <div style={{ display: "flex", gap: 16, marginTop: 12 }}>
+        <div style={{ fontSize: "0.72rem", color: MUTED }}>Today: <span style={{ color: TEXT, fontWeight: 700 }}>{lastPoint.occupied} occupied</span></div>
+        <div style={{ fontSize: "0.72rem", color: MUTED }}><span style={{ color: "#34d399", fontWeight: 700 }}>{lastPoint.available} available</span></div>
+      </div>
+    </div>
+  );
+}
+
+function CensusPulseSection({ census, trend }: { census: CensusData; trend: CensusData[] }) {
   const totalBeds = census.adultTotal + census.adolescentTotal + census.geriatricTotal + census.dualDxTotal;
   const totalOccupied = (census.adultTotal - census.adultAvailable) + (census.adolescentTotal - census.adolescentAvailable) + (census.geriatricTotal - census.geriatricAvailable) + (census.dualDxTotal - census.dualDxAvailable);
   const totalAvail = totalBeds - totalOccupied;
@@ -320,6 +384,7 @@ function CensusPulseSection({ census }: { census: CensusData }) {
         {census.note && (
           <p style={{ fontSize: "0.76rem", color: MUTED, marginTop: 14, paddingTop: 12, borderTop: `1px solid ${BORDER}` }}>📝 {census.note}</p>
         )}
+        <CensusTrendSparkline trend={trend} />
       </div>
     </div>
   );
@@ -348,6 +413,7 @@ export default function DashboardClient({
   soonDocs,
   aegisSummary,
   censusToday,
+  censusTrend,
 }: DashboardClientProps) {
   const statIds = useMemo(() => stats.map((s) => s.id), [stats]);
   const [order, setOrder]           = useState<SectionId[]>(ALL_SECTIONS);
@@ -598,7 +664,7 @@ export default function DashboardClient({
           </div>
         );
       case "census":
-        return censusToday ? <CensusPulseSection census={censusToday} /> : null;
+        return censusToday ? <CensusPulseSection census={censusToday} trend={censusTrend} /> : null;
       case "quick-actions":
         return <QuickActionsWidget role="ADMIN" />;
       case "compliance":

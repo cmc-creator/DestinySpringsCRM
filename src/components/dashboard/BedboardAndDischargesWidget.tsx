@@ -14,9 +14,10 @@ function bedColor(available: number): string {
 
 async function getCensus() {
   try {
-    return await prisma.censusSnapshot.findFirst({ orderBy: { date: "desc" } });
+    const rows = await prisma.censusSnapshot.findMany({ orderBy: { date: "desc" }, take: 14 });
+    return { today: rows[0] ?? null, trend: [...rows].reverse() };
   } catch {
-    return null;
+    return { today: null, trend: [] };
   }
 }
 
@@ -83,6 +84,43 @@ async function getDischargeData(repId?: string) {
   }
 }
 
+type SnapRow = { adultTotal: number; adultAvailable: number; adolescentTotal: number; adolescentAvailable: number; geriatricTotal: number; geriatricAvailable: number; dualDxTotal: number; dualDxAvailable: number; date: Date };
+
+function CensusTrendSparkline({ trend }: { trend: SnapRow[] }) {
+  if (trend.length < 2) return null;
+  const W = 420, H = 64, PAD = 4;
+  const data = trend.map((s) => ({
+    date: s.date,
+    occupied: (s.adultTotal + s.adolescentTotal + s.geriatricTotal + s.dualDxTotal) -
+              (s.adultAvailable + s.adolescentAvailable + s.geriatricAvailable + s.dualDxAvailable),
+    available: s.adultAvailable + s.adolescentAvailable + s.geriatricAvailable + s.dualDxAvailable,
+  }));
+  const maxVal = Math.max(...data.map((d) => d.occupied + d.available), 1);
+  const toX = (i: number) => PAD + (i / (data.length - 1)) * (W - PAD * 2);
+  const toY = (v: number) => H - PAD - (v / maxVal) * (H - PAD * 2);
+  const pts = (key: "occupied" | "available") =>
+    data.map((d, i) => `${toX(i)},${toY(d[key])}`).join(" ");
+  const labelAt = [0, Math.floor(data.length / 2), data.length - 1];
+  return (
+    <div style={{ marginTop: 18, borderTop: "1px solid rgba(255,255,255,0.07)", paddingTop: 14 }}>
+      <p style={{ fontSize: "0.66rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>14-Day Census Trend</p>
+      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: 64 }} preserveAspectRatio="none">
+        <polyline fill="none" stroke="#fbbf24" strokeWidth="2" strokeLinejoin="round" points={pts("occupied")} />
+        <polyline fill="none" stroke="#34d399" strokeWidth="1.5" strokeDasharray="4 3" strokeLinejoin="round" points={pts("available")} />
+        {labelAt.map((i) => (
+          <text key={i} x={toX(i)} y={H} textAnchor={i === 0 ? "start" : i === data.length - 1 ? "end" : "middle"} fontSize="8" fill="#6b7280">
+            {new Date(data[i].date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+          </text>
+        ))}
+      </svg>
+      <div style={{ display: "flex", gap: 12, marginTop: 4 }}>
+        <span style={{ fontSize: "0.65rem", color: "#fbbf24", display: "flex", alignItems: "center", gap: 4 }}><span style={{ display: "inline-block", width: 12, height: 2, background: "#fbbf24", borderRadius: 1 }} />Occupied</span>
+        <span style={{ fontSize: "0.65rem", color: "#34d399", display: "flex", alignItems: "center", gap: 4 }}><span style={{ display: "inline-block", width: 12, height: 2, background: "#34d399", borderRadius: 1 }} />Available</span>
+      </div>
+    </div>
+  );
+}
+
 function BarRow({ label, count, total }: { label: string; count: number; total: number }) {
   const pct = total > 0 ? Math.round((count / total) * 100) : 0;
   return (
@@ -99,7 +137,7 @@ function BarRow({ label, count, total }: { label: string; count: number; total: 
 }
 
 export default async function BedboardAndDischargesWidget({ repId }: { repId?: string }) {
-  const [census, { destinations, providers }] = await Promise.all([
+  const [{ today: census, trend }, { destinations, providers }] = await Promise.all([
     getCensus(),
     getDischargeData(repId),
   ]);
@@ -213,6 +251,8 @@ export default async function BedboardAndDischargesWidget({ repId }: { repId?: s
           )}
         </div>
       </div>
+
+      <CensusTrendSparkline trend={trend} />
     </div>
   );
 }

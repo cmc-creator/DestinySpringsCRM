@@ -126,15 +126,26 @@ export default async function AdminDashboard() {
     });
   } catch { /* non-fatal */ }
 
-  // Census — most recent snapshot
+  // Census — most recent snapshot + 14-day trend
   let censusToday: {
     date: Date; adultTotal: number; adultAvailable: number;
     adolescentTotal: number; adolescentAvailable: number;
     geriatricTotal: number; geriatricAvailable: number;
     dualDxTotal: number; dualDxAvailable: number; note: string | null;
   } | null = null;
+  let censusTrend: Array<{
+    date: Date; adultTotal: number; adultAvailable: number;
+    adolescentTotal: number; adolescentAvailable: number;
+    geriatricTotal: number; geriatricAvailable: number;
+    dualDxTotal: number; dualDxAvailable: number; note: string | null;
+  }> = [];
   try {
-    censusToday = await prisma.censusSnapshot.findFirst({ orderBy: { date: "desc" } });
+    const snapshots = await prisma.censusSnapshot.findMany({
+      orderBy: { date: "desc" },
+      take: 14,
+    });
+    censusToday = snapshots[0] ?? null;
+    censusTrend = snapshots.reverse(); // oldest first for chart
   } catch { /* non-fatal */ }
 
   const now = new Date();
@@ -240,6 +251,14 @@ export default async function AdminDashboard() {
         dualDxAvailable: censusToday.dualDxAvailable,
         note: censusToday.note,
       } : null}
+      censusTrend={censusTrend.map((s) => ({
+        date: s!.date.toISOString(),
+        adultTotal: s!.adultTotal, adultAvailable: s!.adultAvailable,
+        adolescentTotal: s!.adolescentTotal, adolescentAvailable: s!.adolescentAvailable,
+        geriatricTotal: s!.geriatricTotal, geriatricAvailable: s!.geriatricAvailable,
+        dualDxTotal: s!.dualDxTotal, dualDxAvailable: s!.dualDxAvailable,
+        note: s!.note,
+      }))}
       aegisSummary={{
         windowLabel: "Last 7 days",
         replies: 0,
