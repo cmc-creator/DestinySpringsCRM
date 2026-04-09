@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 import { formatCurrency, formatRelativeTime } from "@/lib/utils";
 import AIInsightsPanel from "@/components/ai/AIInsightsPanel";
 import QuickActionsWidget from "@/components/dashboard/QuickActionsWidget";
+import BedAvailabilityWidget from "@/components/dashboard/BedAvailabilityWidget";
+import CadenceAlertWidget from "@/components/dashboard/CadenceAlertWidget";
 
 const CYAN = "var(--nyx-accent)";
 const CARD = "var(--nyx-card)";
@@ -133,6 +135,12 @@ export default async function RepDashboard() {
         <h1 style={{ fontSize: "1.8rem", fontWeight: 900, color: TEXT }}>Welcome, {rep.user.name?.split(" ")[0]}</h1>
         <p style={{ color: TEXT_MUTED, fontSize: "0.875rem", marginTop: 4 }}>{rep.title} · {rep.territory ?? "No territory set"}</p>
       </div>
+
+      {/* Bed Availability */}
+      <BedAvailabilityWidget />
+
+      {/* Tier 1 Cadence Alerts */}
+      <CadenceAlertWidget repId={rep.id} />
 
       {/* Follow-up alerts */}
       {pastDue.length > 0 && (
