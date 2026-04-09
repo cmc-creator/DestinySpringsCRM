@@ -52,6 +52,7 @@
 7. [Account (Facility) Module Reference](#account-facility-module-reference)
 8. [How-To Workflows](#how-to-workflows)
    - [Log a Field Activity with GPS](#log-a-field-activity-with-gps)
+   - [Export Visit Log / Mileage Reimbursement](#export-visit-log-mileage-reimbursement)
    - [Use Voice Dictation for Notes](#use-voice-dictation-for-notes)
    - [Submit a Pre-Assessment Inquiry](#submit-a-pre-assessment-inquiry)
    - [Review and Action a Pre-Assessment (Admin)](#review-and-action-a-pre-assessment-admin)
@@ -274,6 +275,23 @@ Activities are logged touchpoints — calls, in-person visits, facility tours, e
 - **Check-in / Check-out timestamps** (lat/lng + arrived/departed datetime)
 
 See [Log a Field Activity with GPS](#log-a-field-activity-with-gps) for the full workflow.
+
+**Export Visit Log (Mileage Reimbursement)**
+On the **My Activities** page (REP portal), click **📤 Export Log** in the top-right to download a CSV of activities for a custom date range. The export includes:
+
+| Column | Description |
+|--------|-------------|
+| Date | Activity completion date |
+| Activity Type | Call, Site Visit, In-Service, etc. |
+| Purpose | Activity title |
+| Notes | Full notes text |
+| Destination Name | Linked referral source or facility |
+| Destination Address | Full street address of destination |
+| Arrived At / Departed At | Check-in/out times (if GPS-logged) |
+| Duration (min) | Time on-site |
+| Latitude / Longitude | GPS coordinates at time of log |
+
+Import directly into your mileage reimbursement spreadsheet or expense system.
 
 ---
 

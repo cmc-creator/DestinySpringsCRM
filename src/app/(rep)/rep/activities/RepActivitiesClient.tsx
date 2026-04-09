@@ -86,10 +86,18 @@ export default function RepActivitiesClient({
   const [editActivity, setEditActivity] = useState<Activity | null>(null);
   const [editForm, setEditForm] = useState({ type: "", title: "", notes: "", hospitalId: "", completedAt: "" });
   const [editSaving, setEditSaving] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [exportFrom, setExportFrom] = useState(() => {
+    const d = new Date();
+    d.setDate(1);
+    return d.toISOString().slice(0, 10);
+  });
+  const [exportTo, setExportTo] = useState(() => new Date().toISOString().slice(0, 10));
 
   // Track modal open state in a ref so the interval can read it without causing restarts
   const modalOpenRef = React.useRef(false);
-  React.useEffect(() => { modalOpenRef.current = showModal || editActivity !== null; }, [showModal, editActivity])
+  React.useEffect(() => { modalOpenRef.current = showModal || editActivity !== null || showExportModal; }, [showModal, editActivity, showExportModal])
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -218,6 +226,66 @@ export default function RepActivitiesClient({
           onCancel={() => setConfirmDeleteActivityId(null)}
         />
       )}
+
+      {/* Export modal */}
+      {showExportModal && (
+        <div
+          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}
+          onClick={(e) => { if (e.target === e.currentTarget) setShowExportModal(false); }}
+        >
+          <div style={{ background: "#111827", border: "1px solid rgba(34,211,238,0.25)", borderRadius: 16, padding: 28, width: "100%", maxWidth: 400 }}>
+            <h2 style={{ margin: "0 0 6px", fontSize: "1.1rem", fontWeight: 800, color: C.text }}>Export Visit Log</h2>
+            <p style={{ margin: "0 0 20px", fontSize: "0.8rem", color: C.muted, lineHeight: 1.5 }}>
+              Downloads a CSV with date, activity type, destination, addresses, GPS coordinates, arrival/departure times, and duration — suitable for mileage reimbursement.
+            </p>
+            <div style={{ display: "flex", gap: 12, marginBottom: 20 }}>
+              <div style={{ flex: 1 }}>
+                <label style={{ display: "block", fontSize: "0.73rem", fontWeight: 700, color: C.muted, marginBottom: 4 }}>From</label>
+                <input
+                  type="date"
+                  value={exportFrom}
+                  onChange={(e) => setExportFrom(e.target.value)}
+                  style={{ ...inp, width: "100%", boxSizing: "border-box", colorScheme: "dark" }}
+                />
+              </div>
+              <div style={{ flex: 1 }}>
+                <label style={{ display: "block", fontSize: "0.73rem", fontWeight: 700, color: C.muted, marginBottom: 4 }}>To</label>
+                <input
+                  type="date"
+                  value={exportTo}
+                  onChange={(e) => setExportTo(e.target.value)}
+                  style={{ ...inp, width: "100%", boxSizing: "border-box", colorScheme: "dark" }}
+                />
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+              <button
+                onClick={() => setShowExportModal(false)}
+                style={{ background: "transparent", border: `1px solid ${C.border}`, borderRadius: 8, padding: "9px 18px", color: C.muted, fontSize: "0.82rem", cursor: "pointer" }}
+              >
+                Cancel
+              </button>
+              <a
+                href={exporting ? undefined : `/api/export/mileage?from=${exportFrom}&to=${exportTo}`}
+                download
+                onClick={() => { setExporting(true); setTimeout(() => { setExporting(false); setShowExportModal(false); }, 1500); }}
+                style={{
+                  display: "inline-flex", alignItems: "center", gap: 6,
+                  background: exporting ? "rgba(34,211,238,0.05)" : "rgba(34,211,238,0.12)",
+                  border: "1px solid rgba(34,211,238,0.4)",
+                  borderRadius: 8, padding: "9px 20px",
+                  color: "#22d3ee", fontWeight: 800, fontSize: "0.84rem",
+                  textDecoration: "none", cursor: exporting ? "default" : "pointer",
+                  pointerEvents: exporting ? "none" : "auto",
+                }}
+              >
+                {exporting ? "Downloading…" : "📤 Download CSV"}
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
         <div>
@@ -238,6 +306,12 @@ export default function RepActivitiesClient({
           style={{ background: "rgba(255,255,255,0.05)", border: `1px solid rgba(201,168,76,0.2)`, color: loading ? "rgba(237,228,207,0.3)" : "rgba(237,228,207,0.6)", fontWeight: 700, fontSize: "0.82rem", borderRadius: 10, padding: "10px 14px", cursor: loading ? "not-allowed" : "pointer" }}
         >
           {loading ? "↻" : "↻ Refresh"}
+        </button>
+        <button
+          onClick={() => setShowExportModal(true)}
+          style={{ background: "rgba(34,211,238,0.08)", border: "1px solid rgba(34,211,238,0.3)", color: "#22d3ee", fontWeight: 700, fontSize: "0.82rem", borderRadius: 10, padding: "10px 14px", cursor: "pointer" }}
+        >
+          📤 Export Log
         </button>
       </div>
 
