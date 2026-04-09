@@ -45,6 +45,7 @@
    - [Communications (Rep)](#communications-rep)
    - [My Contacts](#my-contacts)
    - [Visit Prep (Pre-Call Planner)](#visit-prep-pre-call-planner)
+   - [Competitive Intel](#competitive-intel)
    - [Pre-Assessment Form](#pre-assessment-form)
    - [Resource Library (Rep)](#resource-library-rep)
    - [Documents](#documents)
@@ -726,6 +727,46 @@ Rule-based talking points generated from real CRM data — no guessing. Examples
 
 **Quick Actions** (always visible at the top)
 Same one-tap Call / Email / Text / Directions buttons, plus a **+ Log Activity** link to record the visit.
+
+---
+
+### Competitive Intel
+
+**Path:** Sidebar → Outreach → Competitive Intel (`/rep/intel`)
+
+A landscape view across all referral sources assigned to this rep — who's sending, who isn't, and what competitors are in play.
+
+**Summary Cards**
+| Card | What it means |
+|------|---------------|
+| Total Sources | All sources currently assigned to this rep |
+| With Competitor Intel | Sources where an admin has entered competitor notes |
+| Active Partners (30d) | Sources that sent at least 1 referral in the last 30 days |
+| Not Yet Sending (90d) | Sources with zero referrals in the last 90 days — prime outreach targets |
+
+**Source Cards**
+Each card shows:
+- Source name, practice name, city/state
+- **Tier badge** and **Status badge**:
+  - 🟢 Active Partner (sent in last 30d)
+  - 🟡 Needs Attention (sent in last 90d but not last 30d)
+  - 🟠 Opportunity (no referrals in 90d)
+- Referral counts: last 30 days and last 90 days
+- Monthly goal (if set)
+- Influence level
+- **⚠ Competitor Intel box** (orange-tinted, expandable) — any competitor activity notes entered by an admin
+
+**Filters**
+| Filter | Shows |
+|--------|-------|
+| All Sources | Every assigned source |
+| ⚠ Has Competitor Intel | Only sources with competitor notes |
+| Active Partners | Sources sending referrals in last 30d |
+| Opportunities | Sources with no referrals in last 90d |
+
+**Search** — type in the search box to filter by source name, practice, contact name, or keywords within competitor intel notes.
+
+> **Tip**: Use the **Opportunities** filter before a territory sweep to build your call list. Sources with competitor intel and zero referrals are your highest-priority recovery targets.
 
 ---
 

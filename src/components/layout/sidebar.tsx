@@ -176,6 +176,7 @@ const REP_NAV: NavGroup[] = [
     group: "Outreach", tint: "orange",
     items: [
       { href: "/rep/contacts",       label: "My Contacts" },
+      { href: "/rep/intel",          label: "Competitive Intel" },
       { href: "/rep/communications", label: "Communications" },
       { href: "/rep/activities",     label: "My Activities" },
       { href: "/rep/tasks",          label: "Tasks" },
