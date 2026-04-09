@@ -43,6 +43,7 @@
    - [My Admissions](#my-admissions)
    - [My Territory](#my-territory)
    - [Communications (Rep)](#communications-rep)
+   - [My Contacts](#my-contacts)
    - [Pre-Assessment Form](#pre-assessment-form)
    - [Resource Library (Rep)](#resource-library-rep)
    - [Documents](#documents)
@@ -211,6 +212,10 @@ The executive dashboard provides a real-time operational snapshot.
 | Conversion Rate | Leads → Admissions conversion % |
 | Avg Length of Stay | Average days per admitted patient (when available) |
 | Active Leads | Leads currently in the pipeline |
+
+**Referral Turnaround Widget** — All-reps view of average days from referral received → admitted, with a per-source bar chart and trend vs. the prior 30-day period.
+
+**Discharge Destinations Widget** — Ranked breakdown of where all patients were discharged to in the last 30 days (IOP, home, SNF, step-down, etc.). Shows count and percentage bar per destination. Useful for identifying step-down referral opportunities and tracking competitor placements. Synced automatically from the SharePoint discharge list.
 
 **Charts & Panels**
 - **Admission Funnel**: bar chart showing Lead → Screened → Pending → Admitted → Discharged counts
@@ -397,11 +402,21 @@ Pre-built printable and exportable reports.
 
 ### Census
 
-Daily census tracking across monitored facilities.
+Daily census tracking across all 4 inpatient units.
 
-- View current occupied/available beds per facility.
-- Update census counts manually or via automated sync (iCANotes / MedWorxs integration).
-- Census data feeds the executive dashboard KPI card.
+- **Auto-sync**: Bed counts are updated automatically **every hour** (Mon–Sun, 7am–4pm AZ time) by reading the live SharePoint bedboard Excel file and using AI to parse unit counts — regardless of column format changes.
+- **Manual override**: Admins can also update census counts manually from this page at any time.
+- Census data feeds the **Bed Availability Widget** on all three dashboards (Admin, Rep, Partner/Account).
+
+**Units tracked**
+| Unit | Field |
+|------|-------|
+| Adult Inpatient Psychiatry | Total / Available |
+| Adolescent Psychiatry | Total / Available |
+| Geriatric / Older Adult | Total / Available |
+| Dual Diagnosis / Co-occurring | Total / Available |
+
+> The "last updated" timestamp on the Bed Availability Widget reflects when the most recent sync or manual entry occurred.
 
 ---
 
@@ -587,6 +602,19 @@ Personal KPI dashboard scoped to the logged-in rep's data only.
 - Overdue Leads (past follow-up date)
 - Overdue Opportunities (past expected admission date)
 
+**Bed Availability Widget** — Live bed availability across all 4 units, auto-synced hourly from the SharePoint bedboard:
+- Adult Inpatient Psychiatry
+- Adolescent Psychiatry
+- Geriatric / Older Adult
+- Dual Diagnosis / Co-occurring
+- Color-coded: green (≥40% open), yellow (10–39%), red (<10%) — "Last updated" timestamp shown.
+
+**Tier 1 Cadence Alerts** — Flags Tier 1 referral sources assigned to this rep that have not been contacted in 7+ days. Red badge at 14+ days, yellow at 7–13 days. Tap a source name to go directly to their record. Hidden when all sources are current.
+
+**Referral Turnaround Widget** — Shows average days from referral received → admitted for this rep's sources, plus a per-source bar chart and a trend arrow vs. the prior 30 days. Faster turnaround = green; slower = red.
+
+**Discharge Destinations Widget** — Ranked list of where patients were discharged to in the last 30 days (IOP, home, SNF, step-down, competitor facilities, etc.), filtered to this rep's referral sources. Shows count and percentage bar for each destination. Synced automatically from the SharePoint discharge list.
+
 **Activity Feed**: Recent field activities with detailed who/what/where context, including facility, location, activity type, and notes snippet.
 
 **Quick Log Widget (⚡ FAB button)**: Floating action button in the bottom-right corner for rapid activity logging from any page (see [Log a Field Activity with GPS](#log-a-field-activity-with-gps)).
@@ -621,6 +649,32 @@ Log and review the rep's own outreach communications.
 - Log a new communication (call, email, in-person visit) with date, contact, and notes.
 - View personal communication history.
 - This data feeds into the admin Communications module for manager review.
+
+---
+
+### My Contacts
+
+A quick-access rolodex of every referral source assigned to this rep — designed for field use.
+
+**What it shows (per source)**
+- Name, specialty, city/state, and source type (ED, IOP/PHP, CSU, Court, etc.)
+- **Days since last contact** — color-coded: cyan (≤7d), yellow (8–14d), red (15d+), gray (never)
+- Referral count to date
+- Tier badge (Tier 1 / Tier 2 / Tier 3) — Tier 1 sources are surfaced at the top
+
+**One-tap actions (expand a card)**
+| Button | Action |
+|--------|--------|
+| 📞 Phone number | Opens native phone dialer |
+| ✉️ Email | Opens native email client |
+| 💬 Text | Opens native SMS app |
+| 📍 Directions | Opens Google Maps directions to the facility |
+
+**Search & Filters**
+- Search by source name, primary contact name, city, specialty, or practice name
+- Filter by tier: All / Tier 1 / Tier 2 / Tier 3
+
+> **Tip**: Tier 1 sources with 14+ days since last contact also appear in the **Cadence Alert Widget** on your dashboard as a red flag.
 
 ---
 
@@ -706,6 +760,8 @@ The Account portal is a read-only external-facing view for referring hospital co
 
 ### Account Dashboard
 - Overview stats: total referrals sent, conversion rate, average response time.
+- **Bed Availability Widget**: Live view of current open beds across all 4 units, auto-synced hourly from the SharePoint bedboard so referring facility staff always see up-to-date availability before placing a call.
+- **Discharge Destinations Widget**: Shows where patients have been discharged in the last 30 days — useful context for care coordination teams at referring facilities.
 - Recent engagement history: list of rep visits, calls, and referral outcomes.
 
 ### Engagements
