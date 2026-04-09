@@ -774,13 +774,16 @@ Submit a clinical pre-assessment inquiry to the admissions team for a potential 
 
 ### Resource Library (Rep)
 
-Browse and download approved resources provided by the admin team.
+Browse, download, and share approved resources provided by the admin team.
 
 - Resources are grouped by category for easy navigation.
-- Each resource shows: title, description, category badge, tags.
-- **Download** button for file-based resources (opens file URL in new tab).
-- **Open Link** button for web-based resources.
-- Search by title or tag is available at the top.
+- Each resource shows: title, description, category badge, tags, file size.
+- **📥 Download** — opens the hosted file (PDF, etc.) in a new tab.
+- **🔗 Open** — for web-based links (opens in new tab).
+- **📤 Share** — one-tap share button:
+  - On **mobile**: triggers the native OS share sheet (share to WhatsApp, text, email, etc.) with the resource title and URL pre-filled.
+  - On **desktop**: copies the resource URL to clipboard. Button briefly shows "✓ Copied!" to confirm.
+- **✉️ Email** — opens the native email client with a pre-composed message including the resource name, description, and URL — ready to send to a social worker or case manager.
 - Read-only — reps cannot add, edit, or delete resources.
 
 ---
