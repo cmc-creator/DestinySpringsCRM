@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import AIInsightsPanel from "@/components/ai/AIInsightsPanel";
+import BedAvailabilityWidget from "@/components/dashboard/BedAvailabilityWidget";
 
 const CYAN = "var(--nyx-accent)";
 const CARD = "var(--nyx-card)";
@@ -135,6 +136,9 @@ export default async function AccountDashboard() {
           <button type="submit" style={{ background: "var(--nyx-accent-dim)", border: "1px solid var(--nyx-accent-str)", borderRadius: 6, color: "var(--nyx-accent)", fontSize: "0.72rem", fontWeight: 700, padding: "3px 10px", cursor: "pointer" }}>Update</button>
         </form>
       </div>
+
+      {/* Bed Availability */}
+      <BedAvailabilityWidget />
 
       {/* Stats */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 16, marginBottom: 28 }}>
