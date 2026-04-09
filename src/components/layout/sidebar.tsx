@@ -138,7 +138,7 @@ const ADMIN_NAV: NavGroup[] = [
       { href: "/admin/compliance",       label: "Compliance" },
       { href: "/admin/analytics",        label: "Analytics" },
       { href: "/admin/reports",          label: "Reports" },
-      { href: "/admin/census",           label: "Census" },
+      { href: "/admin/census",           label: "Bedboard & Discharges" },
       { href: "/admin/payor-mix",        label: "Payor Mix" },
       { href: "/admin/audit",            label: "Audit Log" },
       { href: "/admin/users",            label: "User Accounts" },
