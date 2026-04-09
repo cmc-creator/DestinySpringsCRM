@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { createSsoToken } from "@/lib/auth";
 
 export const maxDuration = 30;
 
@@ -13,14 +14,24 @@ export async function GET(req: NextRequest) {
   const appUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
 
   if (error || !code || !state) {
-    return NextResponse.redirect(`${appUrl}/admin/communications?oauth_error=Access+denied`);
+    const dest = state ? (() => {
+      try {
+        const d = JSON.parse(Buffer.from(state, "base64url").toString("utf-8"));
+        return d.mode === "login" ? "login" : "admin/communications";
+      } catch { return "admin/communications"; }
+    })() : "admin/communications";
+    return NextResponse.redirect(`${appUrl}/${dest}?oauth_error=Access+denied`);
   }
 
-  let userId: string;
+  let userId: string | null = null;
+  let loginMode = false;
   try {
     const decoded = JSON.parse(Buffer.from(state, "base64url").toString("utf-8"));
-    userId = decoded.userId;
-    if (!userId) throw new Error("No userId in state");
+    loginMode = decoded.mode === "login";
+    if (!loginMode) {
+      userId = decoded.userId;
+      if (!userId) throw new Error("No userId in state");
+    }
   } catch {
     return NextResponse.redirect(`${appUrl}/admin/communications?oauth_error=Invalid+state`);
   }
@@ -66,10 +77,32 @@ export async function GET(req: NextRequest) {
     console.warn("Could not fetch Google profile:", e);
   }
 
+  // ── Login mode: find user by email, create SSO session token ───────────────
+  if (loginMode) {
+    if (!email) {
+      return NextResponse.redirect(`${appUrl}/login?error=Could+not+read+your+Google+email`);
+    }
+    const crmUser = await prisma.user.findFirst({
+      where: { email: { equals: email, mode: "insensitive" } },
+    });
+    if (!crmUser) {
+      const msg = encodeURIComponent(`No CRM account linked to ${email}. Contact your admin.`);
+      return NextResponse.redirect(`${appUrl}/login?error=${msg}`);
+    }
+    await prisma.integrationToken.upsert({
+      where:  { userId_provider: { userId: crmUser.id, provider: "google" } },
+      create: { userId: crmUser.id, provider: "google", accessToken: tokenData.access_token, refreshToken: tokenData.refresh_token ?? null, expiresAt: tokenData.expires_in ? new Date(Date.now() + tokenData.expires_in * 1000) : null, scope: tokenData.scope ?? null, email, displayName },
+      update: { accessToken: tokenData.access_token, refreshToken: tokenData.refresh_token ?? null, expiresAt: tokenData.expires_in ? new Date(Date.now() + tokenData.expires_in * 1000) : null, scope: tokenData.scope ?? null, email, displayName },
+    });
+    const ssoToken = createSsoToken(crmUser.id);
+    return NextResponse.redirect(`${appUrl}/auth/sso?t=${encodeURIComponent(ssoToken)}`);
+  }
+
+  // ── Connect mode: upsert token for the already-logged-in user ────────────────
   await prisma.integrationToken.upsert({
-    where: { userId_provider: { userId, provider: "google" } },
+    where: { userId_provider: { userId: userId!, provider: "google" } },
     create: {
-      userId,
+      userId: userId!,
       provider:     "google",
       accessToken:  tokenData.access_token,
       refreshToken: tokenData.refresh_token ?? null,
@@ -88,7 +121,7 @@ export async function GET(req: NextRequest) {
     },
   });
 
-  const user = await prisma.user.findUnique({ where: { id: userId }, select: { role: true } });
+  const user = await prisma.user.findUnique({ where: { id: userId! }, select: { role: true } });
   const base = user?.role === "REP" ? "/rep" : "/admin";
 
   return NextResponse.redirect(`${appUrl}${base}/communications?connected=google`);

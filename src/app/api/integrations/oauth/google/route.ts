@@ -4,10 +4,16 @@ import { auth } from "@/lib/auth";
 export const maxDuration = 10;
 
 // GET /api/integrations/oauth/google
-// Redirects the user to Google OAuth consent screen
-export async function GET(_req: NextRequest) {
+// Redirects the user to Google OAuth consent screen.
+// ?mode=login  — called from the login page; no session required. Creates a CRM session after callback.
+// (default)    — called from Communications; requires existing session to connect the integration.
+export async function GET(req: NextRequest) {
+  const { searchParams } = new URL(req.url);
+  const mode    = searchParams.get("mode");
+  const isLogin = mode === "login";
+
   const session = await auth();
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!isLogin && !session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const clientId    = process.env.GOOGLE_CLIENT_ID;
   const appUrl      = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
@@ -15,11 +21,15 @@ export async function GET(_req: NextRequest) {
 
   if (!clientId) {
     const msg = encodeURIComponent("Google integration is not configured. Add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET to your Vercel environment variables, then redeploy.");
-    const returnUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
-    return NextResponse.redirect(`${returnUrl}/admin/communications?oauth_error=${msg}`);
+    const destination = isLogin ? `/login?error=${msg}` : `/admin/communications?oauth_error=${msg}`;
+    return NextResponse.redirect(`${appUrl}${destination}`);
   }
 
-  const state = Buffer.from(JSON.stringify({ userId: session.user.id })).toString("base64url");
+  // state encodes userId (connect mode) or mode=login flag (login mode)
+  const statePayload = isLogin
+    ? { mode: "login" }
+    : { userId: session!.user.id };
+  const state = Buffer.from(JSON.stringify(statePayload)).toString("base64url");
 
   const scopes = [
     "openid",
