@@ -151,6 +151,7 @@ const ADMIN_NAV: NavGroup[] = [
     items: [
       { href: "/me",                 label: "My Account" },
       { href: "/admin/settings",     label: "Settings" },
+      { href: "/admin/billing",      label: "Billing" },
       { href: "/enterprise/destiny-springs", label: "Partner Portal" },
     ],
   },
@@ -193,7 +194,9 @@ const REP_NAV: NavGroup[] = [
     group: "Files", tint: "cyan",
     items: [
       { href: "/rep/documents", label: "Documents" },
+      { href: "/rep/payments",  label: "Payments" },
       { href: "/me",            label: "My Account" },
+      { href: "/rep/settings",  label: "Settings" },
     ],
   },
 ];

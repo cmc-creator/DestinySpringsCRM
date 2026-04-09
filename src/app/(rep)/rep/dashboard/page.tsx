@@ -41,6 +41,13 @@ export default async function RepDashboard() {
   let overdueLeads: { id: string; hospitalName: string; nextFollowUp: Date | null }[] = [];
   let overdueOpps: { id: string; title: string; nextFollowUp: Date | null; hospital: { hospitalName: string } }[] = [];
   let weeklyActivityCount = 0;
+  let openOppsCount = 0;
+  let closedWonCount = 0;
+  let closedThisMonth = 0;
+  let closedLastMonth = 0;
+  let oppsThisMonth = 0;
+  let oppsLastMonth = 0;
+  let totalPipelineValue = 0;
 
   try {
     rep = await prisma.rep.findUnique({
@@ -76,7 +83,20 @@ export default async function RepDashboard() {
     const now = new Date();
     const weekStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
     const weekAhead = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-    [overdueLeads, overdueOpps, weeklyActivityCount] = await Promise.all([
+    const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const startOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    [
+      overdueLeads,
+      overdueOpps,
+      weeklyActivityCount,
+      openOppsCount,
+      closedWonCount,
+      closedThisMonth,
+      closedLastMonth,
+      oppsThisMonth,
+      oppsLastMonth,
+    ] = await Promise.all([
       prisma.lead.findMany({
         where: { assignedRepId: rep.id, nextFollowUp: { lte: weekAhead } },
         select: { id: true, hospitalName: true, nextFollowUp: true },
@@ -96,7 +116,30 @@ export default async function RepDashboard() {
       prisma.activity.count({
         where: { repId: rep.id, createdAt: { gte: weekStart } },
       }),
+      prisma.opportunity.count({
+        where: { assignedRepId: rep.id, stage: { notIn: ["DISCHARGED", "DECLINED"] } },
+      }),
+      prisma.opportunity.count({
+        where: { assignedRepId: rep.id, stage: "DISCHARGED" },
+      }),
+      prisma.opportunity.count({
+        where: { assignedRepId: rep.id, stage: "DISCHARGED", updatedAt: { gte: startOfThisMonth, lt: startOfNextMonth } },
+      }),
+      prisma.opportunity.count({
+        where: { assignedRepId: rep.id, stage: "DISCHARGED", updatedAt: { gte: startOfLastMonth, lt: startOfThisMonth } },
+      }),
+      prisma.opportunity.count({
+        where: { assignedRepId: rep.id, createdAt: { gte: startOfThisMonth, lt: startOfNextMonth } },
+      }),
+      prisma.opportunity.count({
+        where: { assignedRepId: rep.id, createdAt: { gte: startOfLastMonth, lt: startOfThisMonth } },
+      }),
     ]);
+    const pipelineSum = await prisma.opportunity.aggregate({
+      where: { assignedRepId: rep.id, stage: { notIn: ["DISCHARGED", "DECLINED"] } },
+      _sum: { value: true },
+    });
+    totalPipelineValue = Number(pipelineSum._sum.value ?? 0);
   } catch {
     // non-fatal — follow-ups just won't show
   }
@@ -191,15 +234,42 @@ export default async function RepDashboard() {
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 16, marginBottom: 28 }}>
         {[
-          { label: "Open Opportunities", value: openOpps.length, color: CYAN, icon: "📊" },
-          { label: "Closed Won", value: closedWon.length, color: "#34d399", icon: "✅" },
-          { label: "Pipeline Value", value: formatCurrency(pipelineValue), color: CYAN, icon: "💰" },
-          { label: "Territories", value: rep._count.territories, color: "#60a5fa", icon: "🗺️" },
+          {
+            label: "Open Opportunities", value: openOppsCount, color: CYAN, icon: "📊",
+            delta: oppsThisMonth - oppsLastMonth,
+            sub: pastDue.length > 0 ? `${pastDue.length} overdue follow-up${pastDue.length > 1 ? "s" : ""}` : "No overdue follow-ups",
+          },
+          {
+            label: "Closed Won", value: closedWonCount, color: "#34d399", icon: "✅",
+            delta: closedThisMonth - closedLastMonth,
+            sub: `${closedThisMonth} this month`,
+          },
+          {
+            label: "Pipeline Value", value: formatCurrency(totalPipelineValue), color: CYAN, icon: "💰",
+            sub: `across ${openOppsCount} opp${openOppsCount !== 1 ? "s" : ""}`,
+          },
+          {
+            label: "Territories", value: rep._count.territories, color: "#60a5fa", icon: "🗺️",
+            sub: `${rep._count.leads} lead${rep._count.leads !== 1 ? "s" : ""} assigned`,
+          },
         ].map((s) => (
           <div key={s.label} style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: "20px 18px" }}>
-            <div style={{ fontSize: "1.3rem", marginBottom: 6 }}>{s.icon}</div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
+              <div style={{ fontSize: "1.3rem" }}>{s.icon}</div>
+              {"delta" in s && s.delta !== 0 && (() => {
+                const d = s.delta!;
+                return (
+                  <span style={{ fontSize: "0.68rem", fontWeight: 800, color: d > 0 ? "#34d399" : "#f87171", background: d > 0 ? "rgba(52,211,153,0.12)" : "rgba(248,113,113,0.12)", borderRadius: 6, padding: "2px 6px" }}>
+                    {d > 0 ? "+" : ""}{d}
+                  </span>
+                );
+              })()}
+            </div>
             <div style={{ fontSize: "1.6rem", fontWeight: 900, color: s.color, textShadow: "0 0 20px var(--nyx-accent-str)", lineHeight: 1, marginBottom: 4 }}>{s.value}</div>
-            <div style={{ fontSize: "0.72rem", color: TEXT_MUTED }}>{s.label}</div>
+            <div style={{ fontSize: "0.72rem", color: TEXT_MUTED, marginBottom: "sub" in s && s.sub ? 4 : 0 }}>{s.label}</div>
+            {"sub" in s && s.sub && (
+              <div style={{ fontSize: "0.68rem", color: "var(--nyx-accent)", fontWeight: 600 }}>{s.sub}</div>
+            )}
           </div>
         ))}
       </div>
