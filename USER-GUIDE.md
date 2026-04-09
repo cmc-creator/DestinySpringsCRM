@@ -44,6 +44,7 @@
    - [My Territory](#my-territory)
    - [Communications (Rep)](#communications-rep)
    - [My Contacts](#my-contacts)
+   - [Visit Prep (Pre-Call Planner)](#visit-prep-pre-call-planner)
    - [Pre-Assessment Form](#pre-assessment-form)
    - [Resource Library (Rep)](#resource-library-rep)
    - [Documents](#documents)
@@ -669,12 +670,44 @@ A quick-access rolodex of every referral source assigned to this rep — designe
 | ✉️ Email | Opens native email client |
 | 💬 Text | Opens native SMS app |
 | 📍 Directions | Opens Google Maps directions to the facility |
+| 📋 Visit Prep | Opens the full Visit Prep briefing page for this source |
 
 **Search & Filters**
 - Search by source name, primary contact name, city, specialty, or practice name
 - Filter by tier: All / Tier 1 / Tier 2 / Tier 3
 
 > **Tip**: Tier 1 sources with 14+ days since last contact also appear in the **Cadence Alert Widget** on your dashboard as a red flag.
+
+---
+
+### Visit Prep (Pre-Call Planner)
+
+Tap **📋 Visit Prep** on any contact card to open a full pre-call briefing for that source. Designed to be reviewed in the car before walking in.
+
+**Pre-Call Brief**
+Rule-based talking points generated from real CRM data — no guessing. Examples:
+- Recency prompt: "It's been over a month. Open with a warm check-in and ask if anything has changed."
+- Volume drop: "Referrals dropped 4 vs last quarter. Ask if there are access or process barriers."
+- First visit: "Introduce yourself, leave materials, and ask about their most complex ongoing cases."
+- Tier 1 angle: "Ask about staff changes, continuing education needs, or co-marketing opportunities."
+- Competitor context: surfaced from the stored competitor intel field if present.
+
+**90-Day Pipeline**
+- Referral count for the **last 90 days** vs the **prior 90 days**, with an up/down/steady trend indicator
+- Mini bar chart showing the last 6 months of referral volume
+
+**Recent Activity**
+- Last 5 logged activities for this source: type (call, meeting, in-service, etc.), title, notes snippet, date
+
+**Notes & Intel**
+- Any rep or admin notes stored for this source
+- Competitor intel displayed in a red-tinted warning box
+
+**Contact Details**
+- Full contact card: primary contact name, phone, email, address, practice name, influence role/level
+
+**Quick Actions** (always visible at the top)
+Same one-tap Call / Email / Text / Directions buttons, plus a **+ Log Activity** link to record the visit.
 
 ---
 

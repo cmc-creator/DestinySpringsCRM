@@ -1,5 +1,6 @@
 "use client";
 import { useState, useMemo } from "react";
+import Link from "next/link";
 
 type Source = {
   id: string;
@@ -223,6 +224,18 @@ export default function MyContactsClient({ sources }: { sources: Source[] }) {
                   📍 Directions
                 </a>
               )}
+              <Link
+                href={`/rep/contacts/${s.id}`}
+                style={{
+                  display: "inline-flex", alignItems: "center", gap: 6,
+                  background: "rgba(168,85,247,0.1)", border: "1px solid rgba(168,85,247,0.3)",
+                  borderRadius: 8, padding: "7px 14px",
+                  fontWeight: 700, fontSize: "0.8rem", color: "#a855f7",
+                  textDecoration: "none",
+                }}
+              >
+                📋 Visit Prep
+              </Link>
             </div>
 
             {/* Details grid */}
