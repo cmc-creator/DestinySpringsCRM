@@ -40,6 +40,7 @@ function LoginForm() {
   const [email,    setEmail]    = useState("");
   const [password, setPassword] = useState("");
   const [loading,  setLoading]  = useState(false);
+  const [ssoLoading, setSsoLoading] = useState<"google" | "microsoft-entra-id" | null>(null);
   const [error,    setError]    = useState("");
   const isDev = process.env.NODE_ENV !== "production";
 
@@ -47,15 +48,18 @@ function LoginForm() {
     if (errorCode === "RateLimit") {
       return "Too many sign-in attempts. Please wait a few minutes and try again.";
     }
-
     if (errorCode === "CredentialsSignin") {
       return "Sign-in failed. Check your email and password. If you recently signed up, your account may still be awaiting admin approval.";
     }
-
     if (errorCode === "AccessDenied") {
       return "Access denied. Your account may still be awaiting admin approval.";
     }
-
+    if (errorCode === "OAuthNotLinked") {
+      return "No account found for that Google/Microsoft address. Contact your admin to link your account first.";
+    }
+    if (errorCode === "OAuthCallbackError" || errorCode === "OAuthSignin") {
+      return "OAuth sign-in failed. The provider may not be configured yet — try email and password, or contact your admin.";
+    }
     return `Sign-in failed (${errorCode}). Please check your credentials or contact your admin.`;
   }
 
@@ -63,6 +67,18 @@ function LoginForm() {
     const urlError = searchParams.get("error");
     if (urlError) setError(mapLoginError(urlError));
   }, [searchParams]);
+
+  async function handleSSO(provider: "google" | "microsoft-entra-id") {
+    setSsoLoading(provider);
+    setError("");
+    try {
+      const cb = getSafeCallbackUrl(searchParams.get("callbackUrl"));
+      await signIn(provider, { callbackUrl: cb ?? "/" });
+    } catch {
+      setError("OAuth redirect failed. Please try again.");
+      setSsoLoading(null);
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -272,6 +288,42 @@ function LoginForm() {
           -webkit-appearance: none;
         }
         .lp-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .lp-sso-btn {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 10px;
+          width: 100%;
+          background: rgba(255,255,255,0.05);
+          color: #ede4cf;
+          border: 1px solid rgba(201,168,76,0.18);
+          border-radius: 8px;
+          padding: 12px 14px;
+          font-size: 0.9rem;
+          font-weight: 600;
+          cursor: pointer;
+          min-height: 46px;
+          -webkit-appearance: none;
+          transition: background 0.15s, border-color 0.15s;
+        }
+        .lp-sso-btn:hover:not(:disabled) { background: rgba(255,255,255,0.09); border-color: rgba(201,168,76,0.3); }
+        .lp-sso-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .lp-divider {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          margin: 18px 0;
+          font-size: 0.72rem;
+          color: rgba(237,228,207,0.3);
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+        }
+        .lp-divider::before, .lp-divider::after {
+          content: "";
+          flex: 1;
+          height: 1px;
+          background: rgba(201,168,76,0.15);
+        }
         .lp-signup {
           margin-top: 22px;
           text-align: center;
@@ -399,6 +451,52 @@ function LoginForm() {
           )}
 
           {error && <div className="lp-error">{error}</div>}
+
+          {/* SSO buttons — shown when providers are configured */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 4 }}>
+            <button
+              type="button"
+              className="lp-sso-btn"
+              disabled={ssoLoading !== null}
+              onClick={() => handleSSO("microsoft-entra-id")}
+            >
+              {ssoLoading === "microsoft-entra-id" ? (
+                <span style={{ opacity: 0.7 }}>Redirecting…</span>
+              ) : (
+                <>
+                  <svg width="18" height="18" viewBox="0 0 21 21" aria-hidden="true">
+                    <rect x="1" y="1" width="9" height="9" fill="#f25022"/>
+                    <rect x="11" y="1" width="9" height="9" fill="#7fba00"/>
+                    <rect x="1" y="11" width="9" height="9" fill="#00a4ef"/>
+                    <rect x="11" y="11" width="9" height="9" fill="#ffb900"/>
+                  </svg>
+                  Sign in with Microsoft
+                </>
+              )}
+            </button>
+            <button
+              type="button"
+              className="lp-sso-btn"
+              disabled={ssoLoading !== null}
+              onClick={() => handleSSO("google")}
+            >
+              {ssoLoading === "google" ? (
+                <span style={{ opacity: 0.7 }}>Redirecting…</span>
+              ) : (
+                <>
+                  <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
+                    <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+                    <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+                    <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+                    <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+                  </svg>
+                  Sign in with Google
+                </>
+              )}
+            </button>
+          </div>
+
+          <div className="lp-divider">or sign in with email</div>
 
           <form onSubmit={handleSubmit}>
             <label className="lp-label" htmlFor="lp-email">Email Address</label>

@@ -1,5 +1,7 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
+import MicrosoftEntraID from "next-auth/providers/microsoft-entra-id";
+import Google from "next-auth/providers/google";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { authConfig } from "@/lib/auth.config";
@@ -14,7 +16,100 @@ const FORCE_ADMIN_EMAILS = new Set([
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
   trustHost: true,
+  callbacks: {
+    // Preserve session and authorized from authConfig
+    ...authConfig.callbacks,
+
+    // Override jwt to handle both credentials and OAuth sign-in
+    async jwt({ token, user, account }) {
+      if (account?.provider === "google" || account?.provider === "microsoft-entra-id") {
+        // OAuth sign-in: resolve to CRM user by email (happens once per session)
+        const email = (token.email ?? user?.email) as string | undefined;
+        if (email) {
+          const crmUser = await prisma.user.findFirst({
+            where: { email: { equals: email, mode: "insensitive" } },
+          });
+          if (crmUser) {
+            token.id   = crmUser.id;
+            token.role = crmUser.role as never;
+          }
+        }
+      } else if (user) {
+        // Credentials sign-in
+        token.id   = user.id as string;
+        token.role = (user as { role: string }).role as never;
+      }
+      return token;
+    },
+
+    // Store integration tokens automatically on OAuth sign-in
+    async signIn({ user, account }) {
+      if (account?.provider === "google" || account?.provider === "microsoft-entra-id") {
+        if (!user.email) return false;
+
+        const crmUser = await prisma.user.findFirst({
+          where: { email: { equals: user.email, mode: "insensitive" } },
+        });
+        // Block OAuth sign-in if the user doesn't exist in the CRM
+        if (!crmUser) return "/login?error=OAuthNotLinked";
+
+        const provider = account.provider === "google" ? "google" : "microsoft";
+        const tokenData = {
+          accessToken:  account.access_token  ?? "",
+          refreshToken: account.refresh_token ?? null,
+          expiresAt:    account.expires_at    ? new Date(account.expires_at * 1000) : null,
+          scope:        account.scope         ?? null,
+          email:        user.email            ?? null,
+          displayName:  user.name             ?? null,
+        };
+        try {
+          await prisma.integrationToken.upsert({
+            where:  { userId_provider: { userId: crmUser.id, provider } },
+            create: { userId: crmUser.id, provider, ...tokenData },
+            update: tokenData,
+          });
+        } catch (err) {
+          console.error("[auth] failed to upsert integration token on OAuth sign-in", err);
+          // Don't block sign-in if token storage fails — they can reconnect manually
+        }
+        return true;
+      }
+      return true;
+    },
+  },
   providers: [
+    // ── Microsoft 365 / Entra ID ────────────────────────────────────────────
+    // Same credentials as MICROSOFT_CLIENT_ID / MICROSOFT_CLIENT_SECRET.
+    // Users who sign in with Microsoft automatically connect Outlook + Calendar.
+    ...(process.env.MICROSOFT_CLIENT_ID && process.env.MICROSOFT_CLIENT_SECRET
+      ? [MicrosoftEntraID({
+          clientId:     process.env.MICROSOFT_CLIENT_ID,
+          clientSecret: process.env.MICROSOFT_CLIENT_SECRET,
+          authorization: {
+            params: {
+              scope: "openid email profile offline_access User.Read Mail.ReadWrite Mail.Send Calendars.ReadWrite",
+            },
+          },
+        })]
+      : []),
+
+    // ── Google ──────────────────────────────────────────────────────────────
+    // Same credentials as GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET.
+    // Users who sign in with Google automatically connect Gmail + Calendar.
+    ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
+      ? [Google({
+          clientId:     process.env.GOOGLE_CLIENT_ID,
+          clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+          authorization: {
+            params: {
+              scope:       "openid email profile https://www.googleapis.com/auth/gmail.modify https://www.googleapis.com/auth/calendar.events",
+              access_type: "offline",
+              prompt:      "consent",
+            },
+          },
+        })]
+      : []),
+
     Credentials({
       name: "credentials",
       credentials: {
