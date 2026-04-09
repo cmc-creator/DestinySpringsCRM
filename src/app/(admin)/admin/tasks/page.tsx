@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect, useCallback } from "react";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 
 type TaskStatus   = "OPEN" | "IN_PROGRESS" | "DONE" | "CANCELLED";
 type TaskPriority = "LOW" | "MEDIUM" | "HIGH" | "URGENT";
@@ -83,6 +84,7 @@ export default function AdminTasksPage() {
   const [saving, setSaving]             = useState(false);
   const [updating, setUpdating]         = useState<Set<string>>(new Set());
   const [deleting, setDeleting]         = useState<Set<string>>(new Set());
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -137,7 +139,10 @@ export default function AdminTasksPage() {
   }
 
   async function deleteTask(id: string) {
-    if (!confirm("Delete this task?")) return;
+    setConfirmDeleteId(id);
+  }
+  async function confirmDeleteTask(id: string) {
+    setConfirmDeleteId(null);
     setDeleting((prev) => new Set(prev).add(id));
     try {
       await fetch(`/api/tasks/${id}`, { method: "DELETE" });
@@ -168,11 +173,21 @@ export default function AdminTasksPage() {
 
   return (
     <div style={{ color: C.text, maxWidth: 1100 }}>
+      {confirmDeleteId && (
+        <ConfirmDialog
+          message="Delete this task?"
+          subtext="This cannot be undone."
+          confirmLabel="Delete"
+          onConfirm={() => confirmDeleteTask(confirmDeleteId)}
+          onCancel={() => setConfirmDeleteId(null)}
+        />
+      )}
       {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 28, flexWrap: "wrap", gap: 12 }}>
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 28, flexWrap: "wrap", gap: 12 }}>
         <div>
-          <h1 style={{ fontSize: "1.5rem", fontWeight: 700, color: GOLD, margin: 0, letterSpacing: 2 }}>TASKS</h1>
-          <p style={{ color: C.muted, fontSize: "0.82rem", margin: "4px 0 0" }}>
+          <p style={{ color: "var(--nyx-accent-label)", fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 4 }}>TEAM</p>
+          <h1 style={{ fontSize: "1.8rem", fontWeight: 900, color: C.text, margin: 0 }}>Tasks</h1>
+          <p style={{ color: C.muted, fontSize: "0.875rem", margin: "4px 0 0" }}>
             {tasks.length} total · {counts.open} open · {counts.inProgress} in progress
             {counts.overdue > 0 && <span style={{ color: "#f87171", marginLeft: 8 }}>· {counts.overdue} overdue</span>}
           </p>

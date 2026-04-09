@@ -1,5 +1,6 @@
 ﻿"use client";
 import { useState, useEffect, useCallback, useRef } from "react";
+import TableSkeleton from "@/components/ui/TableSkeleton";
 
 type RepStatus = "ACTIVE"|"INACTIVE"|"PENDING_REVIEW"|"SUSPENDED";
 type PerfTier = "all"|"top"|"mid"|"low";
@@ -219,6 +220,8 @@ export default function RepsClient() {
   const [viewMode, setViewMode] = useState<ViewMode>("cards");
   const [actionMenu, setActionMenu] = useState<string | null>(null);
   const [statusPatching, setStatusPatching] = useState<string | null>(null);
+  const [sortCol, setSortCol] = useState<string>("name");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const actionMenuRef = useRef<HTMLDivElement>(null);
 
   const load = useCallback(async () => {
@@ -289,6 +292,22 @@ export default function RepsClient() {
 
   function clearFilters() { setStatusFilter("ALL"); setStateFilter("ALL"); setPerfFilter("all"); setSearch(""); }
 
+  function toggleSort(col: string) {
+    if (sortCol === col) setSortDir(d => d === "asc" ? "desc" : "asc");
+    else { setSortCol(col); setSortDir("asc"); }
+  }
+
+  const sortedReps = [...filtered].sort((a, b) => {
+    let av: number | string = 0, bv: number | string = 0;
+    if (sortCol === "name") { av = (a.user.name ?? a.user.email).toLowerCase(); bv = (b.user.name ?? b.user.email).toLowerCase(); }
+    else if (sortCol === "opportunities") { av = a._count.opportunities; bv = b._count.opportunities; }
+    else if (sortCol === "territories") { av = a._count.territories; bv = b._count.territories; }
+    else if (sortCol === "createdAt") { av = a.createdAt; bv = b.createdAt; }
+    if (av < bv) return sortDir === "asc" ? -1 : 1;
+    if (av > bv) return sortDir === "asc" ? 1 : -1;
+    return 0;
+  });
+
   return (
     <div>
       {/* Header */}
@@ -319,7 +338,7 @@ export default function RepsClient() {
       </div>
 
       {/* Search + Filters bar */}
-      <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 20, alignItems: "center" }}>
+      <div className="nyx-filter-bar" style={{ marginBottom: 20 }}>
         <input style={{ ...inp, maxWidth: 280, flex: "1 1 200px" }} value={search} onChange={e => setSearch(e.target.value)} placeholder="Search name, email, territory…" />
 
         <select style={{ ...sel, width: "auto", minWidth: 140 }} value={statusFilter} onChange={e => setStatusFilter(e.target.value as RepStatus | "ALL")}>
@@ -346,21 +365,37 @@ export default function RepsClient() {
         )}
       </div>
 
-      {loading && <div style={{ color: C.muted, padding: 40, textAlign: "center" }}>Loading…</div>}
+      {loading && <div style={{ color: C.muted, padding: 40, textAlign: "center" }}></div>}
 
       {/* ── TABLE VIEW ── */}
-      {!loading && viewMode === "table" && (
+      {viewMode === "table" && (
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.83rem", color: C.text }}>
             <thead>
               <tr style={{ borderBottom: `1px solid ${C.border}` }}>
-                {["Rep","Title","Territory","Status","Tier","Opps","Territories","Licensed","Actions"].map(h => (
-                  <th key={h} style={{ padding: "8px 12px", textAlign: "left", fontSize: "0.65rem", fontWeight: 700, color: "var(--nyx-accent-label)", textTransform: "uppercase", letterSpacing: "0.1em", whiteSpace: "nowrap" }}>{h}</th>
+                {[
+                  { col: "name", label: "Rep" },
+                  { col: null, label: "Title" },
+                  { col: null, label: "Territory" },
+                  { col: null, label: "Status" },
+                  { col: null, label: "Tier" },
+                  { col: "opportunities", label: "Opps" },
+                  { col: "territories", label: "Territories" },
+                  { col: null, label: "Licensed" },
+                  { col: null, label: "Actions" },
+                ].map(({ col, label }) => col ? (
+                  <th key={label} onClick={() => toggleSort(col)}
+                    style={{ padding: "8px 12px", textAlign: "left", fontSize: "0.65rem", fontWeight: 700, color: sortCol === col ? "var(--nyx-accent)" : "var(--nyx-accent-label)", textTransform: "uppercase", letterSpacing: "0.1em", whiteSpace: "nowrap", cursor: "pointer", userSelect: "none" }}>
+                    {label}{sortCol === col ? (sortDir === "asc" ? " ▲" : " ▼") : <span style={{ opacity: 0.3 }}> ⇅</span>}
+                  </th>
+                ) : (
+                  <th key={label} style={{ padding: "8px 12px", textAlign: "left", fontSize: "0.65rem", fontWeight: 700, color: "var(--nyx-accent-label)", textTransform: "uppercase", letterSpacing: "0.1em", whiteSpace: "nowrap" }}>{label}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {filtered.map((rep, i) => {
+              {loading && <TableSkeleton cols={9} rows={8} />}
+              {!loading && sortedReps.map((rep, i) => {
                 const colors = ["var(--nyx-accent)","#34d399","#fbbf24","#a78bfa","#f59e0b","#60a5fa","#f87171","#fb923c"];
                 const color = colors[i % colors.length];
                 const tier = getPerfTier(rep);
@@ -396,7 +431,7 @@ export default function RepsClient() {
                     </td>
                     <td style={{ padding: "10px 12px", color }}>{rep._count.territories}</td>
                     <td style={{ padding: "10px 12px", color: C.muted, fontSize: "0.72rem" }}>{rep.licensedStates.slice(0,4).join(", ")}{rep.licensedStates.length > 4 ? ` +${rep.licensedStates.length-4}` : ""}</td>
-                    <td style={{ padding: "10px 12px" }}>
+                    <td style={{ padding: "10px 12px" }} className="nyx-row-actions">
                       <div style={{ display: "flex", gap: 5, alignItems: "center" }}>
                         {rep.phone && (
                           <a href={`tel:${rep.phone}`} title={`Call ${rep.user.name}`}
@@ -430,8 +465,12 @@ export default function RepsClient() {
                   </tr>
                 );
               })}
-              {filtered.length === 0 && (
-                <tr><td colSpan={9} style={{ padding: 40, textAlign: "center", color: C.muted }}>No reps match the current filters.</td></tr>
+              {!loading && filtered.length === 0 && (
+                <tr><td colSpan={9} style={{ padding: "48px 32px", textAlign: "center" }}>
+                  <div style={{ fontSize: "2rem", marginBottom: 10 }}>👥</div>
+                  <p style={{ margin: 0, color: C.text, fontWeight: 600 }}>No reps found</p>
+                  <p style={{ margin: "6px 0 0", color: C.muted, fontSize: "0.82rem" }}>Try adjusting your filters</p>
+                </td></tr>
               )}
             </tbody>
           </table>

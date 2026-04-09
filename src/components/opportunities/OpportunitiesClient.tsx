@@ -153,6 +153,10 @@ export default function OpportunitiesClient({ hospitals, reps }: { hospitals: Ho
   const [view, setView] = useState<"kanban"|"list">("kanban");
   const [modal, setModal] = useState<"add" | Opp | null>(null);
   const [activityOpp, setActivityOpp] = useState<Opp | null>(null);
+  const [search, setSearch] = useState("");
+  const [filterStage, setFilterStage] = useState<string>("ALL");
+  const [sortCol, setSortCol] = useState<string>("createdAt");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -178,6 +182,29 @@ export default function OpportunitiesClient({ hospitals, reps }: { hospitals: Ho
   const totalWon = opps.filter(o => o.stage === "DISCHARGED").reduce((s, o) => s + (o.value ? Number(o.value) : 0), 0);
   const pipeline = opps.filter(o => !["DISCHARGED","DECLINED"].includes(o.stage)).reduce((s, o) => s + (o.value ? Number(o.value) : 0), 0);
 
+  const filtered = opps.filter(o => {
+    const matchStage = filterStage === "ALL" || o.stage === filterStage;
+    const q = search.toLowerCase();
+    const matchSearch = !q || o.title.toLowerCase().includes(q) || o.hospital.hospitalName.toLowerCase().includes(q) || (o.assignedRep?.user.name ?? "").toLowerCase().includes(q);
+    return matchStage && matchSearch;
+  });
+
+  function toggleSort(col: string) {
+    if (sortCol === col) setSortDir(d => d === "asc" ? "desc" : "asc");
+    else { setSortCol(col); setSortDir("asc"); }
+  }
+
+  const sorted = [...filtered].sort((a, b) => {
+    let av: number | string = 0, bv: number | string = 0;
+    if (sortCol === "title") { av = a.title.toLowerCase(); bv = b.title.toLowerCase(); }
+    else if (sortCol === "value") { av = a.value ? Number(a.value) : 0; bv = b.value ? Number(b.value) : 0; }
+    else if (sortCol === "priority") { const order = { URGENT: 4, HIGH: 3, MEDIUM: 2, LOW: 1 }; av = order[a.priority as keyof typeof order] ?? 0; bv = order[b.priority as keyof typeof order] ?? 0; }
+    else if (sortCol === "createdAt") { av = a.createdAt; bv = b.createdAt; }
+    if (av < bv) return sortDir === "asc" ? -1 : 1;
+    if (av > bv) return sortDir === "asc" ? 1 : -1;
+    return 0;
+  });
+
   return (
     <div>
       {/* AI Insights */}
@@ -185,12 +212,12 @@ export default function OpportunitiesClient({ hospitals, reps }: { hospitals: Ho
         <AIInsightsPanel role="admin" />
       </div>
 
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20, flexWrap: "wrap", gap: 12 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12, flexWrap: "wrap", gap: 12 }}>
         <div>
           <p style={{ color: "var(--nyx-accent-label)", fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 4 }}>PIPELINE</p>
           <h2 style={{ fontSize: "1.8rem", fontWeight: 900, color: C.text }}>Admissions</h2>
         </div>
-        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+        <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
           <div style={{ display: "flex", gap: 8 }}>
             <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 8, padding: "8px 14px", textAlign: "center" }}>
               <div style={{ fontSize: "1rem", fontWeight: 900, color: C.cyan }}>{fmt(pipeline)}</div>
@@ -210,13 +237,34 @@ export default function OpportunitiesClient({ hospitals, reps }: { hospitals: Ho
         </div>
       </div>
 
-      {loading && <div style={{ color: C.muted, padding: 40, textAlign: "center" }}>Loading…</div>}
+      {/* Search + Stage filter — own row, mobile-friendly */}
+      <div className="nyx-filter-bar" style={{ marginBottom: 20 }}>
+        <input
+          className="nyx-filter-input"
+          style={{ ...inp, flex: "1 1 200px", maxWidth: 340, minWidth: 0 }}
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder="🔍 Search title, hospital…"
+        />
+        <select className="nyx-filter-select" style={{ ...sel, width: "auto", minWidth: 150 }} value={filterStage} onChange={e => setFilterStage(e.target.value)}>
+          <option value="ALL">All Stages</option>
+          {STAGES.map(s => <option key={s} value={s}>{lbl(s)}</option>)}
+        </select>
+        {(search || filterStage !== "ALL") && (
+          <button onClick={() => { setSearch(""); setFilterStage("ALL"); }}
+            style={{ background: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.2)", borderRadius: 7, padding: "7px 12px", color: "#f87171", cursor: "pointer", fontSize: "0.78rem", fontWeight: 600, whiteSpace: "nowrap" }}>
+            ✕ Clear
+          </button>
+        )}
+      </div>
+
+      {loading && <div style={{ color: C.muted, padding: 40, textAlign: "center" }}></div>}
 
       {!loading && view === "kanban" && (
         <div style={{ position: "relative" }}>
         <div style={{ display: "flex", gap: 12, overflowX: "auto", paddingBottom: 16 }}>
           {STAGES.map(stage => {
-            const items = opps.filter(o => o.stage === stage);
+            const items = filtered.filter(o => o.stage === stage);
             const color = STAGE_CLR[stage];
             return (
               <div key={stage} style={{ minWidth: 230, flex: "0 0 230px" }}>
@@ -265,14 +313,36 @@ export default function OpportunitiesClient({ hospitals, reps }: { hospitals: Ho
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr style={{ borderBottom: `1px solid ${C.border}` }}>
-                  {["Title","Hospital","Stage","Service Line","Value","Rep","Priority","Next Follow-up","",""].map(h => (
-                  <th key={h} style={{ padding: "12px 14px", textAlign: "left", fontSize: "0.65rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.1em", textTransform: "uppercase" }}>{h}</th>
+              {[
+                  { col: "title", label: "Title" },
+                  { col: null, label: "Hospital" },
+                  { col: null, label: "Stage" },
+                  { col: null, label: "Service Line" },
+                  { col: "value", label: "Value" },
+                  { col: null, label: "Rep" },
+                  { col: "priority", label: "Priority" },
+                  { col: null, label: "Next Follow-up" },
+                  { col: null, label: "edit" },
+                  { col: null, label: "activity" },
+                ].map(({ col, label }) => col ? (
+                  <th key={label} onClick={() => toggleSort(col)}
+                    style={{ padding: "12px 14px", textAlign: "left", fontSize: "0.65rem", fontWeight: 700, color: sortCol === col ? "var(--nyx-accent)" : "var(--nyx-accent-label)", letterSpacing: "0.1em", textTransform: "uppercase", cursor: "pointer", userSelect: "none" }}>
+                    {label}{sortCol === col ? (sortDir === "asc" ? " ▲" : " ▼") : <span style={{ opacity: 0.3 }}> ⇅</span>}
+                  </th>
+                ) : (
+                  <th key={label} style={{ padding: "12px 14px", textAlign: "left", fontSize: "0.65rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.1em", textTransform: "uppercase" }}></th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {opps.length === 0 && <tr><td colSpan={8} style={{ padding: 32, textAlign: "center", color: C.muted }}>No opportunities yet.</td></tr>}
-              {opps.map(opp => (
+              {opps.length === 0 && (
+                <tr><td colSpan={8} style={{ padding: "48px 32px", textAlign: "center" }}>
+                  <div style={{ fontSize: "2rem", marginBottom: 10 }}>💼</div>
+                  <p style={{ margin: 0, color: "var(--nyx-text)", fontWeight: 600 }}>No opportunities yet</p>
+                  <p style={{ margin: "6px 0 0", color: "var(--nyx-text-muted)", fontSize: "0.82rem" }}>Add your first opportunity to start tracking deals</p>
+                </td></tr>
+              )}
+              {sorted.map(opp => (
                 <tr key={opp.id} onClick={() => setModal(opp)} style={{ borderBottom: `1px solid var(--nyx-accent-dim)`, cursor: "pointer" }}
                   onMouseEnter={e => (e.currentTarget.style.background = "var(--nyx-accent-dim)")}
                   onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>

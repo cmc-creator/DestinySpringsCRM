@@ -266,6 +266,8 @@ export default function HospitalsClient({ initialHospitals }: { initialHospitals
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState<string>("ALL");
   const [filterStatus, setFilterStatus] = useState<string>("ALL");
+  const [sortCol, setSortCol] = useState<string>("createdAt");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
 
   const load = useCallback(async (q?: string) => {
     const url = q ? `/api/hospitals?search=${encodeURIComponent(q)}` : "/api/hospitals";
@@ -280,6 +282,23 @@ export default function HospitalsClient({ initialHospitals }: { initialHospitals
     const q = search.toLowerCase();
     return (h.hospitalName?.toLowerCase().includes(q) || h.systemName?.toLowerCase()?.includes(q) ||
       h.city?.toLowerCase()?.includes(q) || h.state?.toLowerCase()?.includes(q));
+  });
+
+  function toggleSort(col: string) {
+    if (sortCol === col) setSortDir(d => d === "asc" ? "desc" : "asc");
+    else { setSortCol(col); setSortDir("asc"); }
+  }
+
+  const sorted = [...filtered].sort((a, b) => {
+    let av: number | string = 0, bv: number | string = 0;
+    if (sortCol === "hospitalName") { av = a.hospitalName?.toLowerCase() ?? ""; bv = b.hospitalName?.toLowerCase() ?? ""; }
+    else if (sortCol === "health") { av = healthScore(a); bv = healthScore(b); }
+    else if (sortCol === "opportunities") { av = a._count?.opportunities ?? 0; bv = b._count?.opportunities ?? 0; }
+    else if (sortCol === "contacts") { av = a._count?.contacts ?? 0; bv = b._count?.contacts ?? 0; }
+    else if (sortCol === "createdAt") { av = a.createdAt; bv = b.createdAt; }
+    if (av < bv) return sortDir === "asc" ? -1 : 1;
+    if (av > bv) return sortDir === "asc" ? 1 : -1;
+    return 0;
   });
 
   async function handleSave(data: Partial<Hospital> & { portalEmail?: string }) {
@@ -324,7 +343,7 @@ export default function HospitalsClient({ initialHospitals }: { initialHospitals
     }
   }
 
-  const inp2: React.CSSProperties = { background: C.input, border: `1px solid ${C.border}`, borderRadius: 7, padding: "8px 12px", color: C.text, fontSize: "0.875rem", outline: "none", width: 300 };
+  const inp2: React.CSSProperties = { background: C.input, border: `1px solid ${C.border}`, borderRadius: 7, padding: "8px 12px", color: C.text, fontSize: "0.875rem", outline: "none", width: "100%", maxWidth: 380, boxSizing: "border-box" };
 
   return (
     <div>
@@ -333,7 +352,7 @@ export default function HospitalsClient({ initialHospitals }: { initialHospitals
         <div>
           <p style={{ color: "var(--nyx-accent-label)", fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 4 }}>ACCOUNTS</p>
           <h1 style={{ fontSize: "1.8rem", fontWeight: 900, color: C.text }}>Accounts</h1>
-          <p style={{ color: C.muted, fontSize: "0.875rem", marginTop: 4 }}>{hospitals.length} accounts</p>
+          <p style={{ color: C.muted, fontSize: "0.875rem", marginTop: 4 }}>{filtered.length !== hospitals.length ? `${filtered.length} of ${hospitals.length}` : hospitals.length} accounts</p>
         </div>
         <button onClick={() => setModal("add")} style={{ background: "var(--nyx-accent-dim)", border: "1px solid var(--nyx-accent-str)", borderRadius: 8, padding: "10px 20px", color: "var(--nyx-accent)", cursor: "pointer", fontWeight: 700, fontSize: "0.875rem", display: "flex", alignItems: "center", gap: 6 }}>
           + Add Account
@@ -341,7 +360,7 @@ export default function HospitalsClient({ initialHospitals }: { initialHospitals
       </div>
 
       {/* Status filters */}
-      <div style={{ display: "flex", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
+      <div className="nyx-filter-chips" style={{ marginBottom: 10 }}>
         {(["ALL", ...STATUSES] as const).map(s => (
           <button key={s} onClick={() => setFilterStatus(s)}
             style={{ fontSize: "0.72rem", fontWeight: 700, padding: "4px 12px", borderRadius: 20, border: `1px solid ${filterStatus === s ? STATUS_COLOR[s as HospitalStatus] ?? "var(--nyx-accent)" : C.border}`, background: filterStatus === s ? "rgba(0,0,0,0.3)" : "transparent", color: filterStatus === s ? STATUS_COLOR[s as HospitalStatus] ?? "var(--nyx-accent)" : C.muted, cursor: "pointer", whiteSpace: "nowrap" }}>
@@ -351,7 +370,7 @@ export default function HospitalsClient({ initialHospitals }: { initialHospitals
       </div>
 
       {/* Account type filters */}
-      <div style={{ display: "flex", gap: 6, marginBottom: 14, flexWrap: "wrap" }}>
+      <div className="nyx-filter-chips" style={{ marginBottom: 14 }}>
         <button onClick={() => setFilterType("ALL")}
           style={{ fontSize: "0.7rem", padding: "3px 10px", borderRadius: 16, border: `1px solid ${filterType === "ALL" ? "var(--nyx-accent-str)" : C.border}`, background: filterType === "ALL" ? "var(--nyx-accent-dim)" : "transparent", color: filterType === "ALL" ? "var(--nyx-accent)" : C.muted, cursor: "pointer", whiteSpace: "nowrap" }}>
           All Types
@@ -364,8 +383,8 @@ export default function HospitalsClient({ initialHospitals }: { initialHospitals
         ))}
       </div>
 
-      <div style={{ marginBottom: 16 }}>
-        <input style={inp2} value={search} onChange={e => setSearch(e.target.value)} placeholder="Search accounts, city, state…" />
+      <div className="nyx-filter-bar" style={{ marginBottom: 16 }}>
+        <input style={{ ...inp2, maxWidth: "100%" }} value={search} onChange={e => setSearch(e.target.value)} placeholder="Search accounts, city, state…" />
       </div>
 
       {/* Table */}
@@ -374,18 +393,35 @@ export default function HospitalsClient({ initialHospitals }: { initialHospitals
           <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 700 }}>
             <thead>
               <tr style={{ borderBottom: `1px solid var(--nyx-border)` }}>
-                {["Account", "System", "Type", "Status", "Health", "Opportunities", "Contacts", "Added", ""].map(h => (
-                  <th key={h} style={{ padding: "12px 16px", textAlign: "left", fontSize: "0.68rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.12em", textTransform: "uppercase", whiteSpace: "nowrap" }}>{h}</th>
+                {[
+                  { col: "hospitalName", label: "Account" },
+                  { col: null, label: "System" },
+                  { col: null, label: "Type" },
+                  { col: null, label: "Status" },
+                  { col: "health", label: "Health", center: true },
+                  { col: "opportunities", label: "Opportunities", center: true },
+                  { col: "contacts", label: "Contacts", center: true },
+                  { col: "createdAt", label: "Added" },
+                  { col: null, label: "" },
+                ].map(({ col, label, center }) => col ? (
+                  <th key={label} onClick={() => toggleSort(col)}
+                    style={{ padding: "12px 16px", textAlign: center ? "center" : "left", fontSize: "0.68rem", fontWeight: 700, color: sortCol === col ? "var(--nyx-accent)" : "var(--nyx-accent-label)", letterSpacing: "0.12em", textTransform: "uppercase", whiteSpace: "nowrap", cursor: "pointer", userSelect: "none" }}>
+                    {label}{sortCol === col ? (sortDir === "asc" ? " ▲" : " ▼") : <span style={{ opacity: 0.3 }}> ⇅</span>}
+                  </th>
+                ) : (
+                  <th key={label || "actions"} style={{ padding: "12px 16px", textAlign: center ? "center" : "left", fontSize: "0.68rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.12em", textTransform: "uppercase", whiteSpace: "nowrap" }}>{label}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 && (
-                <tr><td colSpan={7} style={{ padding: 32, textAlign: "center", color: C.muted, fontSize: "0.9rem" }}>
-                  {search ? "No accounts match your search." : "No accounts yet. Click + Add Account to get started."}
+                <tr><td colSpan={7} style={{ padding: "48px 32px", textAlign: "center" }}>
+                  <div style={{ fontSize: "2rem", marginBottom: 10 }}>{search ? "🔍" : "🏥"}</div>
+                  <p style={{ margin: 0, color: C.text, fontWeight: 600 }}>{search ? "No accounts match your search" : "No accounts yet"}</p>
+                  <p style={{ margin: "6px 0 0", color: C.muted, fontSize: "0.82rem" }}>{search ? "Try a different search term or clear the filter" : "Click + Add Account to get started"}</p>
                 </td></tr>
               )}
-              {filtered.map(h => (
+              {sorted.map(h => (
                 <tr key={h.id} onClick={() => setModal(h)} style={{ borderBottom: `1px solid var(--nyx-accent-dim)`, cursor: "pointer", transition: "background 0.15s" }}
                   onMouseEnter={e => (e.currentTarget.style.background = "var(--nyx-accent-dim)")}
                   onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
@@ -413,7 +449,7 @@ export default function HospitalsClient({ initialHospitals }: { initialHospitals
                   <td style={{ padding: "14px 16px", fontSize: "0.85rem", color: C.muted, textAlign: "center" }}>{h._count?.opportunities ?? 0}</td>
                   <td style={{ padding: "14px 16px", fontSize: "0.85rem", color: C.muted, textAlign: "center" }}>{h._count?.contacts ?? 0}</td>
                   <td style={{ padding: "14px 16px", fontSize: "0.8rem", color: C.muted, whiteSpace: "nowrap" }}>{fmtDate(h.createdAt)}</td>
-                  <td style={{ padding: "14px 8px" }}>
+                  <td style={{ padding: "14px 8px" }} className="nyx-row-actions">
                     {h.isPriorityPartner && (
                       <button
                         onClick={(e) => { e.stopPropagation(); void handleGrantTrialSeat(h); }}

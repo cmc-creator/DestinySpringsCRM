@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 function normalizedName(v: string): string {
@@ -31,6 +32,11 @@ function matchHospital(
 }
 
 export async function POST() {
+  const session = await auth();
+  if (!session?.user || (session.user as { role?: string }).role !== "ADMIN") {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const hospitals = await prisma.hospital.findMany({
     select: { id: true, hospitalName: true },
   });

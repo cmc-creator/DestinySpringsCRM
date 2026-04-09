@@ -1,5 +1,6 @@
 ﻿"use client";
 import { useState, useEffect, useCallback } from "react";
+import TableSkeleton from "@/components/ui/TableSkeleton";
 
 type ContractStatus = "DRAFT"|"SENT"|"SIGNED"|"ACTIVE"|"EXPIRED"|"TERMINATED";
 interface Hospital { id: string; hospitalName: string; isPriorityPartner?: boolean; priorityDiscountPercent?: number | null }
@@ -254,6 +255,9 @@ export default function ContractsClient({ hospitals, reps }: { hospitals: Hospit
   const [modal, setModal] = useState<"add" | Contract | null>(null);
   const [newDraft, setNewDraft] = useState<Partial<Contract> | undefined>(undefined);
   const [filterStatus, setFilterStatus] = useState<string>("ALL");
+  const [search, setSearch] = useState("");
+  const [sortCol, setSortCol] = useState<string>("createdAt");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -262,7 +266,30 @@ export default function ContractsClient({ hospitals, reps }: { hospitals: Hospit
 
   useEffect(() => { load(); }, [load]);
 
-  const filtered = filterStatus === "ALL" ? contracts : contracts.filter(c => c.status === filterStatus);
+  const filtered = contracts.filter(c => {
+    const matchStatus = filterStatus === "ALL" || c.status === filterStatus;
+    const q = search.toLowerCase();
+    const matchSearch = !q || c.title.toLowerCase().includes(q) || c.hospital.hospitalName.toLowerCase().includes(q) || (c.assignedRep?.user.name ?? "").toLowerCase().includes(q);
+    return matchStatus && matchSearch;
+  });
+
+  function toggleSort(col: string) {
+    if (sortCol === col) setSortDir(d => d === "asc" ? "desc" : "asc");
+    else { setSortCol(col); setSortDir("asc"); }
+  }
+
+  const sorted = [...filtered].sort((a, b) => {
+    let av: number | string = 0, bv: number | string = 0;
+    if (sortCol === "title") { av = a.title.toLowerCase(); bv = b.title.toLowerCase(); }
+    else if (sortCol === "hospital") { av = a.hospital.hospitalName.toLowerCase(); bv = b.hospital.hospitalName.toLowerCase(); }
+    else if (sortCol === "value") { av = a.value ? Number(a.value) : 0; bv = b.value ? Number(b.value) : 0; }
+    else if (sortCol === "endDate") { av = a.endDate ?? ""; bv = b.endDate ?? ""; }
+    else if (sortCol === "createdAt") { av = a.createdAt; bv = b.createdAt; }
+    if (av < bv) return sortDir === "asc" ? -1 : 1;
+    if (av > bv) return sortDir === "asc" ? 1 : -1;
+    return 0;
+  });
+
   const totalActive = contracts.filter(c => c.status === "ACTIVE").reduce((s, c) => s + (c.value ? Number(c.value) : 0), 0);
 
   async function handleSave(data: Partial<Contract>) {
@@ -285,7 +312,7 @@ export default function ContractsClient({ hospitals, reps }: { hospitals: Hospit
         <div>
           <p style={{ color: "var(--nyx-accent-label)", fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 4 }}>AGREEMENTS</p>
           <h1 style={{ fontSize: "1.8rem", fontWeight: 900, color: C.text }}>Contracts</h1>
-          <p style={{ color: C.muted, fontSize: "0.875rem", marginTop: 4 }}>{contracts.length} contracts · {fmt(totalActive)} active value</p>
+          <p style={{ color: C.muted, fontSize: "0.875rem", marginTop: 4 }}>{filtered.length !== contracts.length ? `${filtered.length} of ${contracts.length}` : contracts.length} contracts · {fmt(totalActive)} active value</p>
         </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
           <button
@@ -337,10 +364,22 @@ export default function ContractsClient({ hospitals, reps }: { hospitals: Hospit
         Buyout matrix: Lite <strong style={{ color: C.text }}>${BUYOUT_PACKAGES.LITE.value.toLocaleString()}</strong>, Standard <strong style={{ color: C.text }}>${BUYOUT_PACKAGES.STANDARD.value.toLocaleString()}</strong>, Full Transfer <strong style={{ color: C.text }}>${BUYOUT_PACKAGES.FULL_TRANSFER.value.toLocaleString()}</strong>. Priority defaults apply {Math.round(PRIORITY_PARTNER_DISCOUNT * 100)}% off standard.
       </div>
 
-      <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
+      <div className="nyx-filter-bar" style={{ marginBottom: 16 }}>
         {["ALL",...STATUSES].map(s => (
           <button key={s} onClick={() => setFilterStatus(s)} style={{ background: filterStatus === s ? "var(--nyx-accent-dim)" : C.card, border: `1px solid ${filterStatus === s ? "var(--nyx-accent-str)" : C.border}`, borderRadius: 6, padding: "5px 14px", color: filterStatus === s ? C.cyan : C.muted, cursor: "pointer", fontSize: "0.75rem", fontWeight: filterStatus === s ? 700 : 400 }}>{s}</button>
         ))}
+        <input
+          style={{ ...inp, maxWidth: 300, flex: "1 1 200px", marginLeft: 8 }}
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder="🔍 Search title, hospital, rep…"
+        />
+        {search && (
+          <button onClick={() => setSearch("")}
+            style={{ background: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.2)", borderRadius: 7, padding: "7px 14px", color: "#f87171", cursor: "pointer", fontSize: "0.78rem", fontWeight: 600, whiteSpace: "nowrap" }}>
+            ✕ Clear
+          </button>
+        )}
       </div>
 
       <div className="gold-card" style={{ borderRadius: 12 }}>
@@ -349,15 +388,35 @@ export default function ContractsClient({ hospitals, reps }: { hospitals: Hospit
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr style={{ borderBottom: `1px solid ${C.border}` }}>
-              {["Title","Hospital","Status","Value","Start","End","Rep",""].map(h => (
-                <th key={h} style={{ padding: "12px 14px", textAlign: "left", fontSize: "0.65rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.1em", textTransform: "uppercase" }}>{h}</th>
+              {[
+                { col: "title", label: "Title" },
+                { col: "hospital", label: "Hospital" },
+                { col: null, label: "Status" },
+                { col: "value", label: "Value" },
+                { col: null, label: "Start" },
+                { col: "endDate", label: "End" },
+                { col: null, label: "Rep" },
+                { col: null, label: "" },
+              ].map(({ col, label }) => col ? (
+                <th key={label} onClick={() => toggleSort(col)}
+                  style={{ padding: "12px 14px", textAlign: "left", fontSize: "0.65rem", fontWeight: 700, color: sortCol === col ? "var(--nyx-accent)" : "var(--nyx-accent-label)", letterSpacing: "0.1em", textTransform: "uppercase", cursor: "pointer", userSelect: "none" }}>
+                  {label}{sortCol === col ? (sortDir === "asc" ? " ▲" : " ▼") : <span style={{ opacity: 0.3 }}> ⇅</span>}
+                </th>
+              ) : (
+                <th key={label || "actions"} style={{ padding: "12px 14px", textAlign: "left", fontSize: "0.65rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.1em", textTransform: "uppercase" }}>{label}</th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {loading && <tr><td colSpan={8} style={{ padding: 32, textAlign: "center", color: C.muted }}>Loading…</td></tr>}
-            {!loading && filtered.length === 0 && <tr><td colSpan={8} style={{ padding: 32, textAlign: "center", color: C.muted }}>No contracts. Create one to get started.</td></tr>}
-            {filtered.map(c => (
+            {loading && <TableSkeleton cols={8} rows={6} />}
+            {!loading && filtered.length === 0 && (
+              <tr><td colSpan={8} style={{ padding: "48px 32px", textAlign: "center" }}>
+                <div style={{ fontSize: "2rem", marginBottom: 10 }}>📋</div>
+                <p style={{ margin: 0, color: "var(--nyx-text)", fontWeight: 600 }}>No contracts found</p>
+                <p style={{ margin: "6px 0 0", color: "var(--nyx-text-muted)", fontSize: "0.82rem" }}>Try adjusting your filters or add a new contract</p>
+              </td></tr>
+            )}
+            {sorted.map(c => (
               <tr key={c.id} onClick={() => setModal(c)} style={{ borderBottom: `1px solid var(--nyx-accent-dim)`, cursor: "pointer" }}
                 onMouseEnter={e => (e.currentTarget.style.background = "var(--nyx-accent-dim)")}
                 onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
@@ -370,7 +429,7 @@ export default function ContractsClient({ hospitals, reps }: { hospitals: Hospit
                 <td style={{ padding: "12px 14px", fontSize: "0.78rem", color: C.muted }}>{fmtDate(c.startDate)}</td>
                 <td style={{ padding: "12px 14px", fontSize: "0.78rem", color: c.status === "EXPIRED" ? "#fbbf24" : C.muted }}>{fmtDate(c.endDate)}</td>
                 <td style={{ padding: "12px 14px", fontSize: "0.78rem", color: C.muted }}>{c.assignedRep?.user.name ?? "-"}</td>
-                <td style={{ padding: "12px 14px", fontSize: "0.75rem", color: C.cyan }}>Edit →</td>
+                <td style={{ padding: "12px 14px", fontSize: "0.75rem", color: C.cyan }} className="nyx-row-actions">Edit →</td>
               </tr>
             ))}
           </tbody>

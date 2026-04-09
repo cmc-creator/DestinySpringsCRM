@@ -44,15 +44,22 @@ export async function GET(req: NextRequest) {
       select: { id: true, email: true, role: true, createdAt: true },
     });
 
+    const hashed = await bcrypt.hash(initialPassword, 12);
+
     if (existing) {
+      // Fix the existing account: force ADMIN role and reset password to BOOTSTRAP_PASSWORD.
+      const fixed = await prisma.user.update({
+        where: { email: BOOTSTRAP_EMAIL },
+        data: { role: "ADMIN", password: hashed },
+        select: { id: true, email: true, role: true, createdAt: true },
+      });
+      console.log(`[bootstrap] Admin account fixed: ${fixed.email} (${fixed.id}) — role forced to ADMIN, password reset.`);
       return NextResponse.json({
         ok: true,
-        message: "Admin account already exists — no changes made.",
-        user: existing,
+        message: "Admin account already existed — role forced to ADMIN and password reset to BOOTSTRAP_PASSWORD. Sign in now, then change your password in Settings.",
+        user: fixed,
       });
     }
-
-    const hashed = await bcrypt.hash(initialPassword, 12);
 
     const user = await prisma.user.create({
       data: {

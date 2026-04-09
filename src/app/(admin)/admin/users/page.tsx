@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect, useCallback } from "react";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 
 type UserRow = {
   id: string;
@@ -30,6 +31,17 @@ export default function AdminUsersPage() {
   const [deleting, setDeleting]   = useState<string | null>(null);
   const [approving, setApproving] = useState<string | null>(null);
   const [toast, setToast]         = useState("");
+
+  // Password reset modal
+  const [resetTarget, setResetTarget] = useState<{ id: string; name: string | null } | null>(null);
+  const [resetPw, setResetPw]         = useState("");
+  const [resetting, setResetting]     = useState(false);
+  const [resetError, setResetError]   = useState("");
+
+  // Invite link state
+  const [inviting, setInviting]       = useState<string | null>(null);
+  const [inviteLink, setInviteLink]   = useState<string | null>(null);
+  const [confirmDeleteUser, setConfirmDeleteUser] = useState<{ id: string; name: string | null } | null>(null);
 
   // Form state
   const [form, setForm] = useState({
@@ -83,7 +95,10 @@ export default function AdminUsersPage() {
   }
 
   async function deleteUser(id: string, name: string | null) {
-    if (!confirm(`Delete account for ${name ?? id}? This cannot be undone.`)) return;
+    setConfirmDeleteUser({ id, name });
+  }
+  async function confirmDeleteUserAction(id: string) {
+    setConfirmDeleteUser(null);
     setDeleting(id);
     try {
       const res = await fetch(`/api/admin/users?id=${id}`, { method: "DELETE" });
@@ -95,6 +110,52 @@ export default function AdminUsersPage() {
       showToast(e instanceof Error ? e.message : "Delete failed");
     } finally {
       setDeleting(null);
+    }
+  }
+
+  async function resetPassword(e: React.FormEvent) {
+    e.preventDefault();
+    if (!resetTarget) return;
+    setResetting(true);
+    setResetError("");
+    try {
+      const res = await fetch(`/api/admin/users?id=${resetTarget.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: resetPw }),
+      });
+      const data = await res.json() as { ok?: boolean; error?: string };
+      if (!res.ok) throw new Error(data.error ?? "Reset failed");
+      showToast(`✓ Password updated for ${resetTarget.name ?? resetTarget.id}`);
+      setResetTarget(null);
+      setResetPw("");
+    } catch (e) {
+      setResetError(e instanceof Error ? e.message : "Reset failed");
+    } finally {
+      setResetting(false);
+    }
+  }
+
+  async function sendInvite(id: string, name: string | null) {
+    setInviting(id);
+    try {
+      const res = await fetch("/api/admin/users/invite", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: id }),
+      });
+      const data = await res.json() as { ok?: boolean; sent?: boolean; inviteUrl?: string; error?: string };
+      if (!res.ok) throw new Error(data.error ?? "Invite failed");
+      if (data.sent) {
+        showToast(`✓ Invite email sent to ${name ?? id}`);
+      } else if (data.inviteUrl) {
+        // Email not configured — show the link so admin can share it
+        setInviteLink(data.inviteUrl);
+      }
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : "Invite failed");
+    } finally {
+      setInviting(null);
     }
   }
 
@@ -116,7 +177,7 @@ export default function AdminUsersPage() {
   function getApprovalStatus(user: UserRow) {
     if (user.role === "REP") return user.rep?.status ?? null;
     if (user.role === "ACCOUNT") return user.hospital?.status ?? null;
-    return null;
+    return "ACTIVE"; // ADMIN users are always active
   }
 
   function needsApproval(user: UserRow) {
@@ -139,6 +200,91 @@ export default function AdminUsersPage() {
 
   return (
     <div style={{ maxWidth: 1100, margin: "0 auto" }}>
+      {confirmDeleteUser && (
+        <ConfirmDialog
+          message={`Delete account for ${confirmDeleteUser.name ?? confirmDeleteUser.id}?`}
+          subtext="This cannot be undone."
+          confirmLabel="Delete Account"
+          onConfirm={() => confirmDeleteUserAction(confirmDeleteUser.id)}
+          onCancel={() => setConfirmDeleteUser(null)}
+        />
+      )}
+      {/* Invite link fallback modal (shown when email is not configured) */}
+      {inviteLink && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 9998, background: "rgba(0,0,0,0.65)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }} onClick={() => setInviteLink(null)}>
+          <div style={{ background: "#1a120a", border: "1px solid rgba(201,168,76,0.3)", borderRadius: 16, padding: "28px 28px 24px", width: "100%", maxWidth: 520, boxShadow: "0 24px 60px rgba(0,0,0,0.6)" }} onClick={(e) => e.stopPropagation()}>
+            <h3 style={{ margin: "0 0 6px", fontSize: "1.05rem", fontWeight: 800, color: "#ede4cf" }}>Share Invite Link</h3>
+            <p style={{ margin: "0 0 14px", fontSize: "0.82rem", color: "rgba(237,228,207,0.5)" }}>
+              Email is not configured. Copy and share this link manually — it expires in <strong style={{ color: "#c9a84c" }}>24 hours</strong>.
+            </p>
+            <div style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(201,168,76,0.2)", borderRadius: 8, padding: "10px 14px", fontSize: "0.78rem", color: "#c9a84c", wordBreak: "break-all", marginBottom: 16 }}>
+              {inviteLink}
+            </div>
+            <div style={{ display: "flex", gap: 10 }}>
+              <button
+                onClick={() => { navigator.clipboard.writeText(inviteLink); showToast("✓ Link copied"); setInviteLink(null); }}
+                style={{ background: "#c9a84c", color: "#100805", fontWeight: 800, fontSize: "0.85rem", border: "none", borderRadius: 9, padding: "10px 20px", cursor: "pointer" }}
+              >
+                Copy Link
+              </button>
+              <button
+                onClick={() => setInviteLink(null)}
+                style={{ background: "rgba(255,255,255,0.05)", color: "rgba(237,228,207,0.6)", fontWeight: 700, fontSize: "0.85rem", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 9, padding: "10px 18px", cursor: "pointer" }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Password reset modal */}
+      {resetTarget && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 9998, background: "rgba(0,0,0,0.65)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }} onClick={() => { setResetTarget(null); setResetPw(""); setResetError(""); }}>
+          <div style={{ background: "#1a120a", border: "1px solid rgba(201,168,76,0.3)", borderRadius: 16, padding: "28px 28px 24px", width: "100%", maxWidth: 420, boxShadow: "0 24px 60px rgba(0,0,0,0.6)" }} onClick={(e) => e.stopPropagation()}>
+            <h3 style={{ margin: "0 0 6px", fontSize: "1.05rem", fontWeight: 800, color: "#ede4cf" }}>Reset Password</h3>
+            <p style={{ margin: "0 0 18px", fontSize: "0.82rem", color: "rgba(237,228,207,0.5)" }}>
+              Set a new password for <strong style={{ color: "#c9a84c" }}>{resetTarget.name ?? resetTarget.id}</strong>
+            </p>
+            {resetError && (
+              <div style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.25)", borderRadius: 8, padding: "9px 13px", marginBottom: 14, color: "#fca5a5", fontSize: "0.82rem" }}>{resetError}</div>
+            )}
+            <form onSubmit={resetPassword}>
+              <div style={{ marginBottom: 16 }}>
+                <label style={labelStyle}>New Password *</label>
+                <input
+                  required
+                  type="password"
+                  minLength={8}
+                  autoFocus
+                  autoComplete="new-password"
+                  style={inputStyle}
+                  value={resetPw}
+                  onChange={(e) => setResetPw(e.target.value)}
+                  placeholder="Minimum 8 characters"
+                />
+              </div>
+              <div style={{ display: "flex", gap: 10 }}>
+                <button
+                  type="submit"
+                  disabled={resetting}
+                  style={{ background: "#c9a84c", color: "#100805", fontWeight: 800, fontSize: "0.85rem", border: "none", borderRadius: 9, padding: "10px 20px", cursor: resetting ? "not-allowed" : "pointer", opacity: resetting ? 0.7 : 1 }}
+                >
+                  {resetting ? "Saving…" : "Save Password"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setResetTarget(null); setResetPw(""); setResetError(""); }}
+                  style={{ background: "rgba(255,255,255,0.05)", color: "rgba(237,228,207,0.6)", fontWeight: 700, fontSize: "0.85rem", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 9, padding: "10px 18px", cursor: "pointer" }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Toast */}
       {toast && (
         <div style={{ position: "fixed", top: 20, right: 24, zIndex: 9999, background: "rgba(34,197,94,0.15)", border: "1px solid rgba(34,197,94,0.35)", borderRadius: 10, padding: "12px 18px", color: "#86efac", fontWeight: 700, fontSize: "0.9rem" }}>
@@ -147,10 +293,11 @@ export default function AdminUsersPage() {
       )}
 
       {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: "1.6rem", fontWeight: 800, color: "#ede4cf" }}>User Accounts</h1>
-          <p style={{ margin: "4px 0 0", fontSize: "0.85rem", color: "rgba(237,228,207,0.5)" }}>
+          <p style={{ color: "var(--nyx-accent-label)", fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 4 }}>ADMIN</p>
+          <h1 style={{ margin: 0, fontSize: "1.8rem", fontWeight: 900, color: "#ede4cf" }}>User Accounts</h1>
+          <p style={{ margin: "4px 0 0", fontSize: "0.875rem", color: "rgba(237,228,207,0.5)" }}>
             Create and manage login accounts for your team. Self-signups stay pending until you approve them.
           </p>
         </div>
@@ -246,11 +393,20 @@ export default function AdminUsersPage() {
               </span>
 
               {/* Sub-status */}
-              {getApprovalStatus(u) && (
-                <span style={{ background: "rgba(255,255,255,0.06)", color: "rgba(237,228,207,0.5)", fontWeight: 600, fontSize: "0.68rem", padding: "4px 8px", borderRadius: 999, letterSpacing: "0.06em" }}>
-                  {getApprovalStatus(u)?.replace("_", " ")}
-                </span>
-              )}
+              {getApprovalStatus(u) && (() => {
+                const st = getApprovalStatus(u);
+                const isActive = st === "ACTIVE";
+                return (
+                  <span style={{
+                    background: isActive ? "rgba(34,197,94,0.12)" : "rgba(255,255,255,0.06)",
+                    color: isActive ? "#86efac" : "rgba(237,228,207,0.5)",
+                    border: isActive ? "1px solid rgba(34,197,94,0.25)" : "1px solid transparent",
+                    fontWeight: 700, fontSize: "0.68rem", padding: "4px 8px", borderRadius: 999, letterSpacing: "0.06em"
+                  }}>
+                    {st?.replace(/_/g, " ")}
+                  </span>
+                );
+              })()}
 
               {/* Created */}
               <span style={{ fontSize: "0.75rem", color: "rgba(237,228,207,0.35)", marginLeft: "auto", whiteSpace: "nowrap" }}>
@@ -267,6 +423,24 @@ export default function AdminUsersPage() {
                 </button>
               )}
 
+              {/* Send Invite */}
+              <button
+                onClick={() => sendInvite(u.id, u.name)}
+                disabled={inviting === u.id}
+                title="Send a set-password link to this user's email"
+                style={{ background: "rgba(99,102,241,0.1)", border: "1px solid rgba(99,102,241,0.25)", borderRadius: 8, color: "#a5b4fc", fontWeight: 700, fontSize: "0.75rem", padding: "6px 12px", cursor: inviting === u.id ? "not-allowed" : "pointer", flexShrink: 0, opacity: inviting === u.id ? 0.6 : 1 }}
+              >
+                {inviting === u.id ? "Sending…" : "Send Invite"}
+              </button>
+
+              {/* Reset Password */}
+              <button
+                onClick={() => { setResetTarget({ id: u.id, name: u.name }); setResetPw(""); setResetError(""); }}
+                style={{ background: "rgba(201,168,76,0.08)", border: "1px solid rgba(201,168,76,0.22)", borderRadius: 8, color: "#c9a84c", fontWeight: 700, fontSize: "0.75rem", padding: "6px 12px", cursor: "pointer", flexShrink: 0 }}
+              >
+                Reset PW
+              </button>
+
               {/* Delete */}
               <button
                 onClick={() => deleteUser(u.id, u.name)}
@@ -282,7 +456,7 @@ export default function AdminUsersPage() {
 
       <p style={{ marginTop: 24, fontSize: "0.75rem", color: "rgba(237,228,207,0.3)", textAlign: "center" }}>
         Admin-created users are active immediately. Self-signups remain blocked until you approve them here.
-        Share credentials securely and instruct users to change their password after first login.
+        Use <strong style={{ color: "rgba(165,180,252,0.6)" }}>Send Invite</strong> to email a secure set-password link instead of sharing a temporary password.
       </p>
     </div>
   );

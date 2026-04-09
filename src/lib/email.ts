@@ -231,3 +231,40 @@ export async function sendAdmissionEmail(opts: {
     })
     .catch((e: unknown) => console.error("[email] admission failed:", e));
 }
+
+// ── Weekly Digest (sent to each active rep every Monday) ────────────────────
+export async function sendWeeklyDigestEmail(opts: {
+  to: string;
+  name: string;
+  weekOf: string;
+  activitiesLogged: number;
+  leadsWorked: number;
+  oppsUpdated: number;
+  tasksCompleted: number;
+  tasksPending: number;
+}) {
+  if (!process.env.RESEND_API_KEY || !process.env.RESEND_FROM_EMAIL) return;
+  const pendingNote =
+    opts.tasksPending > 0
+      ? `<p style="color:rgba(237,228,207,0.5);font-size:12px;margin:16px 0 0;">You have <strong style="color:#fbbf24;">${opts.tasksPending}</strong> open task${opts.tasksPending === 1 ? "" : "s"} waiting for you.</p>`
+      : "";
+  await resend.emails
+    .send({
+      from: FROM,
+      to: opts.to,
+      subject: `Your Weekly Summary - Week of ${opts.weekOf}`,
+      html: layout(`
+        <h2 style="margin:0 0 6px;color:#ede4cf;font-size:17px;font-weight:800;">Weekly Activity Summary</h2>
+        <p style="color:rgba(237,228,207,0.55);margin:0 0 18px;font-size:14px;">Hi ${opts.name || "there"},<br>Here is a snapshot of your activity over the past 7 days.</p>
+        <div style="display:grid;gap:10px;margin-bottom:20px;">
+          ${infoBox("#c9a84c", "ACTIVITIES LOGGED", String(opts.activitiesLogged), "Calls, visits, emails & check-ins")}
+          ${infoBox("#38bdf8", "LEADS WORKED", String(opts.leadsWorked), "Leads updated or followed up on")}
+          ${infoBox("#34d399", "OPPORTUNITIES UPDATED", String(opts.oppsUpdated), "Pipeline opportunities moved or touched")}
+          ${infoBox("#a78bfa", "TASKS COMPLETED", String(opts.tasksCompleted), "Tasks closed out this week")}
+        </div>
+        ${pendingNote}
+        <div style="margin-top:20px;">${btn(`${BASE}/rep/dashboard`, "View My Dashboard")}</div>
+      `),
+    })
+    .catch((e: unknown) => console.error("[email] weekly-digest failed:", e));
+}

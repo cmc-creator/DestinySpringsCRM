@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 
 const CATEGORIES = [
   { value: "BROCHURE",           label: "📄 Brochure" },
@@ -63,6 +64,7 @@ export default function AdminResourcesClient() {
   const [saving, setSaving]       = useState(false);
   const [editId, setEditId]       = useState<string | null>(null);
   const [tagInput, setTagInput]   = useState("");
+  const [confirmArchiveId, setConfirmArchiveId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -111,13 +113,26 @@ export default function AdminResourcesClient() {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm("Archive this resource?")) return;
+    setConfirmArchiveId(id);
+  }
+  async function confirmArchive(id: string) {
+    setConfirmArchiveId(null);
     await fetch(`/api/resources/${id}`, { method: "DELETE" });
     load();
   }
 
   return (
     <div>
+      {confirmArchiveId && (
+        <ConfirmDialog
+          message="Archive this resource?"
+          subtext="It will be hidden from the field team."
+          confirmLabel="Archive"
+          confirmColor="#f59e0b"
+          onConfirm={() => confirmArchive(confirmArchiveId)}
+          onCancel={() => setConfirmArchiveId(null)}
+        />
+      )}
       {/* Header */}
       <div style={{ marginBottom: 28 }}>
         <p style={{ color: C.lbl, fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 4 }}>ADMIN</p>

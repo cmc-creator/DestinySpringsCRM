@@ -1,5 +1,6 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
 const CYAN       = "var(--nyx-accent)";
@@ -19,6 +20,25 @@ interface IntegrationToken {
   teamsWebhook: string | null;
   expiresAt:    string | null;
   updatedAt:    string;
+}
+
+interface OutlookMessage {
+  id:               string;
+  subject:          string | null;
+  from:             { emailAddress: { name: string; address: string } };
+  toRecipients:     Array<{ emailAddress: { name: string; address: string } }>;
+  ccRecipients:     Array<{ emailAddress: { name: string; address: string } }>;
+  receivedDateTime: string;
+  bodyPreview:      string;
+  isRead:           boolean;
+  conversationId:   string;
+  hasAttachments:   boolean;
+}
+
+interface ContactResult {
+  name:   string;
+  email:  string;
+  source: string;
 }
 
 interface CommLog {
@@ -100,6 +120,18 @@ function IntegrationBadge({
   onDisconnect: () => void;
 }) {
   const connected = !!token;
+
+  function expiryLabel() {
+    if (!token?.expiresAt) return null;
+    const msLeft = new Date(token.expiresAt).getTime() - Date.now();
+    if (msLeft < 0) return { text: "Token expired", color: "#f87171" };
+    const days = Math.floor(msLeft / 86_400_000);
+    if (days < 3) return { text: `Expires in ${days}d — reconnect soon`, color: "#fbbf24" };
+    return null;
+  }
+
+  const expiry = expiryLabel();
+
   return (
     <div style={{
       background: CARD, border: `1px solid ${connected ? color + "44" : BORDER}`,
@@ -110,8 +142,8 @@ function IntegrationBadge({
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: "0.82rem", fontWeight: 700, color: TEXT }}>{label}</div>
         {connected ? (
-          <div style={{ fontSize: "0.68rem", color: "#34d399", marginTop: 2 }}>
-            ● Connected{token.email ? ` · ${token.email}` : ""}
+          <div style={{ fontSize: "0.68rem", color: expiry ? expiry.color : "#34d399", marginTop: 2 }}>
+            ● {expiry ? expiry.text : `Connected${token.email ? ` · ${token.email}` : ""}`}
           </div>
         ) : (
           <div style={{ fontSize: "0.68rem", color: TEXT_MUTED, marginTop: 2 }}>Not connected</div>
@@ -145,7 +177,7 @@ interface Props {
 
 export default function CommunicationsHub({ role: _role }: Props) {
   // State
-  const [activeTab, setActiveTab]             = useState<"compose" | "history" | "templates">("compose");
+  const [activeTab, setActiveTab]             = useState<"compose" | "inbox" | "history" | "templates">("compose");
   const [tokens, setTokens]                   = useState<IntegrationToken[]>([]);
   const [logs, setLogs]                       = useState<CommLog[]>([]);
   const [templates, setTemplates]             = useState<Template[]>([]);
@@ -156,10 +188,30 @@ export default function CommunicationsHub({ role: _role }: Props) {
   // Compose form state
   const [to, setTo]                           = useState("");
   const [toName, setToName]                   = useState("");
+  const [cc, setCc]                           = useState("");
+  const [bcc, setBcc]                         = useState("");
+  const [showCcBcc, setShowCcBcc]             = useState(false);
   const [subject, setSubject]                 = useState("");
   const [body, setBody]                       = useState("");
   const [channel, setChannel]                 = useState<string>("INTERNAL");
   const [templateId, setTemplateId]           = useState<string>("");
+  const [scheduledAt, setScheduledAt]         = useState("");
+  const [showScheduler, setShowScheduler]     = useState(false);
+
+  // Contact typeahead
+  const [contactSuggestions, setContactSuggestions] = useState<ContactResult[]>([]);
+  const [showSuggestions, setShowSuggestions]       = useState(false);
+  const suggestionTimer                             = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Inbox state
+  const [inboxProvider, setInboxProvider]     = useState<"microsoft" | "google">("microsoft");
+  const [inboxMessages, setInboxMessages]     = useState<OutlookMessage[]>([]);
+  const [inboxLoading, setInboxLoading]       = useState(false);
+  const [inboxLoaded, setInboxLoaded]         = useState(false);
+  const [inboxUnread, setInboxUnread]         = useState(0);
+  const [selectedMsg, setSelectedMsg]         = useState<OutlookMessage | null>(null);
+  const [inboxSearch, setInboxSearch]         = useState("");
+  const [inboxSearchInput, setInboxSearchInput] = useState("");
 
   // Teams webhook edit state
   const [showTeamsWebhook, setShowTeamsWebhook] = useState(false);
@@ -173,6 +225,7 @@ export default function CommunicationsHub({ role: _role }: Props) {
   const [tplBody, setTplBody]                 = useState("");
   const [tplCategory, setTplCategory]         = useState("OTHER");
   const [savingTpl, setSavingTpl]             = useState(false);
+  const [confirmDisconnect, setConfirmDisconnect] = useState<string | null>(null);
 
   // ── Load data ────────────────────────────────────────────────────────────────
   const loadAll = useCallback(async () => {
@@ -211,7 +264,10 @@ export default function CommunicationsHub({ role: _role }: Props) {
   }
 
   async function disconnectProvider(provider: string) {
-    if (!confirm(`Disconnect ${provider}? You'll need to re-authorize to send emails through it.`)) return;
+    setConfirmDisconnect(provider);
+  }
+  async function confirmDisconnectProvider(provider: string) {
+    setConfirmDisconnect(null);
     await fetch(`/api/integrations/tokens?provider=${provider}`, { method: "DELETE" });
     setTokens((prev) => prev.filter((t) => t.provider !== provider));
   }
@@ -233,6 +289,69 @@ export default function CommunicationsHub({ role: _role }: Props) {
       setSendResult({ type: "success", msg: "Teams webhook saved." });
     }
     setSavingWebhook(false);
+  }
+
+  // ── Inbox ────────────────────────────────────────────────────────────────────
+  const loadInbox = useCallback(async (search = "", prov?: "microsoft" | "google") => {
+    const provider = prov ?? inboxProvider;
+    setInboxLoading(true);
+    const q = search ? `&search=${encodeURIComponent(search)}` : "";
+    const res = await fetch(`/api/communications/inbox?provider=${provider}&folder=Inbox${q}`);
+    if (res.ok) {
+      const data = await res.json() as { messages: OutlookMessage[]; unreadCount: number };
+      setInboxMessages(data.messages);
+      setInboxUnread(data.unreadCount);
+      setInboxLoaded(true);
+    }
+    setInboxLoading(false);
+  }, [inboxProvider]);
+
+  async function markAsRead(msg: OutlookMessage) {
+    if (msg.isRead) return;
+    await fetch("/api/communications/inbox", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ messageId: msg.id, provider: inboxProvider }),
+    });
+    setInboxMessages(prev => prev.map(m => m.id === msg.id ? { ...m, isRead: true } : m));
+    setInboxUnread(prev => Math.max(0, prev - 1));
+  }
+
+  function openMessage(msg: OutlookMessage) {
+    setSelectedMsg(msg);
+    markAsRead(msg);
+  }
+
+  function handleReply(msg: OutlookMessage) {
+    setTo(msg.from.emailAddress.address);
+    setToName(msg.from.emailAddress.name);
+    setSubject(`Re: ${msg.subject ?? ""}`);
+    setBody(`\n\n--- Original message ---\nFrom: ${msg.from.emailAddress.name} <${msg.from.emailAddress.address}>\n${msg.bodyPreview}`);
+    setChannel(inboxProvider === "google" ? "GMAIL" : "OUTLOOK");
+    setSelectedMsg(null);
+    setActiveTab("compose");
+  }
+
+  // ── Contact typeahead ────────────────────────────────────────────────────────
+  function onToChange(val: string) {
+    setTo(val);
+    if (suggestionTimer.current) clearTimeout(suggestionTimer.current);
+    if (val.length < 2) { setContactSuggestions([]); setShowSuggestions(false); return; }
+    suggestionTimer.current = setTimeout(async () => {
+      const res = await fetch(`/api/communications/contacts?q=${encodeURIComponent(val)}`);
+      if (res.ok) {
+        const data = await res.json() as ContactResult[];
+        setContactSuggestions(data);
+        setShowSuggestions(data.length > 0);
+      }
+    }, 300);
+  }
+
+  function pickSuggestion(c: ContactResult) {
+    setTo(c.email);
+    setToName(c.name);
+    setContactSuggestions([]);
+    setShowSuggestions(false);
   }
 
   function applyTemplate(tpl: Template) {
@@ -266,12 +385,15 @@ export default function CommunicationsHub({ role: _role }: Props) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        toEmail:   to.trim()   || null,
-        toName:    toName.trim() || null,
-        subject:   subject.trim() || null,
-        body:      body.trim(),
+        toEmail:     to.trim()      || null,
+        toName:      toName.trim()  || null,
+        subject:     subject.trim() || null,
+        body:        body.trim(),
         channel,
-        templateId: templateId || null,
+        templateId:  templateId    || null,
+        ccEmails:    cc.split(",").map(s => s.trim()).filter(Boolean),
+        bccEmails:   bcc.split(",").map(s => s.trim()).filter(Boolean),
+        scheduledAt: scheduledAt   || undefined,
       }),
     });
 
@@ -288,9 +410,16 @@ export default function CommunicationsHub({ role: _role }: Props) {
       return;
     }
 
-    setSendResult({ type: "success", msg: channel === "INTERNAL" ? "Note saved." : "Message sent!" });
+    const isScheduled = data.scheduled === true;
+    setSendResult({
+      type: "success",
+      msg: isScheduled
+        ? `Scheduled for ${new Date(scheduledAt).toLocaleString()}`
+        : channel === "INTERNAL" ? "Note saved." : "Message sent!",
+    });
     setLogs((prev) => [data.log, ...prev]);
     setTo(""); setToName(""); setSubject(""); setBody(""); setTemplateId("");
+    setCc(""); setBcc(""); setShowCcBcc(false); setScheduledAt(""); setShowScheduler(false);
   }
 
   async function saveTemplate() {
@@ -332,6 +461,16 @@ export default function CommunicationsHub({ role: _role }: Props) {
   // ── Render ────────────────────────────────────────────────────────────────────
   return (
     <div style={{ padding: "28px 32px", maxWidth: 1200, margin: "0 auto" }}>
+      {confirmDisconnect && (
+        <ConfirmDialog
+          message={`Disconnect ${confirmDisconnect}?`}
+          subtext="You'll need to re-authorize to send emails through it."
+          confirmLabel="Disconnect"
+          confirmColor="#c9a84c"
+          onConfirm={() => confirmDisconnectProvider(confirmDisconnect)}
+          onCancel={() => setConfirmDisconnect(null)}
+        />
+      )}
 
       {/* Page header */}
       <div style={{ marginBottom: 28 }}>
@@ -475,23 +614,80 @@ export default function CommunicationsHub({ role: _role }: Props) {
         </div>
       )}
 
+      {/* Onboarding banner — shown when no integrations connected */}
+      {tokens.length === 0 && (
+        <div style={{
+          marginBottom: 20, padding: "16px 20px", borderRadius: 10,
+          background: "rgba(0,120,212,0.08)", border: "1px solid rgba(0,120,212,0.25)",
+          display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap",
+        }}>
+          <span style={{ fontSize: "1.4rem" }}>🔗</span>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontWeight: 700, color: TEXT, fontSize: "0.88rem", marginBottom: 3 }}>
+              Connect Microsoft 365 or Google to unlock full communications
+            </div>
+            <div style={{ fontSize: "0.78rem", color: TEXT_MUTED }}>
+              Send Outlook emails, read your inbox, sync calendars, and post Teams messages — all from here. Connect Google to read Gmail and sync Google Calendar too.
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button onClick={() => connectProvider("microsoft")}
+              style={{ padding: "8px 16px", borderRadius: 7, border: "none",
+                background: "#0078D4", color: "#fff", fontWeight: 700, fontSize: "0.8rem", cursor: "pointer" }}>
+              Connect M365
+            </button>
+            <button onClick={() => connectProvider("google")}
+              style={{ padding: "8px 16px", borderRadius: 7, border: "none",
+                background: "#EA4335", color: "#fff", fontWeight: 700, fontSize: "0.8rem", cursor: "pointer" }}>
+              Connect Google
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Tab bar */}
-      <div style={{ display: "flex", gap: 4, marginBottom: 20, borderBottom: `1px solid ${BORDER}`, paddingBottom: 0 }}>
-        {(["compose", "history", "templates"] as const).map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            style={{
-              padding: "9px 18px", fontSize: "0.82rem", fontWeight: activeTab === tab ? 700 : 500,
-              color: activeTab === tab ? CYAN : TEXT_MUTED,
-              background: "transparent", border: "none", cursor: "pointer",
-              borderBottom: activeTab === tab ? `2px solid ${CYAN}` : "2px solid transparent",
-              textTransform: "capitalize", transition: "all 0.15s",
-            }}
-          >
-            {tab === "compose" ? "✏️ Compose" : tab === "history" ? `📋 History (${logs.length})` : `📄 Templates (${templates.length})`}
-          </button>
-        ))}
+      <div className="nyx-tab-bar" style={{ display: "flex", gap: 4, marginBottom: 20, borderBottom: `1px solid ${BORDER}`, paddingBottom: 0 }}>
+        {(["compose", "inbox", "history", "templates"] as const).map((tab) => {
+          const label = tab === "compose" ? "✏️ Compose"
+            : tab === "inbox"    ? `📥 Inbox${inboxUnread > 0 ? ` (${inboxUnread})` : ""}`
+            : tab === "history"  ? `📋 History (${logs.length})`
+            : `📄 Templates (${templates.length})`;
+
+          // disable inbox if neither microsoft nor google is connected
+          const isInboxDisabled = tab === "inbox" && !tokens.find(t => t.provider === "microsoft") && !tokens.find(t => t.provider === "google");
+
+          return (
+            <button
+              key={tab}
+              onClick={() => {
+                if (isInboxDisabled) {
+                  setSendResult({ type: "error", msg: "Connect Microsoft 365 or Google to access your inbox." });
+                  return;
+                }
+                setActiveTab(tab);
+                if (tab === "inbox" && !inboxLoaded) loadInbox();
+              }}
+              style={{
+                padding: "9px 18px", fontSize: "0.82rem", fontWeight: activeTab === tab ? 700 : 500,
+                color: activeTab === tab ? CYAN : isInboxDisabled ? TEXT_MUTED + "66" : TEXT_MUTED,
+                background: "transparent", border: "none", cursor: isInboxDisabled ? "not-allowed" : "pointer",
+                borderBottom: activeTab === tab ? `2px solid ${CYAN}` : "2px solid transparent",
+                textTransform: "capitalize", transition: "all 0.15s",
+                opacity: isInboxDisabled ? 0.45 : 1,
+              }}
+            >
+              {label}
+              {tab === "inbox" && inboxUnread > 0 && (
+                <span style={{
+                  marginLeft: 4, background: "#0078D4", color: "#fff",
+                  borderRadius: 20, padding: "1px 6px", fontSize: "0.65rem", fontWeight: 800,
+                }}>
+                  {inboxUnread}
+                </span>
+              )}
+            </button>
+          );
+        })}
       </div>
 
       {/* ── COMPOSE TAB ───────────────────────────────────────────────────────── */}
@@ -501,16 +697,74 @@ export default function CommunicationsHub({ role: _role }: Props) {
           {/* Compose form */}
           <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 14, padding: 24 }}>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14, marginBottom: 14 }}>
-              <div>
+              <div style={{ position: "relative" }}>
                 <label style={labelStyle}>To (Email)</label>
-                <input value={to} onChange={(e) => setTo(e.target.value)}
-                  placeholder="recipient@example.com" type="email" style={inputStyle} />
+                <input
+                  value={to}
+                  onChange={(e) => onToChange(e.target.value)}
+                  onFocus={() => contactSuggestions.length > 0 && setShowSuggestions(true)}
+                  onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
+                  placeholder="recipient@example.com"
+                  type="email"
+                  style={inputStyle}
+                  autoComplete="off"
+                />
+                {showSuggestions && contactSuggestions.length > 0 && (
+                  <div style={{
+                    position: "absolute", top: "100%", left: 0, right: 0, zIndex: 200,
+                    background: "var(--nyx-bg)", border: `1px solid ${BORDER}`,
+                    borderRadius: 8, boxShadow: "0 4px 16px rgba(0,0,0,0.35)", marginTop: 2,
+                  }}>
+                    {contactSuggestions.map((c) => (
+                      <div
+                        key={c.email}
+                        onMouseDown={() => pickSuggestion(c)}
+                        style={{
+                          padding: "9px 14px", cursor: "pointer", display: "flex",
+                          alignItems: "center", gap: 10,
+                          borderBottom: `1px solid ${BORDER}`,
+                        }}
+                      >
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: "0.82rem", fontWeight: 600, color: TEXT, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.name}</div>
+                          <div style={{ fontSize: "0.7rem", color: TEXT_MUTED, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.email}</div>
+                        </div>
+                        <span style={{ fontSize: "0.62rem", color: TEXT_MUTED, background: BORDER, borderRadius: 4, padding: "1px 6px", flexShrink: 0 }}>{c.source}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
               <div>
                 <label style={labelStyle}>Recipient Name</label>
                 <input value={toName} onChange={(e) => setToName(e.target.value)}
                   placeholder="Dr. Jane Smith" style={inputStyle} />
               </div>
+            </div>
+
+            {/* CC / BCC */}
+            <div style={{ marginBottom: 14 }}>
+              <button
+                onClick={() => setShowCcBcc(v => !v)}
+                style={{ fontSize: "0.7rem", fontWeight: 600, color: TEXT_MUTED, background: "none",
+                  border: "none", cursor: "pointer", padding: 0, marginBottom: showCcBcc ? 10 : 0 }}
+              >
+                {showCcBcc ? "▾" : "▸"} CC / BCC
+              </button>
+              {showCcBcc && (
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                  <div>
+                    <label style={labelStyle}>CC</label>
+                    <input value={cc} onChange={(e) => setCc(e.target.value)}
+                      placeholder="cc@example.com, cc2@example.com" style={inputStyle} />
+                  </div>
+                  <div>
+                    <label style={labelStyle}>BCC</label>
+                    <input value={bcc} onChange={(e) => setBcc(e.target.value)}
+                      placeholder="bcc@example.com" style={inputStyle} />
+                  </div>
+                </div>
+              )}
             </div>
 
             <div style={{ marginBottom: 14 }}>
@@ -575,7 +829,7 @@ export default function CommunicationsHub({ role: _role }: Props) {
               />
             </div>
 
-            <div style={{ display: "flex", alignItems: "center", gap: 10, justifyContent: "space-between" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, justifyContent: "space-between", flexWrap: "wrap" }}>
               <select
                 value={templateId}
                 onChange={(e) => {
@@ -590,20 +844,53 @@ export default function CommunicationsHub({ role: _role }: Props) {
                   <option key={t.id} value={t.id}>{CATEGORY_LABELS[t.category]}: {t.name}</option>
                 ))}
               </select>
-              <button
-                onClick={handleSend}
-                disabled={sending}
-                style={{
-                  padding: "10px 26px", borderRadius: 8, border: "none",
-                  background: channel === "INTERNAL" ? ACCENT_MID : `linear-gradient(135deg, ${CHANNEL_STATUS_COLOR[channel]} 0%, ${CHANNEL_STATUS_COLOR[channel]}cc 100%)`,
-                  color: "#fff", fontSize: "0.85rem", fontWeight: 700,
-                  cursor: sending ? "not-allowed" : "pointer", opacity: sending ? 0.7 : 1,
-                  letterSpacing: "0.02em",
-                }}
-              >
-                {sending ? "Sending…" : channel === "INTERNAL" ? "💾 Save Note" : "⚡ Send"}
-              </button>
+
+              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                <button
+                  onClick={() => { setShowScheduler(v => !v); if (showScheduler) setScheduledAt(""); }}
+                  style={{
+                    padding: "10px 14px", borderRadius: 8, border: `1px solid ${BORDER}`,
+                    background: showScheduler ? ACCENT_DIM : "transparent",
+                    color: showScheduler ? CYAN : TEXT_MUTED,
+                    fontSize: "0.8rem", fontWeight: 600, cursor: "pointer",
+                  }}
+                >
+                  🕐 Schedule
+                </button>
+                <button
+                  onClick={handleSend}
+                  disabled={sending}
+                  style={{
+                    padding: "10px 26px", borderRadius: 8, border: "none",
+                    background: channel === "INTERNAL" ? ACCENT_MID : `linear-gradient(135deg, ${CHANNEL_STATUS_COLOR[channel]} 0%, ${CHANNEL_STATUS_COLOR[channel]}cc 100%)`,
+                    color: "#fff", fontSize: "0.85rem", fontWeight: 700,
+                    cursor: sending ? "not-allowed" : "pointer", opacity: sending ? 0.7 : 1,
+                    letterSpacing: "0.02em",
+                  }}
+                >
+                  {sending ? "Sending…" : scheduledAt ? "📅 Schedule Send" : channel === "INTERNAL" ? "💾 Save Note" : "⚡ Send"}
+                </button>
+              </div>
             </div>
+
+            {/* Schedule send */}
+            {showScheduler && (
+              <div style={{ marginTop: 12, padding: "12px 14px", borderRadius: 8, background: ACCENT_DIM, border: `1px solid ${ACCENT_MID}` }}>
+                <label style={labelStyle}>Send at</label>
+                <input
+                  type="datetime-local"
+                  value={scheduledAt}
+                  onChange={(e) => setScheduledAt(e.target.value)}
+                  min={new Date(Date.now() + 60000).toISOString().slice(0, 16)}
+                  style={{ ...inputStyle, width: "auto" }}
+                />
+                {scheduledAt && (
+                  <div style={{ fontSize: "0.72rem", color: TEXT_MUTED, marginTop: 6 }}>
+                    Will send at {new Date(scheduledAt).toLocaleString()} — processed by hourly cron
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Quick actions panel */}
@@ -677,6 +964,186 @@ export default function CommunicationsHub({ role: _role }: Props) {
               )}
             </div>
           </div>
+        </div>
+      )}
+
+      {/* ── INBOX TAB ────────────────────────────────────────────────────────── */}
+      {activeTab === "inbox" && (
+        <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 14, overflow: "hidden" }}>
+
+          {/* Provider pills — shown when both MS and Google are connected */}
+          {microsoftToken && googleToken && (
+            <div style={{ display: "flex", gap: 6, padding: "10px 18px 0", borderBottom: `1px solid ${BORDER}` }}>
+              {([["microsoft", "📧 Outlook", "#0078D4"], ["google", "📬 Gmail", "#EA4335"]] as const).map(([p, label, color]) => (
+                <button
+                  key={p}
+                  onClick={() => {
+                    if (inboxProvider !== p) {
+                      setInboxProvider(p);
+                      setInboxLoaded(false);
+                      setInboxMessages([]);
+                      setInboxSearch("");
+                      setInboxSearchInput("");
+                      setSelectedMsg(null);
+                      loadInbox("", p);
+                    }
+                  }}
+                  style={{
+                    padding: "5px 14px", borderRadius: 20, border: `1px solid ${inboxProvider === p ? color : BORDER}`,
+                    background: inboxProvider === p ? color + "22" : "transparent",
+                    color: inboxProvider === p ? color : TEXT_MUTED,
+                    fontWeight: inboxProvider === p ? 700 : 400, fontSize: "0.78rem", cursor: "pointer",
+                    marginBottom: 8,
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Search bar */}
+          <div style={{ display: "flex", gap: 8, alignItems: "center", padding: "14px 18px", borderBottom: `1px solid ${BORDER}` }}>
+            <input
+              value={inboxSearchInput}
+              onChange={(e) => setInboxSearchInput(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") { setInboxSearch(inboxSearchInput); loadInbox(inboxSearchInput); } }}
+              placeholder={`Search ${inboxProvider === "google" ? "Gmail" : "Outlook"} inbox…`}
+              style={{ ...inputStyle, flex: 1, marginBottom: 0, padding: "8px 12px" }}
+            />
+            <button
+              onClick={() => { setInboxSearch(inboxSearchInput); loadInbox(inboxSearchInput); }}
+              style={{ padding: "8px 16px", borderRadius: 7, border: "none", background: inboxProvider === "google" ? "#EA4335" : "#0078D4", color: "#fff", fontWeight: 700, fontSize: "0.8rem", cursor: "pointer" }}
+            >
+              Search
+            </button>
+            {inboxSearch && (
+              <button
+                onClick={() => { setInboxSearchInput(""); setInboxSearch(""); loadInbox(""); }}
+                style={{ padding: "8px 12px", borderRadius: 7, border: `1px solid ${BORDER}`, background: "transparent", color: TEXT_MUTED, fontSize: "0.8rem", cursor: "pointer" }}
+              >
+                Clear
+              </button>
+            )}
+            <button
+              onClick={() => loadInbox(inboxSearch)}
+              title="Refresh inbox"
+              style={{ padding: "8px 12px", borderRadius: 7, border: `1px solid ${BORDER}`, background: "transparent", color: TEXT_MUTED, fontSize: "0.8rem", cursor: "pointer" }}
+            >
+              ↻
+            </button>
+          </div>
+
+          {/* Detail view */}
+          {selectedMsg ? (
+            <div style={{ padding: 24 }}>
+              <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 20, flexWrap: "wrap" }}>
+                <button
+                  onClick={() => setSelectedMsg(null)}
+                  style={{ padding: "7px 14px", borderRadius: 7, border: `1px solid ${BORDER}`, background: "transparent", color: TEXT_MUTED, fontSize: "0.8rem", cursor: "pointer" }}
+                >
+                  ← Back
+                </button>
+                <button
+                  onClick={() => handleReply(selectedMsg)}
+                  style={{ padding: "7px 14px", borderRadius: 7, border: "none", background: inboxProvider === "google" ? "#EA4335" : "#0078D4", color: "#fff", fontWeight: 700, fontSize: "0.8rem", cursor: "pointer" }}
+                >
+                  ↩ Reply
+                </button>
+                {!selectedMsg.isRead && (
+                  <button
+                    onClick={() => markAsRead(selectedMsg)}
+                    style={{ padding: "7px 14px", borderRadius: 7, border: `1px solid ${BORDER}`, background: "transparent", color: TEXT_MUTED, fontSize: "0.8rem", cursor: "pointer" }}
+                  >
+                    Mark as Read
+                  </button>
+                )}
+              </div>
+
+              <div style={{ marginBottom: 16 }}>
+                <div style={{ fontSize: "1.05rem", fontWeight: 700, color: TEXT, marginBottom: 10 }}>{selectedMsg.subject || "(no subject)"}</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+                  <div style={{ fontSize: "0.77rem", color: TEXT_MUTED }}>
+                    <strong style={{ color: TEXT }}>From:</strong> {selectedMsg.from.emailAddress.name} &lt;{selectedMsg.from.emailAddress.address}&gt;
+                  </div>
+                  <div style={{ fontSize: "0.77rem", color: TEXT_MUTED }}>
+                    <strong style={{ color: TEXT }}>To:</strong> {selectedMsg.toRecipients.map(r => r.emailAddress.address).join(", ")}
+                  </div>
+                  {selectedMsg.ccRecipients.length > 0 && (
+                    <div style={{ fontSize: "0.77rem", color: TEXT_MUTED }}>
+                      <strong style={{ color: TEXT }}>CC:</strong> {selectedMsg.ccRecipients.map(r => r.emailAddress.address).join(", ")}
+                    </div>
+                  )}
+                  <div style={{ fontSize: "0.77rem", color: TEXT_MUTED }}>
+                    <strong style={{ color: TEXT }}>Received:</strong> {new Date(selectedMsg.receivedDateTime).toLocaleString()}
+                  </div>
+                  {selectedMsg.hasAttachments && (
+                    <div style={{ fontSize: "0.75rem", color: "#f59e0b" }}>📎 Has attachments (open in {inboxProvider === "google" ? "Gmail" : "Outlook"} to view)</div>
+                  )}
+                </div>
+              </div>
+
+              <div style={{ background: "var(--nyx-bg)", border: `1px solid ${BORDER}`, borderRadius: 8, padding: 18, fontSize: "0.83rem", color: TEXT, lineHeight: 1.7, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+                {selectedMsg.bodyPreview}
+                {selectedMsg.bodyPreview.length >= 250 && (
+                  <div style={{ marginTop: 12, fontSize: "0.72rem", color: TEXT_MUTED }}>
+                    Preview truncated. <button onClick={() => handleReply(selectedMsg)} style={{ background: "none", border: "none", color: inboxProvider === "google" ? "#EA4335" : "#0078D4", cursor: "pointer", textDecoration: "underline", fontSize: "inherit" }}>Open in compose to reply</button>
+                  </div>
+                )}
+              </div>
+            </div>
+
+          ) : inboxLoading ? (
+            <div style={{ padding: 40, textAlign: "center", color: TEXT_MUTED }}>
+              <div style={{ fontSize: "1.4rem", marginBottom: 8 }}>⏳</div>
+              Loading {inboxProvider === "google" ? "Gmail" : "Outlook"} inbox…
+            </div>
+
+          ) : inboxMessages.length === 0 ? (
+            <div style={{ padding: 40, textAlign: "center", color: TEXT_MUTED }}>
+              {inboxSearch ? `No messages matching "${inboxSearch}"` : `Your ${inboxProvider === "google" ? "Gmail" : "Outlook"} inbox is empty.`}
+            </div>
+
+          ) : (
+            /* Message list */
+            <div>
+              {inboxMessages.map((msg) => (
+                <div
+                  key={msg.id}
+                  onClick={() => openMessage(msg)}
+                  style={{
+                    display: "flex", alignItems: "flex-start", gap: 14, padding: "14px 18px",
+                    borderBottom: `1px solid ${BORDER}`, cursor: "pointer",
+                    background: msg.isRead ? "transparent" : (inboxProvider === "google" ? "rgba(234,67,53,0.05)" : "rgba(0,120,212,0.05)"),
+                    transition: "background 0.12s",
+                  }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.04)"; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = msg.isRead ? "transparent" : (inboxProvider === "google" ? "rgba(234,67,53,0.05)" : "rgba(0,120,212,0.05)"); }}
+                >
+                  {/* Unread dot */}
+                  <div style={{ width: 8, height: 8, borderRadius: "50%", background: msg.isRead ? "transparent" : (inboxProvider === "google" ? "#EA4335" : "#0078D4"), flexShrink: 0, marginTop: 6 }} />
+
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 3 }}>
+                      <span style={{ fontWeight: msg.isRead ? 500 : 700, fontSize: "0.83rem", color: TEXT, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>
+                        {msg.from.emailAddress.name || msg.from.emailAddress.address}
+                      </span>
+                      <span style={{ fontSize: "0.7rem", color: TEXT_MUTED, flexShrink: 0 }}>
+                        {new Date(msg.receivedDateTime).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                      </span>
+                    </div>
+                    <div style={{ fontSize: "0.8rem", fontWeight: msg.isRead ? 400 : 600, color: msg.isRead ? TEXT_MUTED : TEXT, marginBottom: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {msg.subject || "(no subject)"}
+                    </div>
+                    <div style={{ fontSize: "0.72rem", color: TEXT_MUTED, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {msg.bodyPreview}
+                    </div>
+                    {msg.hasAttachments && <span style={{ fontSize: "0.65rem", color: "#f59e0b", marginTop: 2, display: "inline-block" }}>📎</span>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

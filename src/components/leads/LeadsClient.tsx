@@ -1,6 +1,7 @@
 ﻿"use client";
 import { useState, useEffect, useCallback, useRef } from "react";
 import AIInsightsPanel from "@/components/ai/AIInsightsPanel";
+import TableSkeleton from "@/components/ui/TableSkeleton";
 
 // ── Types ───────────────────────────────────────────────
 type LeadStatus = "NEW"|"CONTACTED"|"QUALIFIED"|"PROPOSAL_SENT"|"NEGOTIATING"|"WON"|"LOST"|"UNQUALIFIED";
@@ -330,6 +331,10 @@ export default function LeadsClient({ reps }: { reps: Rep[] }) {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("ALL");
+  const [filterSource, setFilterSource] = useState<string>("ALL");
+  const [filterPriority, setFilterPriority] = useState<string>("ALL");
+  const [sortCol, setSortCol] = useState<string>("createdAt");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [modal, setModal] = useState<"add" | Lead | null>(null);
   const [activityLead, setActivityLead] = useState<Lead | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -351,9 +356,27 @@ export default function LeadsClient({ reps }: { reps: Rep[] }) {
 
   const filtered = leads.filter(l => {
     const matchStatus = filterStatus === "ALL" || l.status === filterStatus;
+    const matchSource = filterSource === "ALL" || l.source === filterSource;
+    const matchPriority = filterPriority === "ALL" || l.priority === filterPriority;
     const q = search.toLowerCase();
     const matchSearch = !q || l.hospitalName.toLowerCase().includes(q) || (l.contactName ?? "").toLowerCase().includes(q) || (l.state ?? "").toLowerCase().includes(q);
-    return matchStatus && matchSearch;
+    return matchStatus && matchSource && matchPriority && matchSearch;
+  });
+
+  function toggleSort(col: string) {
+    if (sortCol === col) setSortDir(d => d === "asc" ? "desc" : "asc");
+    else { setSortCol(col); setSortDir("asc"); }
+  }
+
+  const sorted = [...filtered].sort((a, b) => {
+    let av: number | string = 0, bv: number | string = 0;
+    if (sortCol === "hospitalName") { av = a.hospitalName?.toLowerCase() ?? ""; bv = b.hospitalName?.toLowerCase() ?? ""; }
+    else if (sortCol === "estimatedValue") { av = a.estimatedValue ? Number(a.estimatedValue) : 0; bv = b.estimatedValue ? Number(b.estimatedValue) : 0; }
+    else if (sortCol === "priority") { const order = { URGENT: 4, HIGH: 3, MEDIUM: 2, LOW: 1 }; av = order[a.priority as keyof typeof order] ?? 0; bv = order[b.priority as keyof typeof order] ?? 0; }
+    else if (sortCol === "createdAt") { av = a.createdAt; bv = b.createdAt; }
+    if (av < bv) return sortDir === "asc" ? -1 : 1;
+    if (av > bv) return sortDir === "asc" ? 1 : -1;
+    return 0;
   });
 
   useEffect(() => {
@@ -428,7 +451,7 @@ export default function LeadsClient({ reps }: { reps: Rep[] }) {
         <div>
           <p style={{ color: "var(--nyx-accent-label)", fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 4 }}>PIPELINE</p>
           <h1 style={{ fontSize: "1.8rem", fontWeight: 900, color: C.text }}>Lead Pipeline</h1>
-          <p style={{ color: C.muted, fontSize: "0.875rem", marginTop: 4 }}>{leads.length} total leads</p>
+          <p style={{ color: C.muted, fontSize: "0.875rem", marginTop: 4 }}>{filtered.length !== leads.length ? `${filtered.length} of ${leads.length}` : leads.length} total leads</p>
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           <button onClick={() => exportLeadsCSV(filtered)} style={{ background: "rgba(52,211,153,0.08)", border: "1px solid rgba(52,211,153,0.2)", borderRadius: 8, padding: "10px 18px", color: "#34d399", cursor: "pointer", fontWeight: 700, fontSize: "0.82rem", display: "flex", alignItems: "center", gap: 6 }}>
@@ -451,9 +474,23 @@ export default function LeadsClient({ reps }: { reps: Rep[] }) {
         ))}
       </div>
 
-      {/* Search */}
-      <div style={{ marginBottom: 16 }}>
-        <input style={{ ...inp, maxWidth: 360 }} value={search} onChange={e => setSearch(e.target.value)} placeholder="Search hospital, contact, state…" />
+      {/* Search + Filters */}
+      <div className="nyx-filter-bar" style={{ marginBottom: 16 }}>
+        <input style={{ ...inp, maxWidth: 320, flex: "1 1 200px" }} value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍 Search hospital, contact, state…" />
+        <select style={{ ...sel, width: "auto", minWidth: 140 }} value={filterSource} onChange={e => setFilterSource(e.target.value)}>
+          <option value="ALL">All Sources</option>
+          {SOURCES.map(s => <option key={s} value={s}>{lbl(s)}</option>)}
+        </select>
+        <select style={{ ...sel, width: "auto", minWidth: 130 }} value={filterPriority} onChange={e => setFilterPriority(e.target.value)}>
+          <option value="ALL">All Priorities</option>
+          {PRIORITIES.map(p => <option key={p} value={p}>{p}</option>)}
+        </select>
+        {(filterSource !== "ALL" || filterPriority !== "ALL" || search) && (
+          <button onClick={() => { setSearch(""); setFilterSource("ALL"); setFilterPriority("ALL"); }}
+            style={{ background: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.2)", borderRadius: 7, padding: "7px 14px", color: "#f87171", cursor: "pointer", fontSize: "0.78rem", fontWeight: 600, whiteSpace: "nowrap" }}>
+            ✕ Clear filters
+          </button>
+        )}
       </div>
 
       {/* Table */}
@@ -469,15 +506,37 @@ export default function LeadsClient({ reps }: { reps: Rep[] }) {
                   onChange={toggleAll}
                   style={{ accentColor: C.cyan, cursor: "pointer", width: 14, height: 14 }} />
               </th>
-              {["Hospital", "Contact", "Status", "Priority", "Source", "Est. Value", "Rep", "Next Follow-up", "Created", ""].map(h => (
-                <th key={h} style={{ padding: "12px 14px", textAlign: "left", fontSize: "0.65rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.1em", textTransform: "uppercase", whiteSpace: "nowrap" }}>{h}</th>
+              {[
+                { col: "hospitalName", label: "Hospital" },
+                { col: null, label: "Contact" },
+                { col: null, label: "Status" },
+                { col: "priority", label: "Priority" },
+                { col: null, label: "Source" },
+                { col: "estimatedValue", label: "Est. Value" },
+                { col: null, label: "Rep" },
+                { col: null, label: "Next Follow-up" },
+                { col: "createdAt", label: "Created" },
+                { col: null, label: "" },
+              ].map(({ col, label }) => col ? (
+                <th key={label} onClick={() => toggleSort(col)}
+                  style={{ padding: "12px 14px", textAlign: "left", fontSize: "0.65rem", fontWeight: 700, color: sortCol === col ? "var(--nyx-accent)" : "var(--nyx-accent-label)", letterSpacing: "0.1em", textTransform: "uppercase", whiteSpace: "nowrap", cursor: "pointer", userSelect: "none" }}>
+                  {label}{sortCol === col ? (sortDir === "asc" ? " ▲" : " ▼") : <span style={{ opacity: 0.3 }}> ⇅</span>}
+                </th>
+              ) : (
+                <th key={label || "actions"} style={{ padding: "12px 14px", textAlign: "left", fontSize: "0.65rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.1em", textTransform: "uppercase", whiteSpace: "nowrap" }}>{label}</th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {loading && <tr><td colSpan={10} style={{ padding: 32, textAlign: "center", color: C.muted }}>Loading…</td></tr>}
-            {!loading && filtered.length === 0 && <tr><td colSpan={10} style={{ padding: 32, textAlign: "center", color: C.muted }}>No leads match your filters.</td></tr>}
-            {filtered.map(lead => (
+            {loading && <TableSkeleton cols={10} rows={8} />}
+            {!loading && filtered.length === 0 && (
+              <tr><td colSpan={10} style={{ padding: "48px 32px", textAlign: "center" }}>
+                <div style={{ fontSize: "2rem", marginBottom: 10 }}>🔍</div>
+                <p style={{ margin: 0, color: "var(--nyx-text)", fontWeight: 600 }}>No leads found</p>
+                <p style={{ margin: "6px 0 0", color: "var(--nyx-text-muted)", fontSize: "0.82rem" }}>Try adjusting your filters or import new leads</p>
+              </td></tr>
+            )}
+            {sorted.map(lead => (
               <tr key={lead.id} onClick={() => setModal(lead)}
                 style={{ borderBottom: `1px solid var(--nyx-accent-dim)`, cursor: "pointer", background: selected.has(lead.id) ? "var(--nyx-accent-dim)" : "transparent", transition: "background 0.15s" }}
                 onMouseEnter={e => { if (!selected.has(lead.id)) e.currentTarget.style.background = "var(--nyx-accent-dim)"; }}
@@ -511,7 +570,7 @@ export default function LeadsClient({ reps }: { reps: Rep[] }) {
                   {lead.nextFollowUp ? fmtDate(lead.nextFollowUp) : <span style={{ opacity: 0.4 }}>--</span>}
                 </td>
                 <td style={{ padding: "13px 14px", fontSize: "0.75rem", color: C.muted, whiteSpace: "nowrap" }}>{fmtDate(lead.createdAt)}</td>
-                <td style={{ padding: "13px 10px" }} onClick={e => e.stopPropagation()}>
+                <td style={{ padding: "13px 10px" }} className="nyx-row-actions" onClick={e => e.stopPropagation()}>
                   <button onClick={() => setActivityLead(lead)} title="Activity feed"
                     style={{ width: 28, height: 28, borderRadius: 6, background: "rgba(96,165,250,0.1)", border: "1px solid rgba(96,165,250,0.22)", cursor: "pointer", fontSize: "0.82rem", display: "flex", alignItems: "center", justifyContent: "center" }}>
                     💬

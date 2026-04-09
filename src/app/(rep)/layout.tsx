@@ -6,6 +6,7 @@ import QuickLogWidget from "@/components/activities/QuickLogWidget";
 import FirstLoginCelebration from "@/components/onboarding/FirstLoginCelebration";
 import OnboardingWalkthrough from "@/components/onboarding/OnboardingWalkthrough";
 import SessionTracker from "@/components/analytics/SessionTracker";
+import SsoConnectedBanner from "@/components/layout/SsoConnectedBanner";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -33,6 +34,7 @@ export default async function RepLayout({ children }: { children: React.ReactNod
       <AIChatWidget />
       <QuickLogWidget role="REP" repId={rep?.id} />
       <SessionTracker />
+      <SsoConnectedBanner />
     </div>
   );
 }
