@@ -1,5 +1,6 @@
 ﻿import { prisma } from "@/lib/prisma";
 import DashboardClient from "@/components/dashboard/DashboardClient";
+import TurnaroundWidget from "@/components/dashboard/TurnaroundWidget";
 import { Prisma } from "@prisma/client";
 
 const REP_COLORS = ["var(--nyx-accent)","#34d399","#fbbf24","#a78bfa","#f59e0b","#60a5fa","#f87171","#fb923c"];
@@ -173,6 +174,8 @@ export default async function AdminDashboard() {
     }));
 
   return (
+    <>
+    <TurnaroundWidget />
     <DashboardClient
       stats={stats}
       recentActivities={serializedActivities}
@@ -205,5 +208,6 @@ export default async function AdminDashboard() {
         lastActivityAt: null,
       }}
     />
+    </>
   );
 }

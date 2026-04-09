@@ -7,6 +7,7 @@ import AIInsightsPanel from "@/components/ai/AIInsightsPanel";
 import QuickActionsWidget from "@/components/dashboard/QuickActionsWidget";
 import BedAvailabilityWidget from "@/components/dashboard/BedAvailabilityWidget";
 import CadenceAlertWidget from "@/components/dashboard/CadenceAlertWidget";
+import TurnaroundWidget from "@/components/dashboard/TurnaroundWidget";
 
 const CYAN = "var(--nyx-accent)";
 const CARD = "var(--nyx-card)";
@@ -141,6 +142,9 @@ export default async function RepDashboard() {
 
       {/* Tier 1 Cadence Alerts */}
       <CadenceAlertWidget repId={rep.id} />
+
+      {/* Referral Turnaround Time */}
+      <TurnaroundWidget repId={rep.id} />
 
       {/* Follow-up alerts */}
       {pastDue.length > 0 && (
