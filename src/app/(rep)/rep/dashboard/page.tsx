@@ -8,6 +8,7 @@ import QuickActionsWidget from "@/components/dashboard/QuickActionsWidget";
 import BedAvailabilityWidget from "@/components/dashboard/BedAvailabilityWidget";
 import CadenceAlertWidget from "@/components/dashboard/CadenceAlertWidget";
 import TurnaroundWidget from "@/components/dashboard/TurnaroundWidget";
+import DischargeDestinationWidget from "@/components/dashboard/DischargeDestinationWidget";
 
 const CYAN = "var(--nyx-accent)";
 const CARD = "var(--nyx-card)";
@@ -145,6 +146,9 @@ export default async function RepDashboard() {
 
       {/* Referral Turnaround Time */}
       <TurnaroundWidget repId={rep.id} />
+
+      {/* Discharge Destinations */}
+      <DischargeDestinationWidget repId={rep.id} />
 
       {/* Follow-up alerts */}
       {pastDue.length > 0 && (

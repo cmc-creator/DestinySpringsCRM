@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import AIInsightsPanel from "@/components/ai/AIInsightsPanel";
 import BedAvailabilityWidget from "@/components/dashboard/BedAvailabilityWidget";
+import DischargeDestinationWidget from "@/components/dashboard/DischargeDestinationWidget";
 
 const CYAN = "var(--nyx-accent)";
 const CARD = "var(--nyx-card)";
@@ -139,6 +140,9 @@ export default async function AccountDashboard() {
 
       {/* Bed Availability */}
       <BedAvailabilityWidget />
+
+      {/* Discharge Destinations */}
+      <DischargeDestinationWidget />
 
       {/* Stats */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 16, marginBottom: 28 }}>

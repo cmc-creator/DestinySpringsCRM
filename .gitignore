@@ -33,7 +33,11 @@ yarn-error.log*
 # local env files
 .env*.local
 .env
+.env.production
 .env*.check
+
+# private diagnostic / recovery scripts
+scripts/_*.mjs
 
 # vercel
 .vercel

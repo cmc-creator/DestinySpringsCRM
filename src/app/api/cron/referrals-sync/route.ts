@@ -54,18 +54,20 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const [intake, discharge] = await Promise.all([
+  const [intake, discharge, bedboard] = await Promise.all([
     runSync(req, "/api/referrals/intake/m365/sync"),
     runSync(req, "/api/referrals/discharge/sync"),
+    runSync(req, "/api/integrations/sharepoint/bedboard-sync"),
   ]);
 
-  const ok = intake.ok && discharge.ok;
+  const ok = intake.ok && discharge.ok && bedboard.ok;
   return NextResponse.json(
     {
       ok,
       ranAt: new Date().toISOString(),
       intake,
       discharge,
+      bedboard,
     },
     { status: ok ? 200 : 207 },
   );
