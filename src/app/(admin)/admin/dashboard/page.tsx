@@ -13,6 +13,16 @@ export default async function AdminDashboard() {
   let openOpps = 0;
   let closedAdmissions = 0;
   let stalledOpps = 0;
+  // Extra context for enriched stat cards
+  let unassignedLeads = 0;
+  let pipelineValue = 0;
+  let closedThisMonth = 0;
+  let closedLastMonth = 0;
+  let leadsThisMonth = 0;
+  let leadsLastMonth = 0;
+  let oppsThisMonth = 0;
+  let oppsLastMonth = 0;
+  let overdueFollowUps = 0;
   let recentActivities: {
     id: string;
     title: string;
@@ -31,9 +41,18 @@ export default async function AdminDashboard() {
   let expiringDocs: { id: string; type: string; repId: string; expiresAt: Date | null; rep: { user: { name: string | null } } }[] = [];
 
   try {
+    const now2 = new Date();
+    const monthStart = new Date(now2.getFullYear(), now2.getMonth(), 1);
+    const prevMonthStart = new Date(now2.getFullYear(), now2.getMonth() - 1, 1);
+
     [
       repCount, hospitalCount, leadCount, openOpps, closedAdmissions,
-      stalledOpps, recentActivities, recentOpps, mapReps, mapHospitalsRaw
+      stalledOpps, recentActivities, recentOpps, mapReps, mapHospitalsRaw,
+      unassignedLeads,
+      closedThisMonth, closedLastMonth,
+      leadsThisMonth, leadsLastMonth,
+      oppsThisMonth, oppsLastMonth,
+      overdueFollowUps,
     ] = await Promise.all([
       prisma.rep.count({ where: { status: "ACTIVE" } }),
       prisma.hospital.count({ where: { status: { not: "CHURNED" } } }),
@@ -70,6 +89,15 @@ export default async function AdminDashboard() {
       prisma.opportunity.findMany({ take: 6, orderBy: { createdAt: "desc" }, include: { hospital: { select: { hospitalName: true } }, assignedRep: { include: { user: { select: { name: true } } } } } }),
       prisma.rep.findMany({ where: { status: "ACTIVE" }, include: { user: { select: { name: true, email: true } }, territories: true } }),
       prisma.hospital.findMany({ select: { id: true, hospitalName: true, city: true, state: true, status: true, assignedRepId: true }, orderBy: { hospitalName: "asc" } }),
+      // Enrichment queries for stat card sub/delta
+      prisma.lead.count({ where: { status: { in: ["NEW", "CONTACTED", "QUALIFIED"] }, assignedRepId: null } }),
+      prisma.opportunity.count({ where: { stage: "DISCHARGED", updatedAt: { gte: monthStart } } }),
+      prisma.opportunity.count({ where: { stage: "DISCHARGED", updatedAt: { gte: prevMonthStart, lt: monthStart } } }),
+      prisma.lead.count({ where: { status: { in: ["NEW", "CONTACTED", "QUALIFIED"] }, createdAt: { gte: monthStart } } }),
+      prisma.lead.count({ where: { status: { in: ["NEW", "CONTACTED", "QUALIFIED"] }, createdAt: { gte: prevMonthStart, lt: monthStart } } }),
+      prisma.opportunity.count({ where: { stage: { notIn: ["DISCHARGED", "DECLINED"] }, createdAt: { gte: monthStart } } }),
+      prisma.opportunity.count({ where: { stage: { notIn: ["DISCHARGED", "DECLINED"] }, createdAt: { gte: prevMonthStart, lt: monthStart } } }),
+      prisma.opportunity.count({ where: { stage: { notIn: ["DISCHARGED", "DECLINED"] }, nextFollowUp: { lt: new Date() } } }),
     ]);
   } catch {
     return (
@@ -79,6 +107,14 @@ export default async function AdminDashboard() {
       </div>
     );
   }
+
+  try {
+    const pvAgg = await prisma.opportunity.aggregate({
+      _sum: { value: true },
+      where: { stage: { notIn: ["DISCHARGED", "DECLINED"] } },
+    });
+    pipelineValue = pvAgg._sum.value ? Number(pvAgg._sum.value) : 0;
+  } catch { /* non-fatal */ }
 
   try {
     const in30 = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
@@ -124,13 +160,19 @@ export default async function AdminDashboard() {
       : null,
   }));
 
+  function fmtVal(n: number) {
+    if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(1)}M`;
+    if (n >= 1_000) return `$${(n / 1_000).toFixed(0)}K`;
+    return `$${n.toFixed(0)}`;
+  }
+
   const stats = [
-    { id: "reps",          label: "Active Reps",        value: repCount,        icon: "reps",          href: "/admin/reps" },
-    { id: "hospitals",     label: "Active Clients",      value: hospitalCount,   icon: "hospitals",     href: "/admin/hospitals" },
-    { id: "leads",         label: "Open Leads",         value: leadCount,       icon: "leads",         href: "/admin/leads" },
-    { id: "opportunities", label: "Open Opportunities", value: openOpps,        icon: "opportunities", href: "/admin/opportunities" },
-    { id: "won",           label: "Admissions Closed",  value: closedAdmissions, icon: "won",          href: "/admin/opportunities" },
-    { id: "invoices",      label: "Stalled Opps (10d)", value: stalledOpps,      icon: "invoices",     href: "/admin/opportunities" },
+    { id: "reps",          label: "Active Reps",        value: repCount,         icon: "reps",          href: "/admin/reps" },
+    { id: "hospitals",     label: "Active Clients",      value: hospitalCount,    icon: "hospitals",     href: "/admin/hospitals" },
+    { id: "leads",         label: "Open Leads",          value: leadCount,        icon: "leads",         href: "/admin/leads",          delta: leadsThisMonth - leadsLastMonth,    sub: unassignedLeads > 0 ? `${unassignedLeads} unassigned` : "All assigned" },
+    { id: "opportunities", label: "Open Opportunities",  value: openOpps,         icon: "opportunities", href: "/admin/opportunities",   delta: oppsThisMonth - oppsLastMonth,      sub: pipelineValue > 0 ? `${fmtVal(pipelineValue)} pipeline` : undefined },
+    { id: "won",           label: "Admissions Closed",   value: closedAdmissions, icon: "won",           href: "/admin/opportunities",   delta: closedThisMonth - closedLastMonth,  sub: `${closedThisMonth} this month` },
+    { id: "invoices",      label: "Stalled Opps (10d)",  value: stalledOpps,      icon: "invoices",      href: "/admin/opportunities",   delta: undefined,                          sub: overdueFollowUps > 0 ? `${overdueFollowUps} overdue follow-up${overdueFollowUps !== 1 ? "s" : ""}` : "No overdue follow-ups" },
   ];
 
   const serializedActivities = recentActivities.map((a) => ({

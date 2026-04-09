@@ -37,7 +37,7 @@ function fmtCurrency(n: number) {
 }
 
 // ─── Prop types ───────────────────────────────────────────────────────────────
-export interface StatItem { id: string; label: string; value: number; icon: string; href: string }
+export interface StatItem { id: string; label: string; value: number; icon: string; href: string; sub?: string; delta?: number }
 export interface ActivityItem {
   id: string;
   title: string;
@@ -549,7 +549,24 @@ export default function DashboardClient({
                     <div className="gold-card" style={{ borderRadius: 12, padding: "20px 18px", cursor: "pointer", transition: "box-shadow 0.2s" }}>
                       <div style={{ marginBottom: 10, opacity: 0.85 }}><Icon id={s.icon} color="var(--nyx-accent)" /></div>
                       <div style={{ fontSize: "1.8rem", fontWeight: 900, color: TEXT, lineHeight: 1, marginBottom: 4 }}>{s.value}</div>
-                      <div style={{ fontSize: "0.75rem", color: MUTED, fontWeight: 500 }}>{s.label}</div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                        <div style={{ fontSize: "0.75rem", color: MUTED, fontWeight: 500 }}>{s.label}</div>
+                        {typeof s.delta === "number" && s.delta !== 0 && (
+                          <span style={{
+                            fontSize: "0.66rem",
+                            fontWeight: 700,
+                            color: s.delta > 0 ? "#34d399" : "#f87171",
+                            background: s.delta > 0 ? "rgba(52,211,153,0.1)" : "rgba(248,113,113,0.1)",
+                            borderRadius: 4,
+                            padding: "1px 5px",
+                          }}>
+                            {s.delta > 0 ? `+${s.delta}` : s.delta}
+                          </span>
+                        )}
+                      </div>
+                      {s.sub && (
+                        <div style={{ marginTop: 4, fontSize: "0.7rem", color: "var(--nyx-accent-label)", fontWeight: 500, opacity: 0.8 }}>{s.sub}</div>
+                      )}
                       {typeof target === "number" && target > 0 && (
                         <div style={{ marginTop: 6, fontSize: "0.68rem", color: progress !== null && progress >= 100 ? "#34d399" : "var(--nyx-accent-label)", fontWeight: 600 }}>
                           Target {target} · {progress ?? 0}%
