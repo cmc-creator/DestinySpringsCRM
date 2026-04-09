@@ -165,8 +165,6 @@ export default async function RepDashboard() {
   }
 
   const openOpps = rep.opportunities.filter(o => !["DISCHARGED", "DECLINED"].includes(o.stage));
-  const closedWon = rep.opportunities.filter(o => o.stage === "DISCHARGED");
-  const pipelineValue = openOpps.reduce((s, o) => s + (o.value ? Number(o.value) : 0), 0);
 
   const activityScore = Math.min(100, weeklyActivityCount * 10);
   const ringColor = activityScore >= 70 ? "#34d399" : activityScore >= 40 ? "#fbbf24" : "#f87171";
