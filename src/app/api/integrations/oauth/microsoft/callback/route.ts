@@ -87,14 +87,13 @@ export async function GET(req: NextRequest) {
   // ── Login mode: find user by email, create SSO session token ───────────────
   if (loginMode) {
     if (!email) {
-      return NextResponse.redirect(`${appUrl}/login?error=Could+not+read+your+Microsoft+email`);
+      return NextResponse.redirect(`${appUrl}/login?error=OAuthEmailReadFailed`);
     }
     const crmUser = await prisma.user.findFirst({
       where: { email: { equals: email, mode: "insensitive" } },
     });
     if (!crmUser) {
-      const msg = encodeURIComponent(`No CRM account linked to ${email}. Contact your admin.`);
-      return NextResponse.redirect(`${appUrl}/login?error=${msg}`);
+      return NextResponse.redirect(`${appUrl}/login?error=OAuthNotLinked`);
     }
     // Save / refresh the integration token for this user
     await prisma.integrationToken.upsert({

@@ -1,12 +1,22 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { Suspense, useEffect, useRef } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 
-// This page is the SSO bridge: OAuth callback mints an HMAC token, redirects here,
-// and this page calls signIn("sso-token") so NextAuth creates the session cookie.
 export default function SsoPage() {
+  return (
+    <Suspense fallback={
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh" }}>
+        <p>Signing you in&hellip;</p>
+      </div>
+    }>
+      <SsoInner />
+    </Suspense>
+  );
+}
+
+function SsoInner() {
   const router        = useRouter();
   const searchParams  = useSearchParams();
   const called        = useRef(false);
@@ -17,7 +27,7 @@ export default function SsoPage() {
 
     const t = searchParams.get("t");
     if (!t) {
-      router.replace("/login?error=Invalid+SSO+token");
+      router.replace("/login?error=SsoTokenMissing");
       return;
     }
 
@@ -26,20 +36,19 @@ export default function SsoPage() {
         router.replace("/login?error=OAuthNotLinked");
         return;
       }
-      // Read role from session to redirect to the correct dashboard
       fetch("/api/auth/session")
         .then((r) => r.json())
         .then((session) => {
           const role = session?.user?.role as string | undefined;
           if (role === "REP") {
-            router.replace("/rep/dashboard");
+            router.replace("/rep/dashboard?sso_connected=1");
           } else if (role) {
-            router.replace("/admin/dashboard");
+            router.replace("/admin/dashboard?sso_connected=1");
           } else {
             router.replace("/login?error=OAuthNotLinked");
           }
         })
-        .catch(() => router.replace("/admin/dashboard"));
+        .catch(() => router.replace("/admin/dashboard?sso_connected=1"));
     });
   }, [router, searchParams]);
 
@@ -49,3 +58,4 @@ export default function SsoPage() {
     </div>
   );
 }
+

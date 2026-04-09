@@ -54,12 +54,15 @@ function LoginForm() {
       return "Access denied. Your account may still be awaiting admin approval.";
     }
     if (errorCode === "OAuthNotLinked") {
-      return "No account found for that Google/Microsoft address. Contact your admin to link your account first.";
+      return "No CRM account is linked to that email address. Contact your admin to have your account created or linked.";
     }
-    if (errorCode === "OAuthCallbackError" || errorCode === "OAuthSignin") {
-      return "OAuth sign-in failed. The provider may not be configured yet — try email and password, or contact your admin.";
+    if (errorCode === "OAuthEmailReadFailed") {
+      return "Could not read your email address from the provider. Please try again or sign in with email and password.";
     }
-    return `Sign-in failed (${errorCode}). Please check your credentials or contact your admin.`;
+    if (errorCode === "SsoTokenMissing" || errorCode === "OAuthCallbackError" || errorCode === "OAuthSignin") {
+      return "OAuth sign-in failed. Please try again or sign in with email and password.";
+    }
+    return `Sign-in failed. Please check your credentials or contact your admin.`;
   }
 
   useEffect(() => {
