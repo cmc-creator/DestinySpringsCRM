@@ -85,10 +85,11 @@ export default function OnboardingWalkthrough({ role }: OnboardingWalkthroughPro
 
   useEffect(() => {
     const start = (event: Event) => {
-      const custom = event as CustomEvent<{ role?: string }>;
+      const custom = event as CustomEvent<{ role?: string; force?: boolean }>;
       const requestedRole = custom.detail?.role?.toUpperCase();
       if (requestedRole && requestedRole !== role) return;
-      if (completedRoles.has(role)) return;
+      // Only block auto-start for already-completed tours; manual button always restarts
+      if (!custom.detail?.force && completedRoles.has(role)) return;
       setStepIndex(0);
       setOpen(true);
     };

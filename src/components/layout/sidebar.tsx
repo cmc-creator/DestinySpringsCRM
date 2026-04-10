@@ -128,6 +128,7 @@ const ADMIN_NAV: NavGroup[] = [
     items: [
       { href: "/admin/inquiry",    label: "Referral Intake Inbox" },
       { href: "/admin/resources",  label: "Resource Library" },
+      { href: "/user-guide",          label: "User Guide" },
     ],
   },
   {
@@ -191,6 +192,7 @@ const REP_NAV: NavGroup[] = [
     items: [
       { href: "/rep/inquiry",   label: "Referral Intake" },
       { href: "/rep/resources", label: "Resource Library" },
+      { href: "/user-guide",    label: "User Guide" },
     ],
   },
   {
@@ -518,7 +520,7 @@ export function Sidebar({ role, userName, userEmail }: SidebarProps) {
           </div>
         </div>
         <button
-          onClick={() => window.dispatchEvent(new CustomEvent("nyx:start-walkthrough", { detail: { role } }))}
+          onClick={() => window.dispatchEvent(new CustomEvent("nyx:start-walkthrough", { detail: { role, force: true } }))}
           style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: `1px solid ${BORDER}`, borderRadius: 6, padding: "11px 7px", minHeight: 44, fontSize: "0.78rem", color: TEXT, cursor: "pointer", fontWeight: 700, marginBottom: 6 }}
         >
           Guided Tour
