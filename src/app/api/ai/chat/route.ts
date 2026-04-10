@@ -80,7 +80,7 @@ When a user mentions a location or service gap:
 - Use **bold** for key terms and names, bullet lists for options/steps, and short paragraphs.
 - Ask one clarifying question at a time when you need more context.
 - Offer concrete next steps, not vague advice.
-- When you don't have live DB access, acknowledge it and offer to help draft, plan, or strategize instead.
+- You have direct access to live CRM data injected under the "## Logged-In User Context" section. This includes census snapshots (bed availability by unit), recent patient discharges, admission pipeline stats, rep activity, and more. Use this data confidently and cite specific numbers when answering questions. NEVER say you cannot access the data or that you lack live information — the injected context IS the live data for this session.
 
 You are NOT a general-purpose assistant. Stay focused on behavioral health business development, referral management, admission pipeline strategy, and platform navigation. Politely redirect unrelated requests.`;
 
@@ -192,7 +192,7 @@ async function buildUserContext(userId: string, role: string) {
     };
 
     if (role === "REP" && baseUser.rep?.id) {
-      const [openOppCount, overdueFollowUps, recentActivities] = await Promise.all([
+      const [openOppCount, overdueFollowUps, recentActivities, censusToday] = await Promise.all([
         prisma.opportunity.count({
           where: {
             assignedRepId: baseUser.rep.id,
@@ -220,6 +220,7 @@ async function buildUserContext(userId: string, role: string) {
           take: 3,
           select: { title: true, type: true, createdAt: true },
         }),
+        prisma.censusSnapshot.findFirst({ orderBy: { date: "desc" } }),
       ]);
 
       context.repSnapshot = {
@@ -235,6 +236,20 @@ async function buildUserContext(userId: string, role: string) {
           type: activity.type,
           createdAt: activity.createdAt.toISOString(),
         })),
+        censusToday: censusToday
+          ? {
+              date: censusToday.date.toISOString().slice(0, 10),
+              adultTotal: censusToday.adultTotal,
+              adultAvailable: censusToday.adultAvailable,
+              adolescentTotal: censusToday.adolescentTotal,
+              adolescentAvailable: censusToday.adolescentAvailable,
+              geriatricTotal: censusToday.geriatricTotal,
+              geriatricAvailable: censusToday.geriatricAvailable,
+              dualDxTotal: censusToday.dualDxTotal,
+              dualDxAvailable: censusToday.dualDxAvailable,
+              note: censusToday.note ?? null,
+            }
+          : null,
       };
     }
 
@@ -271,11 +286,23 @@ async function buildUserContext(userId: string, role: string) {
     }
 
     if (role === "ADMIN") {
-      const [openLeads, openOpportunities, pendingInvoices, pendingApprovals] = await Promise.all([
+      const [openLeads, openOpportunities, pendingInvoices, pendingApprovals, censusToday, recentDischarges] = await Promise.all([
         prisma.lead.count({ where: { status: { in: ["NEW", "CONTACTED", "QUALIFIED"] } } }),
         prisma.opportunity.count({ where: { stage: { notIn: ["DISCHARGED", "DECLINED"] } } }),
         prisma.invoice.count({ where: { status: { in: ["SENT", "OVERDUE"] } } }),
         prisma.rep.count({ where: { status: "PENDING_REVIEW" } }),
+        prisma.censusSnapshot.findFirst({ orderBy: { date: "desc" } }),
+        prisma.referral.findMany({
+          where: { status: "ADMITTED", dischargeDate: { not: null } },
+          orderBy: { dischargeDate: "desc" },
+          take: 10,
+          select: {
+            patientInitials: true,
+            serviceLine: true,
+            dischargeDate: true,
+            referralSource: { select: { name: true } },
+          },
+        }),
       ]);
 
       context.adminSnapshot = {
@@ -283,6 +310,26 @@ async function buildUserContext(userId: string, role: string) {
         openOpportunities,
         pendingInvoices,
         pendingRepApprovals: pendingApprovals,
+        censusToday: censusToday
+          ? {
+              date: censusToday.date.toISOString().slice(0, 10),
+              adultTotal: censusToday.adultTotal,
+              adultAvailable: censusToday.adultAvailable,
+              adolescentTotal: censusToday.adolescentTotal,
+              adolescentAvailable: censusToday.adolescentAvailable,
+              geriatricTotal: censusToday.geriatricTotal,
+              geriatricAvailable: censusToday.geriatricAvailable,
+              dualDxTotal: censusToday.dualDxTotal,
+              dualDxAvailable: censusToday.dualDxAvailable,
+              note: censusToday.note ?? null,
+            }
+          : null,
+        recentDischarges: recentDischarges.map((r) => ({
+          patient: r.patientInitials ?? "—",
+          source: r.referralSource.name,
+          serviceLine: r.serviceLine ?? "—",
+          dischargedAt: r.dischargeDate?.toISOString().slice(0, 10) ?? "—",
+        })),
       };
     }
 
@@ -378,7 +425,7 @@ export async function POST(req: NextRequest) {
   if (userContext) {
     const rendered = stringifyContext(userContext);
     if (rendered) {
-      promptSections.push(`## Logged-In User Context\nUse this live CRM context to personalize tone, recommendations, follow-ups, automation ideas, and suggested next actions. Do not claim hidden certainty beyond what is shown here.\n${rendered}`);
+      promptSections.push(`## Logged-In User Context\nThis is LIVE data pulled directly from the CRM database right now. Use it to answer data questions directly — quote specific numbers, stages, and dates. Do not claim you cannot access the data.\n${rendered}`);
     }
   }
   const systemPromptWithContext = promptSections.join("\n\n");
@@ -397,7 +444,7 @@ export async function POST(req: NextRequest) {
       body: JSON.stringify({
         systemInstruction: { parts: [{ text: systemPromptWithContext }] },
         contents: geminiContents,
-        generationConfig: { maxOutputTokens: 1024, temperature: 0.7 },
+        generationConfig: { maxOutputTokens: 8192, temperature: 0.7 },
       }),
     }
   );

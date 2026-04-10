@@ -107,9 +107,14 @@ function getProposalPreviewEntries(data?: Record<string, unknown>) {
 
 function renderMarkdown(text: string): string {
   return text
+    .replace(/^### (.+)$/gm, '<div style="font-weight:800;font-size:0.78rem;color:var(--nyx-accent);margin:10px 0 3px;letter-spacing:0.04em">$1</div>')
+    .replace(/^## (.+)$/gm, '<div style="font-weight:800;font-size:0.82rem;color:var(--nyx-accent);margin:12px 0 4px;letter-spacing:0.04em">$1</div>')
+    .replace(/^# (.+)$/gm, '<div style="font-weight:900;font-size:0.88rem;color:var(--nyx-accent);margin:14px 0 5px;letter-spacing:0.04em">$1</div>')
     .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
     .replace(/\*(.+?)\*/g, "<em>$1</em>")
     .replace(/`(.+?)`/g, `<code style="background:rgba(255,255,255,0.08);border-radius:3px;padding:1px 5px;font-size:0.85em;">$1</code>`)
+    .replace(/^[-*] (.+)$/gm, '<div style="display:flex;gap:7px;padding-left:10px;margin:3px 0"><span style="color:var(--nyx-accent);flex-shrink:0;margin-top:1px">•</span><span>$1</span></div>')
+    .replace(/^\d+\. (.+)$/gm, '<div style="padding-left:14px;margin:3px 0">$1</div>')
     .replace(/\n/g, "<br />");
 }
 
