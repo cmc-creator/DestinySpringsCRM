@@ -82,8 +82,41 @@ export async function POST(req: NextRequest) {
       status: status ?? "RECEIVED",
       notes,
     },
-    include: { referralSource: true },
+    include: { referralSource: { include: { assignedRep: true } } },
   });
+
+  // Auto-create a follow-up task for the assigned rep
+  const assignedRepId = referral.referralSource.assignedRepId ?? null;
+  if (assignedRepId) {
+    const followUpDue = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+    await prisma.task.create({
+      data: {
+        title: `Follow up on referral${patientInitials ? ` — ${patientInitials}` : ""} from ${referral.referralSource.name}`,
+        notes: `Auto-created when referral was logged. Service line: ${serviceLine ?? "—"}`,
+        repId: assignedRepId,
+        dueAt: followUpDue,
+        status: "OPEN",
+        priority: "HIGH",
+      },
+    });
+
+    // In-app notification for the rep
+    const repUser = await prisma.user.findFirst({
+      where: { rep: { id: assignedRepId } },
+      select: { id: true },
+    });
+    if (repUser) {
+      await prisma.notification.create({
+        data: {
+          userId: repUser.id,
+          title: "New Referral — Follow-Up Task Created",
+          body: `A follow-up task was created for your new referral from ${referral.referralSource.name}.`,
+          type: "INFO",
+          link: "/rep/tasks",
+        },
+      });
+    }
+  }
 
   return NextResponse.json(referral, { status: 201 });
 }

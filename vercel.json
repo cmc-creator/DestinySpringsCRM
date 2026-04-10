@@ -24,6 +24,22 @@
     {
       "path": "/api/cron/send-scheduled",
       "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/cron/stale-pipeline",
+      "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/cron/inactive-sources",
+      "schedule": "0 8 * * 1"
+    },
+    {
+      "path": "/api/cron/census-alert",
+      "schedule": "0 7 * * *"
+    },
+    {
+      "path": "/api/cron/rep-activity-check",
+      "schedule": "0 9 * * *"
     }
   ]
 }

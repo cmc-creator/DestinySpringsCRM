@@ -268,3 +268,99 @@ export async function sendWeeklyDigestEmail(opts: {
     })
     .catch((e: unknown) => console.error("[email] weekly-digest failed:", e));
 }
+
+// ── Stale Pipeline Alert (to rep) ────────────────────────────────────────────
+export async function sendStalePipelineEmail(opts: {
+  to: string;
+  name: string;
+  oppTitle: string;
+  stage: string;
+  daysStale: number;
+}) {
+  if (!process.env.RESEND_API_KEY || !process.env.RESEND_FROM_EMAIL) return;
+  const stageLabel = opts.stage.replace(/_/g, " ");
+  await resend.emails
+    .send({
+      from: FROM,
+      to: opts.to,
+      subject: `Stale Pipeline: "${opts.oppTitle}" hasn't moved in ${opts.daysStale} days`,
+      html: layout(`
+        <h2 style="margin:0 0 6px;color:#fbbf24;font-size:17px;font-weight:800;">Pipeline Opportunity Stalled</h2>
+        <p style="color:rgba(237,228,207,0.55);margin:0 0 18px;font-size:14px;">Hi ${opts.name || "there"},<br>An opportunity in your pipeline hasn't advanced in ${opts.daysStale} days and may need attention.</p>
+        ${infoBox("#fbbf24", `${opts.daysStale}d STALE`, opts.oppTitle, `Current stage: ${stageLabel}`)}
+        ${btn(`${BASE}/rep/opportunities`, "Review Pipeline", "#fbbf24", "#1a1208")}
+      `),
+    })
+    .catch((e: unknown) => console.error("[email] stale-pipeline failed:", e));
+}
+
+// ── Inactive Referral Source Alert (to rep) ──────────────────────────────────
+export async function sendInactiveSourceEmail(opts: {
+  to: string;
+  name: string;
+  sourceName: string;
+  daysSinceLastReferral: number;
+}) {
+  if (!process.env.RESEND_API_KEY || !process.env.RESEND_FROM_EMAIL) return;
+  await resend.emails
+    .send({
+      from: FROM,
+      to: opts.to,
+      subject: `Inactive Source: ${opts.sourceName} hasn't referred in ${opts.daysSinceLastReferral} days`,
+      html: layout(`
+        <h2 style="margin:0 0 6px;color:#f97316;font-size:17px;font-weight:800;">Referral Source Going Cold</h2>
+        <p style="color:rgba(237,228,207,0.55);margin:0 0 18px;font-size:14px;">Hi ${opts.name || "there"},<br>A referral source in your territory hasn't sent a referral in over ${opts.daysSinceLastReferral} days. Time to reconnect.</p>
+        ${infoBox("#f97316", `${opts.daysSinceLastReferral}d INACTIVE`, opts.sourceName, "No referrals received recently")}
+        ${btn(`${BASE}/rep/territory`, "View Territory", "#f97316", "#fff")}
+      `),
+    })
+    .catch((e: unknown) => console.error("[email] inactive-source failed:", e));
+}
+
+// ── Low Census Alert (to admin / reps) ───────────────────────────────────────
+export async function sendLowCensusEmail(opts: {
+  to: string;
+  name: string;
+  totalAvailable: number;
+  totalBeds: number;
+  date: string;
+}) {
+  if (!process.env.RESEND_API_KEY || !process.env.RESEND_FROM_EMAIL) return;
+  const pct = opts.totalBeds > 0 ? Math.round((opts.totalAvailable / opts.totalBeds) * 100) : 0;
+  await resend.emails
+    .send({
+      from: FROM,
+      to: opts.to,
+      subject: `Low Census Alert: ${opts.totalAvailable} beds available (${pct}% capacity)`,
+      html: layout(`
+        <h2 style="margin:0 0 6px;color:#34d399;font-size:17px;font-weight:800;">Low Census — Push Referrals Now</h2>
+        <p style="color:rgba(237,228,207,0.55);margin:0 0 18px;font-size:14px;">Hi ${opts.name || "there"},<br>Today's census shows low bed availability. This is the time to activate referral source outreach.</p>
+        ${infoBox("#34d399", "LOW CENSUS", `${opts.totalAvailable} of ${opts.totalBeds} beds available`, `Census date: ${opts.date} &bull; ${pct}% capacity open`)}
+        ${btn(`${BASE}/rep/bedboard`, "View Bedboard", "#34d399", "#052e16")}
+      `),
+    })
+    .catch((e: unknown) => console.error("[email] low-census failed:", e));
+}
+
+// ── Rep Inactive Activity Alert (to rep) ─────────────────────────────────────
+export async function sendRepInactiveEmail(opts: {
+  to: string;
+  name: string;
+  daysSinceActivity: number;
+}) {
+  if (!process.env.RESEND_API_KEY || !process.env.RESEND_FROM_EMAIL) return;
+  await resend.emails
+    .send({
+      from: FROM,
+      to: opts.to,
+      subject: `Activity Reminder: No logged activities in ${opts.daysSinceActivity} days`,
+      html: layout(`
+        <h2 style="margin:0 0 6px;color:#c084fc;font-size:17px;font-weight:800;">Activity Log Reminder</h2>
+        <p style="color:rgba(237,228,207,0.55);margin:0 0 18px;font-size:14px;">Hi ${opts.name || "there"},<br>You haven't logged any activities in ${opts.daysSinceActivity} days. Keeping your activity log current helps leadership track outreach quality and cadence.</p>
+        ${infoBox("#c084fc", `${opts.daysSinceActivity}d NO ACTIVITY`, "Log your recent visits, calls, and outreach", "Doesn't take long — just a quick entry")}
+        ${btn(`${BASE}/rep/activities`, "Log Activity", "#c084fc", "#fff")}
+      `),
+    })
+    .catch((e: unknown) => console.error("[email] rep-inactive failed:", e));
+}
+
