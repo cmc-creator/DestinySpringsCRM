@@ -265,6 +265,7 @@ export function Sidebar({ role, userName, userEmail }: SidebarProps) {
     leads: { id: string; hospitalName: string; contactName?: string | null }[];
     opportunities: { id: string; title: string; hospital: { hospitalName: string } }[];
     reps: { id: string; user: { name?: string | null; email?: string | null }; territory?: string | null }[];
+    referralSources: { id: string; name: string; contactName?: string | null; type?: string | null; city?: string | null; state?: string | null }[];
   } | null>(null);
   const [searchLoading, setSearchLoading] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
@@ -316,6 +317,7 @@ export function Sidebar({ role, userName, userEmail }: SidebarProps) {
     ...searchResults.leads.map(l => ({ icon: "≡ƒÄ»", label: l.hospitalName, sub: l.contactName ?? "", href: "/admin/leads", typeLabel: "Lead" })),
     ...searchResults.opportunities.map(o => ({ icon: "≡ƒôè", label: o.title, sub: o.hospital.hospitalName, href: "/admin/opportunities", typeLabel: "Opportunity" })),
     ...searchResults.reps.map(r => ({ icon: "≡ƒæñ", label: r.user.name ?? r.user.email ?? "", sub: r.territory ?? "", href: "/admin/reps", typeLabel: "Rep" })),
+    ...(searchResults.referralSources ?? []).map(s => ({ icon: "≡ƒæñ", label: s.name, sub: [s.contactName, [s.city, s.state].filter(Boolean).join(", ")].filter(Boolean).join(" · "), href: `/rep/contacts/${s.id}`, typeLabel: s.type ?? "Source" })),
   ] : [];
 
   function goToResult(href: string) {

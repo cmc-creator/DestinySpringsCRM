@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>You're offline — Destiny Springs CRM</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #0a0e1a;
+      color: #e2e8f0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      min-height: 100dvh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .card {
+      background: #111827;
+      border: 1px solid rgba(0, 212, 255, 0.15);
+      border-radius: 16px;
+      padding: 40px 36px;
+      max-width: 420px;
+      width: 100%;
+      text-align: center;
+    }
+    .icon { font-size: 3rem; margin-bottom: 16px; }
+    h1 { font-size: 1.5rem; font-weight: 800; margin-bottom: 8px; color: #f1f5f9; }
+    p { font-size: 0.9rem; color: #94a3b8; line-height: 1.6; margin-bottom: 24px; }
+    button {
+      background: rgba(0, 212, 255, 0.12);
+      border: 1px solid rgba(0, 212, 255, 0.35);
+      color: #00d4ff;
+      font-size: 0.875rem;
+      font-weight: 700;
+      padding: 10px 28px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    button:hover { background: rgba(0, 212, 255, 0.2); }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="icon">📡</div>
+    <h1>You're offline</h1>
+    <p>No internet connection detected. Please check your network and try again.</p>
+    <button onclick="window.location.reload()">Retry</button>
+  </div>
+</body>
+</html>

@@ -242,6 +242,43 @@ export default function VisitPrepClient({
   const [logNotes, setLogNotes] = useState("");
   const [logSaving, setLogSaving] = useState(false);
   const [activities, setActivities] = useState<Activity[]>(lastActivities);
+  const [checkingIn, setCheckingIn] = useState(false);
+  const [checkInMsg, setCheckInMsg] = useState<string | null>(null);
+
+  async function checkIn() {
+    if (!navigator.geolocation) { setCheckInMsg("Geolocation not supported"); return; }
+    setCheckingIn(true);
+    setCheckInMsg(null);
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        try {
+          const res = await fetch("/api/activities", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              type: "SITE_VISIT",
+              title: `Check-in at ${source.name}`,
+              notes: `GPS: ${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}`,
+              referralSourceId: source.id,
+              completedAt: new Date().toISOString(),
+            }),
+          });
+          if (res.ok) {
+            const act = await res.json() as { id: string; type: string; title: string; notes: string | null; completedAt: string | null; createdAt: string };
+            setActivities(prev => [act, ...prev].slice(0, 10));
+            setCheckInMsg("Checked in!");
+            setTimeout(() => setCheckInMsg(null), 4000);
+          } else {
+            setCheckInMsg("Check-in failed");
+          }
+        } finally {
+          setCheckingIn(false);
+        }
+      },
+      () => { setCheckingIn(false); setCheckInMsg("Location denied"); },
+      { timeout: 10000 },
+    );
+  }
 
   async function saveActivity() {
     if (!logTitle.trim() || logSaving) return;
@@ -395,6 +432,24 @@ export default function VisitPrepClient({
           >
             {logOpen ? "✕ Cancel" : "⚡ Log Activity"}
           </button>
+          <button
+            onClick={checkIn}
+            disabled={checkingIn}
+            style={{
+              display: "inline-flex", alignItems: "center", gap: 6,
+              background: "rgba(52,211,153,0.1)", border: "1px solid rgba(52,211,153,0.3)",
+              borderRadius: 8, padding: "8px 16px",
+              fontWeight: 700, fontSize: "0.82rem", color: checkingIn ? "#6b7280" : "#34d399",
+              cursor: checkingIn ? "not-allowed" : "pointer",
+            }}
+          >
+            {checkingIn ? "Locating…" : "📍 Check In Here"}
+          </button>
+          {checkInMsg && (
+            <span style={{ fontSize: "0.75rem", fontWeight: 600, color: checkInMsg === "Checked in!" ? "#34d399" : "#f87171", alignSelf: "center" }}>
+              {checkInMsg}
+            </span>
+          )}
         </div>
       </div>
 

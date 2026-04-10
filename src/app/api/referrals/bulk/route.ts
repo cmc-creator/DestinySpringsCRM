@@ -33,6 +33,33 @@ export async function POST(req: NextRequest) {
       data: { status: status as ReferralStatus },
     });
 
+    // Auto-create follow-up tasks when marking referrals as ADMITTED
+    if (status === "ADMITTED") {
+      const admitted = await prisma.referral.findMany({
+        where: { id: { in: ids as string[] } },
+        select: {
+          id: true,
+          patientInitials: true,
+          referralSource: { select: { name: true, assignedRepId: true } },
+        },
+      });
+      for (const ref of admitted) {
+        const repId = ref.referralSource?.assignedRepId;
+        if (repId) {
+          await prisma.task.create({
+            data: {
+              title: `Follow-up: ${ref.patientInitials ?? "Patient"} from ${ref.referralSource?.name ?? "referral source"}`,
+              notes: "Auto-created on admission. Coordinate discharge planning and thank the referral source.",
+              priority: "HIGH",
+              status: "OPEN",
+              dueAt: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
+              repId,
+            },
+          });
+        }
+      }
+    }
+
     return NextResponse.json({ updated: result.count });
   } catch (e) {
     console.error("Bulk referral update error:", e);

@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import CensusExportButton from "@/components/dashboard/CensusExportButton";
 
 export const dynamic = "force-dynamic";
 
@@ -210,8 +211,9 @@ export default async function CensusPage() {
 
       {/* History table */}
       <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 14, overflow: "hidden" }}>
-        <div style={{ padding: "18px 24px", borderBottom: `1px solid ${BORDER}` }}>
+        <div style={{ padding: "18px 24px", borderBottom: `1px solid ${BORDER}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <h2 style={{ fontSize: "1rem", fontWeight: 700, color: TEXT, margin: 0 }}>Recent History (Last 30 Days)</h2>
+          <CensusExportButton snapshots={snapshots} />
         </div>
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.82rem" }}>

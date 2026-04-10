@@ -145,6 +145,56 @@ export default async function RepDashboard() {
     // non-fatal — follow-ups just won't show
   }
 
+  // Referral source health: sources going cold (no contact 20+ days)
+  let coldSources: { id: string; name: string; lastActivityAt: Date | null; daysIdle: number }[] = [];
+  try {
+    const sources = await prisma.referralSource.findMany({
+      where: { assignedRepId: rep.id },
+      select: {
+        id: true,
+        name: true,
+        activities: {
+          orderBy: { createdAt: "desc" },
+          take: 1,
+          select: { createdAt: true },
+        },
+      },
+    });
+    const now3 = new Date();
+    for (const s of sources) {
+      const lastAct = s.activities[0]?.createdAt ?? null;
+      const daysIdle = lastAct
+        ? Math.floor((now3.getTime() - lastAct.getTime()) / 86400000)
+        : 9999;
+      if (daysIdle >= 20) {
+        coldSources.push({ id: s.id, name: s.name, lastActivityAt: lastAct, daysIdle });
+      }
+    }
+    coldSources.sort((a, b) => b.daysIdle - a.daysIdle);
+  } catch { /* non-fatal */ }
+
+  // Activity breakdown by type this week vs last week
+  let activityByType: { type: string; thisWeek: number; lastWeek: number }[] = [];
+  try {
+    const now2 = new Date();
+    const weekStart2 = new Date(now2.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const twoWeeksAgo = new Date(now2.getTime() - 14 * 24 * 60 * 60 * 1000);
+    const [thisWeekActs, lastWeekActs] = await Promise.all([
+      prisma.activity.groupBy({ by: ["type"], where: { repId: rep.id, createdAt: { gte: weekStart2 } }, _count: { id: true } }),
+      prisma.activity.groupBy({ by: ["type"], where: { repId: rep.id, createdAt: { gte: twoWeeksAgo, lt: weekStart2 } }, _count: { id: true } }),
+    ]);
+    const lastWeekMap = new Map(lastWeekActs.map(a => [a.type, a._count.id]));
+    const allTypes = [...new Set([...thisWeekActs.map(a => a.type), ...lastWeekActs.map(a => a.type)])];
+    activityByType = allTypes
+      .map(type => ({
+        type,
+        thisWeek: thisWeekActs.find(a => a.type === type)?._count.id ?? 0,
+        lastWeek: lastWeekMap.get(type) ?? 0,
+      }))
+      .sort((a, b) => b.thisWeek - a.thisWeek)
+      .slice(0, 6);
+  } catch { /* non-fatal */ }
+
   const now = new Date();
   const overdueFollowUps = [
     ...overdueLeads.map(l => ({ id: l.id, label: l.hospitalName, date: l.nextFollowUp, type: "LEAD" as const })),
@@ -320,7 +370,63 @@ export default async function RepDashboard() {
         </div>
       </div>
 
+      {/* Activity Breakdown by Type */}
+      {activityByType.length > 0 && (
+        <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 14, padding: "18px 22px", marginBottom: 28 }}>
+          <p style={{ fontSize: "0.65rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 14 }}>THIS WEEK BY TYPE</p>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(130px, 1fr))", gap: 10 }}>
+            {activityByType.map(a => {
+              const ACT_LABELS: Record<string, string> = {
+                CALL: "Call", EMAIL: "Email", NOTE: "Note", MEETING: "Meeting", LUNCH: "Lunch",
+                SITE_VISIT: "Site Visit", IN_SERVICE: "In-Service", FOLLOW_UP: "Follow-Up",
+                CE_PRESENTATION: "CE Pres.", LUNCH_AND_LEARN: "L&L", REFERRAL_RECEIVED: "Referral",
+                TASK: "Task", PROPOSAL_SENT: "Proposal", DEMO_COMPLETED: "Demo", CONFERENCE: "Conference",
+              };
+              const delta = a.thisWeek - a.lastWeek;
+              return (
+                <div key={a.type} style={{ background: "rgba(0,0,0,0.2)", borderRadius: 10, padding: "10px 14px", border: `1px solid ${BORDER}` }}>
+                  <div style={{ fontSize: "0.68rem", color: TEXT_MUTED, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>
+                    {ACT_LABELS[a.type] ?? a.type}
+                  </div>
+                  <div style={{ fontSize: "1.6rem", fontWeight: 900, color: CYAN, lineHeight: 1 }}>{a.thisWeek}</div>
+                  {delta !== 0 && (
+                    <div style={{ fontSize: "0.65rem", color: delta > 0 ? "#34d399" : "#f87171", marginTop: 3 }}>
+                      {delta > 0 ? "▲" : "▼"} {Math.abs(delta)} vs last week
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       <div className="nyx-page-grid-2col" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
+        {/* Referral Source Health */}
+        {coldSources.length > 0 && (
+          <div style={{ background: "rgba(251,191,36,0.04)", border: "1px solid rgba(251,191,36,0.2)", borderRadius: 14, padding: "18px 22px", gridColumn: "1 / -1" }}>
+            <p style={{ fontSize: "0.65rem", fontWeight: 700, color: "#fbbf24", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 14 }}>
+              ⚠ REFERRAL SOURCES GOING COLD
+            </p>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 10 }}>
+              {coldSources.slice(0, 8).map(s => {
+                const isVeryOld = s.daysIdle >= 45;
+                const badgeColor = isVeryOld ? "#f87171" : "#fbbf24";
+                return (
+                  <a key={s.id} href={`/rep/contacts/${s.id}`} style={{ textDecoration: "none" }}>
+                    <div style={{ background: "rgba(0,0,0,0.2)", borderRadius: 10, padding: "10px 14px", border: `1px solid ${isVeryOld ? "rgba(248,113,113,0.2)" : "rgba(251,191,36,0.18)"}`, cursor: "pointer" }}>
+                      <div style={{ fontSize: "0.78rem", color: TEXT, fontWeight: 600, marginBottom: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.name}</div>
+                      <div style={{ display: "inline-block", fontSize: "0.65rem", fontWeight: 700, color: badgeColor, background: `${badgeColor}18`, borderRadius: 6, padding: "2px 7px" }}>
+                        {s.daysIdle === 9999 ? "No contact yet" : `${s.daysIdle}d idle`}
+                      </div>
+                    </div>
+                  </a>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: "20px" }}>
           <p style={{ fontSize: "0.7rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 14 }}>MY OPPORTUNITIES</p>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>

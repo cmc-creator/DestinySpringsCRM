@@ -11,6 +11,7 @@ export default function PWAInstallBanner() {
   const [prompt, setPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [show, setShow] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
+  const [isAndroidFallback, setIsAndroidFallback] = useState(false);
   const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
@@ -20,20 +21,42 @@ export default function PWAInstallBanner() {
     const snooze = localStorage.getItem("pwa-install-snooze");
     if (snooze && Date.now() - Number(snooze) < 7 * 24 * 60 * 60 * 1000) return;
 
-    const ios = /iphone|ipad|ipod/i.test(navigator.userAgent) && !(window.navigator as Navigator & { standalone?: boolean }).standalone;
+    const ua = navigator.userAgent;
+    const ios = /iphone|ipad|ipod/i.test(ua) && !(window.navigator as Navigator & { standalone?: boolean }).standalone;
     if (ios) {
       setIsIOS(true);
       setShow(true);
       return;
     }
 
+    // Listen for Chrome's native install prompt (Android Chrome / desktop Chrome)
+    let nativePromptFired = false;
     function handler(e: Event) {
       e.preventDefault();
+      nativePromptFired = true;
       setPrompt(e as BeforeInstallPromptEvent);
+      setIsAndroidFallback(false);
       setShow(true);
     }
     window.addEventListener("beforeinstallprompt", handler);
-    return () => window.removeEventListener("beforeinstallprompt", handler);
+
+    // Fallback for Android browsers where beforeinstallprompt doesn't fire
+    // (Samsung Internet, Firefox, etc.) - show manual instructions after 2s
+    const isMobile = /android|mobile/i.test(ua) || window.innerWidth < 768;
+    let fallbackTimer: ReturnType<typeof setTimeout> | null = null;
+    if (isMobile) {
+      fallbackTimer = setTimeout(() => {
+        if (!nativePromptFired) {
+          setIsAndroidFallback(true);
+          setShow(true);
+        }
+      }, 2000);
+    }
+
+    return () => {
+      window.removeEventListener("beforeinstallprompt", handler);
+      if (fallbackTimer) clearTimeout(fallbackTimer);
+    };
   }, []);
 
   function dismiss() {
@@ -50,6 +73,12 @@ export default function PWAInstallBanner() {
   }
 
   if (!show || dismissed) return null;
+
+  const instructionText = isIOS
+    ? <>Tap the <strong style={{ color: "#C9A84C" }}>Share</strong> button then <strong style={{ color: "#C9A84C" }}>Add to Home Screen</strong> for the best experience.</>
+    : isAndroidFallback
+    ? <>Tap your browser&apos;s <strong style={{ color: "#C9A84C" }}>menu (&#8942;)</strong> then <strong style={{ color: "#C9A84C" }}>Add to Home Screen</strong> or <strong style={{ color: "#C9A84C" }}>Install App</strong>.</>
+    : <>Install the app for faster access and a full-screen experience.</>;
 
   return (
     <div
@@ -83,21 +112,14 @@ export default function PWAInstallBanner() {
         <p style={{ margin: 0, fontWeight: 700, color: "#e8e8e8", fontSize: "0.9rem" }}>
           Add Destiny Springs to your home screen
         </p>
-        {isIOS ? (
-          <p style={{ margin: "5px 0 0", fontSize: "0.78rem", color: "#a0a0b0", lineHeight: 1.45 }}>
-            Tap the <strong style={{ color: "#C9A84C" }}>Share</strong> button then{" "}
-            <strong style={{ color: "#C9A84C" }}>Add to Home Screen</strong> for the best experience.
-          </p>
-        ) : (
-          <p style={{ margin: "5px 0 0", fontSize: "0.78rem", color: "#a0a0b0", lineHeight: 1.45 }}>
-            Install the app for faster access and a full-screen experience.
-          </p>
-        )}
+        <p style={{ margin: "5px 0 0", fontSize: "0.78rem", color: "#a0a0b0", lineHeight: 1.45 }}>
+          {instructionText}
+        </p>
       </div>
 
       {/* Actions */}
       <div style={{ display: "flex", flexDirection: "column", gap: 8, flexShrink: 0 }}>
-        {!isIOS && (
+        {!isIOS && !isAndroidFallback && (
           <button
             onClick={install}
             style={{
@@ -134,3 +156,4 @@ export default function PWAInstallBanner() {
     </div>
   );
 }
+

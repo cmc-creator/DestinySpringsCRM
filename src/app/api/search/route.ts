@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
   const lq = q.toLowerCase();
   const contains = (field: string) => ({ contains: field, mode: "insensitive" as const });
 
-  const [hospitals, leads, opportunities, reps] = await Promise.all([
+  const [hospitals, leads, opportunities, reps, referralSources] = await Promise.all([
     prisma.hospital.findMany({
       where: { OR: [{ hospitalName: contains(q) }, { city: contains(q) }, { state: contains(q) }, { primaryContactName: contains(q) }] },
       select: { id: true, hospitalName: true, city: true, state: true, status: true },
@@ -37,7 +37,20 @@ export async function GET(req: NextRequest) {
           take: 5,
         })
       : Promise.resolve([]),
+    prisma.referralSource.findMany({
+      where: {
+        OR: [
+          { name: contains(q) },
+          { contactName: contains(q) },
+          { specialty: contains(q) },
+          { city: contains(q) },
+          { state: contains(q) },
+        ],
+      },
+      select: { id: true, name: true, contactName: true, type: true, city: true, state: true, assignedRepId: true },
+      take: 6,
+    }),
   ]);
 
-  return NextResponse.json({ hospitals, leads, opportunities, reps, query: lq });
+  return NextResponse.json({ hospitals, leads, opportunities, reps, referralSources, query: lq });
 }
