@@ -77,7 +77,7 @@ export default async function CensusPage() {
     <div>
       <div style={{ marginBottom: 28 }}>
         <p style={{ color: "var(--nyx-accent-label)", fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 4 }}>OPERATIONS</p>
-        <h1 style={{ fontSize: "1.8rem", fontWeight: 900, color: TEXT }}>Census</h1>
+        <h1 style={{ fontSize: "1.8rem", fontWeight: 900, color: TEXT }}>Bedboard &amp; Discharges</h1>
         <p style={{ color: TEXT_MUTED, fontSize: "0.875rem", marginTop: 4 }}>Daily bed availability snapshot for all units.</p>
       </div>
 

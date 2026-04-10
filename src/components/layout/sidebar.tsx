@@ -170,6 +170,7 @@ const REP_NAV: NavGroup[] = [
     group: "Pipeline", tint: "blue",
     items: [
       { href: "/rep/opportunities", label: "My Admissions" },
+      { href: "/rep/referrals",     label: "Referral Log" },
       { href: "/rep/territory",     label: "My Territory" },
     ],
   },
