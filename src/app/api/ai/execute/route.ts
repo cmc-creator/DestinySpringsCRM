@@ -383,9 +383,18 @@ export async function POST(req: NextRequest) {
       }
 
       case "create_activity": {
-        const data = only<Record<string, unknown>>(body.data, ["type", "title", "subject", "notes", "leadId", "hospitalId", "referralSourceId", "opportunityId", "contactId", "scheduledAt", "completedAt"]);
+        const data = only<Record<string, unknown>>(body.data, ["type", "title", "subject", "notes", "repId", "leadId", "hospitalId", "referralSourceId", "opportunityId", "contactId", "scheduledAt", "completedAt"]);
         if (!data.type) return NextResponse.json({ error: "type is required" }, { status: 400 });
         const title = (data.title as string | undefined) ?? (data.subject as string | undefined) ?? "AI Logged Activity";
+
+        // Auto-resolve repId: if caller is a rep and none was provided, look up their rep record
+        let repId = (data.repId as string | undefined) ?? null;
+        if (!repId && session.user.role === "REP") {
+          const repRecord = await prisma.rep.findUnique({ where: { userId: session.user.id }, select: { id: true } });
+          repId = repRecord?.id ?? null;
+        }
+        if (repId) await assertExists("rep", repId);
+
         await assertExists("lead", (data.leadId as string | undefined) ?? null);
         await assertExists("hospital", (data.hospitalId as string | undefined) ?? null);
         await assertExists("referralSource", (data.referralSourceId as string | undefined) ?? null);
@@ -399,6 +408,7 @@ export async function POST(req: NextRequest) {
             type: assertEnum(data.type, ACTIVITY_TYPES, "activity type") as never,
             title,
             notes: (data.notes as string | undefined) ?? null,
+            repId: repId ?? null,
             leadId: (data.leadId as string | undefined) ?? null,
             hospitalId: (data.hospitalId as string | undefined) ?? null,
             referralSourceId: (data.referralSourceId as string | undefined) ?? null,
