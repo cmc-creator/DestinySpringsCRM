@@ -24,7 +24,6 @@ function buildRouteUrl(hospitals: Hospital[]): string {
 
   const ua = typeof navigator !== "undefined" ? navigator.userAgent : "";
   const isIOS = /iPad|iPhone|iPod/.test(ua);
-  const isAndroid = /Android/.test(ua);
 
   if (isIOS) {
     // Apple Maps — supports single destination only (use first hospital)
@@ -32,13 +31,7 @@ function buildRouteUrl(hospitals: Hospital[]): string {
     return `https://maps.apple.com/?q=${dest}`;
   }
 
-  if (isAndroid) {
-    // Android native geo intent via Google Maps URL
-    const dest = encodeURIComponent(destinations[0]);
-    return `geo:0,0?q=${dest}`;
-  }
-
-  // Desktop / other — Google Maps multi-stop route
+  // Android and desktop/other — Google Maps multi-stop route
   if (destinations.length === 1) {
     return `https://maps.google.com/maps?q=${encodeURIComponent(destinations[0])}`;
   }

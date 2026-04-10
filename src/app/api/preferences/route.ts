@@ -33,6 +33,7 @@ type StoredPreferences = {
     defaultViewId?: string;
     savedViews?: Array<{ id: string; label: string; repFilter: string }>;
     defaultsInitialized?: boolean;
+    colorOverrides?: Record<string, string>;
   };
   onboarding?: {
     welcomeSeenRoles?: string[];
@@ -125,6 +126,20 @@ function sanitizePreferences(input: unknown): StoredPreferences {
       defaultViewId: typeof territory.defaultViewId === "string" ? territory.defaultViewId.slice(0, 40) : "",
       savedViews,
       defaultsInitialized: typeof territory.defaultsInitialized === "boolean" ? territory.defaultsInitialized : false,
+      colorOverrides: (() => {
+        const raw = toObject(territory.colorOverrides);
+        const HEX_RE = /^#[0-9a-fA-F]{6}$/;
+        const safe: Record<string, string> = {};
+        let count = 0;
+        for (const [k, v] of Object.entries(raw)) {
+          if (count >= 1000) break;
+          if (typeof k === "string" && k.length <= 60 && typeof v === "string" && HEX_RE.test(v)) {
+            safe[k] = v;
+            count++;
+          }
+        }
+        return safe;
+      })(),
     };
   }
 
@@ -185,7 +200,7 @@ export async function PUT(req: Request) {
     ...(incoming.alerts ? { alerts: { ...toObject(existingRoot.alerts), ...incoming.alerts } } : {}),
     ...(incoming.dashboard ? { dashboard: { ...toObject(existingRoot.dashboard), ...incoming.dashboard } } : {}),
     ...(incoming.onboarding ? { onboarding: { ...toObject(existingRoot.onboarding), ...incoming.onboarding } } : {}),
-    ...(incoming.territory ? { territory: { ...toObject(existingRoot.territory), ...incoming.territory } } : {}),
+    ...(incoming.territory ? { territory: { ...toObject(existingRoot.territory), ...incoming.territory, ...(incoming.territory.colorOverrides !== undefined ? { colorOverrides: { ...toObject(toObject(existingRoot.territory).colorOverrides), ...incoming.territory.colorOverrides } } : {}) } } : {}),
   };
 
   const updated = await prisma.user.update({

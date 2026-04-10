@@ -12,13 +12,29 @@ export async function GET(req: NextRequest) {
   const from         = searchParams.get("from");
   const to           = searchParams.get("to");
   const leadId          = searchParams.get("leadId");
-  const repId           = searchParams.get("repId");
+  const rawRepId        = searchParams.get("repId");
   const hospitalId      = searchParams.get("hospitalId");
   const opportunityId   = searchParams.get("opportunityId");
   const referralSourceId = searchParams.get("referralSourceId");
+  const contactId        = searchParams.get("contactId");
+
+  // REP role: scope to own rep and prevent cross-rep data dumps
+  let repId: string | null = rawRepId;
+  if (session.user.role === "REP") {
+    const repRecord = await prisma.rep.findUnique({
+      where: { userId: session.user.id },
+      select: { id: true },
+    });
+    if (!repRecord) return NextResponse.json({ error: "Rep not found" }, { status: 403 });
+    // If no entity filter is provided, or caller passed an explicit repId, force to own rep
+    const hasEntityFilter = !!(leadId || hospitalId || opportunityId || referralSourceId || contactId);
+    if (!hasEntityFilter || rawRepId) {
+      repId = repRecord.id;
+    }
+  }
 
   // When filtering by entity, return most-recent-first and skip the date filter
-  const entityFilter = leadId || repId || hospitalId || opportunityId || referralSourceId;
+  const entityFilter = leadId || repId || hospitalId || opportunityId || referralSourceId || contactId;
 
   const activities = await prisma.activity.findMany({
     where: {
@@ -27,6 +43,7 @@ export async function GET(req: NextRequest) {
       ...(hospitalId       ? { hospitalId }       : {}),
       ...(opportunityId    ? { opportunityId }    : {}),
       ...(referralSourceId ? { referralSourceId } : {}),
+      ...(contactId        ? { contactId }        : {}),
       ...(!entityFilter && (from || to) ? {
         scheduledAt: {
           ...(from ? { gte: new Date(from) } : {}),
@@ -67,6 +84,16 @@ export async function POST(req: NextRequest) {
     if (!body.title?.trim()) {
       return NextResponse.json({ error: "title is required" }, { status: 400 });
     }
+    // For REP role, always use their own rep record -- prevent logging as another rep
+    let resolvedRepId: string | null = body.repId ?? null;
+    if (session.user.role === "REP") {
+      const repRecord = await prisma.rep.findUnique({
+        where: { userId: session.user.id },
+        select: { id: true },
+      });
+      resolvedRepId = repRecord?.id ?? null;
+    }
+
     const activity = await prisma.activity.create({
       data: {
         type: body.type,
@@ -77,7 +104,7 @@ export async function POST(req: NextRequest) {
         arrivedAt: body.arrivedAt ? new Date(body.arrivedAt) : null,
         departedAt: body.departedAt ? new Date(body.departedAt) : null,
         durationMinutes: body.durationMinutes ?? null,
-        repId: body.repId ?? null,
+        repId: resolvedRepId,
         leadId: body.leadId ?? null,
         hospitalId: body.hospitalId ?? null,
         opportunityId: body.opportunityId ?? null,

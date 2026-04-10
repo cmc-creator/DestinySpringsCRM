@@ -111,6 +111,7 @@ export default function TerritoryMapClient({ hospitals, repTerritories }: Props)
   const [logNotes, setLogNotes] = useState("");
   const [logSaving, setLogSaving] = useState(false);
   const [logDone, setLogDone] = useState(false);
+  const [colorOverrides, setColorOverrides] = useState<Record<string, string>>({});
 
   async function saveMapLog() {
     if (!logTitle.trim() || logSaving || !logModal) return;
@@ -229,6 +230,17 @@ export default function TerritoryMapClient({ hospitals, repTerritories }: Props)
         
         setSavedViews(nextViews);
         setDefaultViewId(finalDefault);
+
+        // Load saved pin colour overrides
+        const rawOverrides = territory.colorOverrides;
+        if (rawOverrides && typeof rawOverrides === "object" && !Array.isArray(rawOverrides)) {
+          const HEX_RE = /^#[0-9a-fA-F]{6}$/;
+          const safe: Record<string, string> = {};
+          for (const [k, v] of Object.entries(rawOverrides as Record<string, unknown>)) {
+            if (typeof v === "string" && HEX_RE.test(v)) safe[k] = v;
+          }
+          if (active) setColorOverrides(safe);
+        }
 
         const defaultView = nextViews.find((view) => view.id === finalDefault);
         if (defaultView && (defaultView.repFilter === ALL_REPS || defaultView.repFilter === UNASSIGNED || repOptions.includes(defaultView.repFilter))) {
@@ -385,7 +397,7 @@ export default function TerritoryMapClient({ hospitals, repTerritories }: Props)
 
         const lat = center[0] + jitter(idx * 3, 0.6);
         const lng = center[1] + jitter(idx * 3 + 1, 0.8);
-        const color = h.referralMapColor ?? STATUS_CLR[h.status] ?? "#64748b";
+        const color = colorOverrides[h.id] ?? h.referralMapColor ?? STATUS_CLR[h.status] ?? "#64748b";
         const tag = h.referralMapLabel ?? h.status;
         referralLegend.set(tag, color);
 
@@ -416,8 +428,17 @@ export default function TerritoryMapClient({ hospitals, repTerritories }: Props)
               <button data-log-hosp="${h.id}" data-log-name="${h.hospitalName.replace(/"/g, "&quot;")}" style="margin-top:10px;width:100%;background:rgba(0,212,255,0.12);border:1px solid rgba(0,212,255,0.35);border-radius:7px;padding:6px 10px;font-size:0.75rem;font-weight:700;color:#22d3ee;cursor:pointer;">
                 ⚡ Log Activity
               </button>
+              <div style="margin-top:8px;border-top:1px solid rgba(255,255,255,0.08);padding-top:8px">
+                <div style="font-size:0.65rem;color:#888;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:5px">Pin Color</div>
+                <div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap">
+                  ${["#22d3ee","#34d399","#fb923c","#f87171","#a78bfa","#fbbf24","#f472b6"].map(hex =>
+                    `<button data-color-hosp="${h.id}" data-color-val="${hex}" title="${hex}" style="width:18px;height:18px;border-radius:50%;background:${hex};border:${colorOverrides[h.id] === hex ? "2.5px solid white" : "1.5px solid rgba(255,255,255,0.3)"};cursor:pointer;padding:0;flex-shrink:0"></button>`
+                  ).join("")}
+                  <button data-color-hosp="${h.id}" data-color-val="__reset__" title="Reset color" style="width:18px;height:18px;border-radius:50%;background:rgba(255,255,255,0.08);border:1.5px solid rgba(255,255,255,0.25);cursor:pointer;padding:0;font-size:9px;line-height:18px;color:#aaa;flex-shrink:0">✕</button>
+                </div>
+              </div>
             </div>
-          `, { maxWidth: 250 });
+          `, { maxWidth: 260 });
       });
 
       // Legend
@@ -440,19 +461,44 @@ export default function TerritoryMapClient({ hospitals, repTerritories }: Props)
 
       mapRef.current = map;
 
-      // Event delegation for popup "Log Activity" buttons
+      // Event delegation for popup "Log Activity" buttons and colour swatches
       const container = containerRef.current;
       function handlePopupClick(e: MouseEvent) {
         const btn = (e.target as HTMLElement).closest("[data-log-hosp]") as HTMLElement | null;
-        if (!btn) return;
-        const hId = btn.getAttribute("data-log-hosp");
-        const hName = btn.getAttribute("data-log-name");
-        if (hId && hName) {
-          setLogModal({ hospitalId: hId, hospitalName: hName });
-          setLogType("CALL");
-          setLogTitle("");
-          setLogNotes("");
-          setLogDone(false);
+        if (btn) {
+          const hId = btn.getAttribute("data-log-hosp");
+          const hName = btn.getAttribute("data-log-name");
+          if (hId && hName) {
+            setLogModal({ hospitalId: hId, hospitalName: hName });
+            setLogType("CALL");
+            setLogTitle("");
+            setLogNotes("");
+            setLogDone(false);
+          }
+          return;
+        }
+        // Colour-override swatches
+        const colorBtn = (e.target as HTMLElement).closest("[data-color-hosp]") as HTMLElement | null;
+        if (colorBtn) {
+          const hId = colorBtn.getAttribute("data-color-hosp");
+          const colorVal = colorBtn.getAttribute("data-color-val");
+          if (hId && colorVal !== null) {
+            const HEX_RE = /^#[0-9a-fA-F]{6}$/;
+            setColorOverrides(prev => {
+              const next = { ...prev };
+              if (colorVal === "__reset__") {
+                delete next[hId];
+              } else if (HEX_RE.test(colorVal)) {
+                next[hId] = colorVal;
+              }
+              fetch("/api/preferences", {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ preferences: { territory: { colorOverrides: next } } }),
+              }).catch(() => {});
+              return next;
+            });
+          }
         }
       }
       container?.addEventListener("click", handlePopupClick);
@@ -465,7 +511,7 @@ export default function TerritoryMapClient({ hospitals, repTerritories }: Props)
         mapRef.current = null;
       }
     };
-  }, [filteredHospitals, filteredTerritories]);
+  }, [filteredHospitals, filteredTerritories, colorOverrides]);
 
   return (
     <div>
