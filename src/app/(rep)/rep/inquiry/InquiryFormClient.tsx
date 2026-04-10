@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import SearchableSelect from "@/components/ui/SearchableSelect";
 
 const C = {
   cyan:   "var(--nyx-accent)",
@@ -190,17 +191,21 @@ export default function InquiryFormClient({
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
             <div>
               <label style={lbl}>Sending Facility</label>
-              <select value={form.hospitalId} onChange={e => set("hospitalId", e.target.value)} style={{ ...inp, cursor: "pointer" }}>
-                <option value="">— None —</option>
-                {hospitals.map(h => <option key={h.id} value={h.id}>{h.hospitalName}</option>)}
-              </select>
+              <SearchableSelect
+                options={hospitals.map(h => ({ value: h.id, label: h.hospitalName }))}
+                value={form.hospitalId}
+                onChange={(v) => set("hospitalId", v)}
+                placeholder="— None —"
+              />
             </div>
             <div>
               <label style={lbl}>Referral Source</label>
-              <select value={form.referralSourceId} onChange={e => set("referralSourceId", e.target.value)} style={{ ...inp, cursor: "pointer" }}>
-                <option value="">— None —</option>
-                {referralSources.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-              </select>
+              <SearchableSelect
+                options={referralSources.map(s => ({ value: s.id, label: s.name }))}
+                value={form.referralSourceId}
+                onChange={(v) => set("referralSourceId", v)}
+                placeholder="— None —"
+              />
             </div>
             <div style={{ gridColumn: "1/-1" }}>
               <label style={lbl}>Referring Provider Name</label>

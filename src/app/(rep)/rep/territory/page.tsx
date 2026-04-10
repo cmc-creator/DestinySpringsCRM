@@ -2,6 +2,7 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import TerritoryMapWrapper from "@/components/maps/TerritoryMapWrapper";
+import RouteIQButton from "@/components/maps/RouteIQButton";
 
 const CYAN = "var(--nyx-accent)";
 const CARD = "var(--nyx-card)";
@@ -58,6 +59,11 @@ export default async function RepTerritoryPage() {
         <p style={{ color: "var(--nyx-accent-label)", fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 4 }}>REP PORTAL</p>
         <h1 style={{ fontSize: "1.8rem", fontWeight: 900, color: TEXT }}>My Territory</h1>
         <p style={{ color: TEXT_MUTED, fontSize: "0.875rem", marginTop: 4 }}>{rep.territory ?? "No territory assigned"}</p>
+        {mapHospitals.length > 0 && (
+          <div style={{ marginTop: 12 }}>
+            <RouteIQButton hospitals={mapHospitals} />
+          </div>
+        )}
       </div>
 
       <div style={{ display: "flex", gap: 14, marginBottom: 24, flexWrap: "wrap" }}>

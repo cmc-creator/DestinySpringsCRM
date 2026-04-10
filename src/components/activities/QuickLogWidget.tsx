@@ -1,5 +1,6 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
+import SearchableSelect from "@/components/ui/SearchableSelect";
 
 type SpeechRecognitionHandle = {
   continuous: boolean;
@@ -193,16 +194,12 @@ export default function QuickLogWidget({ repId, role }: { repId?: string; role: 
 
                 <div>
                   <label style={{ fontSize: "0.68rem", fontWeight: 700, color: "var(--nyx-accent-label)", letterSpacing: "0.1em", textTransform: "uppercase", display: "block", marginBottom: 6 }}>Account (optional)</label>
-                  <select
+                  <SearchableSelect
+                    options={hospitals.map(h => ({ value: h.id, label: h.hospitalName }))}
                     value={hospitalId}
-                    onChange={e => setHospitalId(e.target.value)}
-                    style={{ width: "100%", background: "rgba(0,0,0,0.3)", border: "1px solid var(--nyx-accent-dim)", borderRadius: 8, padding: "9px 12px", color: hospitalId ? "var(--nyx-text)" : "var(--nyx-text-muted)", fontSize: "0.875rem", outline: "none", boxSizing: "border-box" }}
-                  >
-                    <option value="">— None —</option>
-                    {hospitals.map(h => (
-                      <option key={h.id} value={h.id}>{h.hospitalName}</option>
-                    ))}
-                  </select>
+                    onChange={setHospitalId}
+                    placeholder="— None —"
+                  />
                 </div>
 
                 <div>

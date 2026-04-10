@@ -35,6 +35,30 @@ export default function RepReferralsClient({ referrals }: { referrals: ReferralR
   const [search, setSearch]       = useState("");
   const [statusFilter, setStatus] = useState("ALL");
 
+  function exportCSV() {
+    const headers = ["Referring Source", "Type", "Patient", "Service Line", "Admitted", "Discharged", "Referred Out To", "Status"];
+    const rows = filtered.map((r) => [
+      r.referralSource.name,
+      r.referralSource.type.replace(/_/g, " "),
+      r.patientInitials ?? "",
+      r.serviceLine ?? "",
+      r.admissionDate ? fmt(r.admissionDate) ?? "" : "",
+      r.dischargeDate ? fmt(r.dischargeDate) ?? "" : "",
+      r.dischargeDestination ?? "",
+      STATUS_META[r.status]?.label ?? r.status,
+    ]);
+    const csv = [headers, ...rows]
+      .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(","))
+      .join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement("a");
+    a.href     = url;
+    a.download = `referrals-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
     return referrals.filter((r) => {
@@ -93,6 +117,20 @@ export default function RepReferralsClient({ referrals }: { referrals: ReferralR
           font-size: 0.875rem;
           outline: none;
         }
+        .ref-export-btn {
+          background: var(--nyx-card);
+          border: 1px solid var(--nyx-accent-dim);
+          border-radius: 8px;
+          padding: 9px 16px;
+          color: var(--nyx-accent);
+          font-size: 0.82rem;
+          font-weight: 600;
+          cursor: pointer;
+          white-space: nowrap;
+          letter-spacing: 0.02em;
+          flex-shrink: 0;
+        }
+        .ref-export-btn:hover { background: rgba(201,168,76,0.08); }
         /* Desktop table */
         .ref-table-wrap { display: block; }
         /* Mobile cards */
@@ -132,6 +170,9 @@ export default function RepReferralsClient({ referrals }: { referrals: ReferralR
             <option key={k} value={k}>{v.label}</option>
           ))}
         </select>
+        <button type="button" className="ref-export-btn" onClick={exportCSV} title="Download CSV">
+          ⬇ Download CSV
+        </button>
       </div>
 
       {/* Desktop: table */}

@@ -102,6 +102,14 @@ export default function TerritoryMapClient({ hospitals, repTerritories }: Props)
   const [defaultViewId, setDefaultViewId] = useState<string>("");
   const [newViewLabel, setNewViewLabel] = useState("");
   const [savingPrefs, setSavingPrefs] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
 
   const repOptions = useMemo(() => {
     const names = new Set<string>();
@@ -405,69 +413,99 @@ export default function TerritoryMapClient({ hospitals, repTerritories }: Props)
   }, [filteredHospitals, filteredTerritories]);
 
   return (
-    <div style={{ position: "relative" }}>
+    <div>
+      {/* Filter controls — above map on mobile, overlaid on desktop */}
       {(repOptions.length > 1 || hasUnassigned) && (
-        <div style={{ position: "absolute", top: 10, right: 10, zIndex: 500, background: "rgba(10,18,35,0.9)", border: "1px solid var(--nyx-accent-mid)", borderRadius: 8, padding: "8px 10px", minWidth: 210 }}>
-          <label htmlFor="territory-map-filter" style={{ display: "block", color: "var(--nyx-accent-label)", fontSize: "0.62rem", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 4 }}>
-            View Territory
-          </label>
-          <select
-            id="territory-map-filter"
-            value={repFilter}
-            onChange={(event) => setRepFilter(event.target.value)}
-            style={{ width: "100%", background: "rgba(0,0,0,0.35)", color: "var(--nyx-text)", border: "1px solid var(--nyx-accent-dim)", borderRadius: 6, padding: "6px 8px", fontSize: "0.75rem" }}
-          >
-            <option value={ALL_REPS}>All Territories</option>
-            {repOptions.map((name) => (
-              <option key={name} value={name}>{name}</option>
-            ))}
-            {hasUnassigned && <option value={UNASSIGNED}>Unassigned Only</option>}
-          </select>
-          <div style={{ marginTop: 6, color: "var(--nyx-text-muted)", fontSize: "0.67rem" }}>
-            Showing {filteredHospitals.length} location{filteredHospitals.length === 1 ? "" : "s"}
-          </div>
-          <div style={{ marginTop: 8, display: "flex", gap: 6 }}>
-            <input
-              value={newViewLabel}
-              onChange={(event) => setNewViewLabel(event.target.value)}
-              placeholder="Save current view"
-              style={{ flex: 1, background: "rgba(0,0,0,0.35)", color: "var(--nyx-text)", border: "1px solid var(--nyx-accent-dim)", borderRadius: 6, padding: "5px 8px", fontSize: "0.72rem" }}
-            />
-            <button
-              type="button"
-              onClick={createSavedView}
-              disabled={savingPrefs || !newViewLabel.trim()}
-              style={{ background: "var(--nyx-accent-dim)", color: "var(--nyx-accent)", border: "1px solid var(--nyx-accent-str)", borderRadius: 6, padding: "5px 8px", fontSize: "0.7rem", cursor: savingPrefs ? "not-allowed" : "pointer" }}
-            >
-              Save
-            </button>
-          </div>
-          {savedViews.length > 0 && (
-            <div style={{ marginTop: 8, display: "flex", flexWrap: "wrap", gap: 6 }}>
-              {savedViews.map((view) => {
-                const active = view.repFilter === repFilter;
-                const isDefault = view.id === defaultViewId;
-                return (
-                  <div key={view.id} style={{ display: "inline-flex", alignItems: "center", gap: 4, borderRadius: 999, border: `1px solid ${active ? "var(--nyx-accent-str)" : "var(--nyx-border)"}`, background: active ? "var(--nyx-accent-dim)" : "rgba(255,255,255,0.03)", padding: "3px 8px" }}>
-                    <button type="button" onClick={() => setRepFilter(view.repFilter)} style={{ background: "transparent", border: "none", color: active ? "var(--nyx-accent)" : "var(--nyx-text-muted)", fontSize: "0.68rem", cursor: "pointer", padding: 0 }}>
-                      {isDefault ? "* " : ""}{view.label}
-                    </button>
-                    <button type="button" onClick={() => void setDefaultView(view.id)} title="Set default" style={{ background: "transparent", border: "none", color: isDefault ? "var(--nyx-accent)" : "var(--nyx-text-muted)", fontSize: "0.66rem", cursor: "pointer", padding: 0 }}>
-                      D
-                    </button>
-                    <button type="button" onClick={() => void removeSavedView(view.id)} title="Delete" style={{ background: "transparent", border: "none", color: "var(--nyx-text-muted)", fontSize: "0.66rem", cursor: "pointer", padding: 0 }}>
-                      x
-                    </button>
-                  </div>
-                );
-              })}
+        isMobile ? (
+          <div style={{ background: "rgba(10,18,35,0.96)", border: "1px solid var(--nyx-accent-mid)", borderRadius: 10, padding: "12px 14px", marginBottom: 10 }}>
+            <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+              <div style={{ flex: 1, minWidth: 140 }}>
+                <label htmlFor="territory-map-filter-m" style={{ display: "block", color: "var(--nyx-accent-label)", fontSize: "0.62rem", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 4 }}>
+                  View Territory
+                </label>
+                <select
+                  id="territory-map-filter-m"
+                  value={repFilter}
+                  onChange={(event) => setRepFilter(event.target.value)}
+                  style={{ width: "100%", background: "rgba(0,0,0,0.35)", color: "var(--nyx-text)", border: "1px solid var(--nyx-accent-dim)", borderRadius: 6, padding: "8px 10px", fontSize: "0.85rem" }}
+                >
+                  <option value={ALL_REPS}>All Territories</option>
+                  {repOptions.map((name) => (
+                    <option key={name} value={name}>{name}</option>
+                  ))}
+                  {hasUnassigned && <option value={UNASSIGNED}>Unassigned Only</option>}
+                </select>
+              </div>
+              <div style={{ fontSize: "0.75rem", color: "var(--nyx-text-muted)", alignSelf: "flex-end", paddingBottom: 2 }}>
+                {filteredHospitals.length} location{filteredHospitals.length === 1 ? "" : "s"}
+              </div>
             </div>
-          )}
-        </div>
+          </div>
+        ) : (
+          <div style={{ position: "absolute", top: 10, right: 10, zIndex: 500, background: "rgba(10,18,35,0.9)", border: "1px solid var(--nyx-accent-mid)", borderRadius: 8, padding: "8px 10px", minWidth: 210 }}>
+            <label htmlFor="territory-map-filter" style={{ display: "block", color: "var(--nyx-accent-label)", fontSize: "0.62rem", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 4 }}>
+              View Territory
+            </label>
+            <select
+              id="territory-map-filter"
+              value={repFilter}
+              onChange={(event) => setRepFilter(event.target.value)}
+              style={{ width: "100%", background: "rgba(0,0,0,0.35)", color: "var(--nyx-text)", border: "1px solid var(--nyx-accent-dim)", borderRadius: 6, padding: "6px 8px", fontSize: "0.75rem" }}
+            >
+              <option value={ALL_REPS}>All Territories</option>
+              {repOptions.map((name) => (
+                <option key={name} value={name}>{name}</option>
+              ))}
+              {hasUnassigned && <option value={UNASSIGNED}>Unassigned Only</option>}
+            </select>
+            <div style={{ marginTop: 6, color: "var(--nyx-text-muted)", fontSize: "0.67rem" }}>
+              Showing {filteredHospitals.length} location{filteredHospitals.length === 1 ? "" : "s"}
+            </div>
+            <div style={{ marginTop: 8, display: "flex", gap: 6 }}>
+              <input
+                value={newViewLabel}
+                onChange={(event) => setNewViewLabel(event.target.value)}
+                placeholder="Save current view"
+                style={{ flex: 1, background: "rgba(0,0,0,0.35)", color: "var(--nyx-text)", border: "1px solid var(--nyx-accent-dim)", borderRadius: 6, padding: "5px 8px", fontSize: "0.72rem" }}
+              />
+              <button
+                type="button"
+                onClick={createSavedView}
+                disabled={savingPrefs || !newViewLabel.trim()}
+                style={{ background: "var(--nyx-accent-dim)", color: "var(--nyx-accent)", border: "1px solid var(--nyx-accent-str)", borderRadius: 6, padding: "5px 8px", fontSize: "0.7rem", cursor: savingPrefs ? "not-allowed" : "pointer" }}
+              >
+                Save
+              </button>
+            </div>
+            {savedViews.length > 0 && (
+              <div style={{ marginTop: 8, display: "flex", flexWrap: "wrap", gap: 6 }}>
+                {savedViews.map((view) => {
+                  const active = view.repFilter === repFilter;
+                  const isDefault = view.id === defaultViewId;
+                  return (
+                    <div key={view.id} style={{ display: "inline-flex", alignItems: "center", gap: 4, borderRadius: 999, border: `1px solid ${active ? "var(--nyx-accent-str)" : "var(--nyx-border)"}`, background: active ? "var(--nyx-accent-dim)" : "rgba(255,255,255,0.03)", padding: "3px 8px" }}>
+                      <button type="button" onClick={() => setRepFilter(view.repFilter)} style={{ background: "transparent", border: "none", color: active ? "var(--nyx-accent)" : "var(--nyx-text-muted)", fontSize: "0.68rem", cursor: "pointer", padding: 0 }}>
+                        {isDefault ? "* " : ""}{view.label}
+                      </button>
+                      <button type="button" onClick={() => void setDefaultView(view.id)} title="Set default" style={{ background: "transparent", border: "none", color: isDefault ? "var(--nyx-accent)" : "var(--nyx-text-muted)", fontSize: "0.66rem", cursor: "pointer", padding: 0 }}>
+                        D
+                      </button>
+                      <button type="button" onClick={() => void removeSavedView(view.id)} title="Delete" style={{ background: "transparent", border: "none", color: "var(--nyx-text-muted)", fontSize: "0.66rem", cursor: "pointer", padding: 0 }}>
+                        x
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )
       )}
-      {/* Leaflet CSS */}
-      <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-      <div ref={containerRef} style={{ width: "100%", height: "clamp(300px, 50vh, 620px)", borderRadius: 10, overflow: "hidden" }} />
+      <div style={{ position: "relative" }}>
+        {/* Leaflet CSS */}
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+        <div ref={containerRef} style={{ width: "100%", height: isMobile ? "min(65vh, 500px)" : "clamp(300px, 50vh, 620px)", borderRadius: 10, overflow: "hidden" }} />
+      </div>
     </div>
   );
 }

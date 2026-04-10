@@ -171,6 +171,7 @@ const REP_NAV: NavGroup[] = [
     items: [
       { href: "/rep/opportunities", label: "My Admissions" },
       { href: "/rep/referrals",     label: "Referral Log" },
+      { href: "/rep/bedboard",      label: "Bedboard & Availability" },
       { href: "/rep/territory",     label: "My Territory" },
     ],
   },
