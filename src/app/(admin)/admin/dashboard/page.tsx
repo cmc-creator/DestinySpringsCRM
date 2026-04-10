@@ -2,11 +2,23 @@
 import DashboardClient from "@/components/dashboard/DashboardClient";
 import TurnaroundWidget from "@/components/dashboard/TurnaroundWidget";
 import BedboardAndDischargesWidget from "@/components/dashboard/BedboardAndDischargesWidget";
+import AdminDateRangePicker from "@/components/dashboard/AdminDateRangePicker";
+import { Suspense } from "react";
 import { Prisma } from "@prisma/client";
+
+export const dynamic = "force-dynamic";
 
 const REP_COLORS = ["var(--nyx-accent)","#34d399","#fbbf24","#a78bfa","#f59e0b","#60a5fa","#f87171","#fb923c"];
 
-export default async function AdminDashboard() {
+export default async function AdminDashboard({ searchParams }: { searchParams: Promise<{ range?: string }> }) {
+  const { range = "30d" } = await searchParams;
+
+  const now3 = new Date();
+  let rangeStart: Date;
+  if (range === "7d")  rangeStart = new Date(now3.getTime() - 7  * 86400000);
+  else if (range === "90d") rangeStart = new Date(now3.getTime() - 90 * 86400000);
+  else if (range === "all") rangeStart = new Date(0);
+  else                      rangeStart = new Date(now3.getTime() - 30 * 86400000); // default 30d
   let repCount = 0;
   let hospitalCount = 0;
   let leadCount = 0;
@@ -69,6 +81,7 @@ export default async function AdminDashboard() {
         take: 8,
         orderBy: { createdAt: "desc" },
         where: {
+          createdAt: { gte: rangeStart },
           OR: [
             { repId: { not: null } },
             { hospitalId: { not: null } },
@@ -91,7 +104,7 @@ export default async function AdminDashboard() {
       prisma.hospital.findMany({ select: { id: true, hospitalName: true, city: true, state: true, status: true, assignedRepId: true }, orderBy: { hospitalName: "asc" } }),
       // Enrichment queries for stat card sub/delta
       prisma.lead.count({ where: { status: { in: ["NEW", "CONTACTED", "QUALIFIED"] }, assignedRepId: null } }),
-      prisma.opportunity.count({ where: { stage: "DISCHARGED", updatedAt: { gte: monthStart } } }),
+      prisma.opportunity.count({ where: { stage: "DISCHARGED", updatedAt: { gte: rangeStart } } }),
       prisma.opportunity.count({ where: { stage: "DISCHARGED", updatedAt: { gte: prevMonthStart, lt: monthStart } } }),
       prisma.lead.count({ where: { status: { in: ["NEW", "CONTACTED", "QUALIFIED"] }, createdAt: { gte: monthStart } } }),
       prisma.lead.count({ where: { status: { in: ["NEW", "CONTACTED", "QUALIFIED"] }, createdAt: { gte: prevMonthStart, lt: monthStart } } }),
@@ -229,6 +242,9 @@ export default async function AdminDashboard() {
 
   return (
     <>
+    <Suspense fallback={null}>
+      <AdminDateRangePicker current={range} />
+    </Suspense>
     <TurnaroundWidget />
     <BedboardAndDischargesWidget />
     <DashboardClient

@@ -2,6 +2,8 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import MessagesInbox from "@/components/communications/MessagesInbox";
 
+export const dynamic = "force-dynamic";
+
 export const metadata = { title: "Messages | Destiny Springs Rep Portal" };
 
 export default async function RepMessagesPage() {

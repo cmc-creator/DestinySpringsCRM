@@ -1,4 +1,5 @@
 "use client";
+import { useState } from "react";
 import Link from "next/link";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -235,6 +236,40 @@ export default function VisitPrepClient({
     ? `https://maps.google.com/?q=${encodeURIComponent(`${source.address} ${source.city ?? ""} ${source.state ?? ""} ${source.zip ?? ""}`)}`
     : null;
 
+  const [logOpen, setLogOpen] = useState(false);
+  const [logType, setLogType] = useState("CALL");
+  const [logTitle, setLogTitle] = useState("");
+  const [logNotes, setLogNotes] = useState("");
+  const [logSaving, setLogSaving] = useState(false);
+  const [activities, setActivities] = useState<Activity[]>(lastActivities);
+
+  async function saveActivity() {
+    if (!logTitle.trim() || logSaving) return;
+    setLogSaving(true);
+    try {
+      const res = await fetch("/api/activities", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: logType,
+          title: logTitle.trim(),
+          notes: logNotes.trim() || null,
+          referralSourceId: source.id,
+          completedAt: new Date().toISOString(),
+        }),
+      });
+      if (res.ok) {
+        const act = await res.json() as { id: string; type: string; title: string; notes: string | null; completedAt: string | null; createdAt: string };
+        setActivities(prev => [{ id: act.id, type: act.type, title: act.title, notes: act.notes, completedAt: act.completedAt, createdAt: act.createdAt }, ...prev].slice(0, 10));
+        setLogTitle("");
+        setLogNotes("");
+        setLogOpen(false);
+      }
+    } finally {
+      setLogSaving(false);
+    }
+  }
+
   return (
     <div>
       {/* ── Back link ───────────────────────────────────────────── */}
@@ -346,19 +381,82 @@ export default function VisitPrepClient({
               📍 Directions
             </a>
           )}
-          <Link
-            href="/rep/activities"
+          <button
+            onClick={() => setLogOpen(o => !o)}
             style={{
               display: "inline-flex", alignItems: "center", gap: 6,
-              background: "rgba(255,255,255,0.04)", border: "1px solid var(--nyx-border)",
+              background: logOpen ? "rgba(255,255,255,0.04)" : "var(--nyx-accent-dim)",
+              border: `1px solid ${logOpen ? "var(--nyx-border)" : "var(--nyx-accent-str)"}`,
               borderRadius: 8, padding: "8px 16px",
-              fontWeight: 700, fontSize: "0.82rem", color: "var(--nyx-text-muted)", textDecoration: "none",
+              fontWeight: 700, fontSize: "0.82rem",
+              color: logOpen ? "var(--nyx-text-muted)" : "var(--nyx-accent)",
+              cursor: "pointer",
             }}
           >
-            + Log Activity
-          </Link>
+            {logOpen ? "✕ Cancel" : "⚡ Log Activity"}
+          </button>
         </div>
       </div>
+
+      {/* ── Inline log form ─────────────────────────────────────── */}
+      {logOpen && (
+        <div style={{
+          background: "var(--nyx-card)",
+          border: "1px solid var(--nyx-accent-str)",
+          borderRadius: 14, padding: "16px 20px", marginBottom: 20,
+        }}>
+          <div style={{ fontSize: "0.75rem", fontWeight: 800, color: "var(--nyx-accent)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 14 }}>
+            ⚡ Log Activity — {source.name}
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: 10, marginBottom: 10 }}>
+            <div>
+              <label style={{ display: "block", fontSize: "0.62rem", fontWeight: 700, color: "var(--nyx-text-muted)", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 4 }}>Type</label>
+              <select
+                value={logType}
+                onChange={e => setLogType(e.target.value)}
+                style={{ width: "100%", background: "rgba(0,0,0,0.3)", color: "var(--nyx-text)", border: "1px solid var(--nyx-border)", borderRadius: 7, padding: "8px 10px", fontSize: "0.82rem" }}
+              >
+                {Object.entries(ACT_LABELS).map(([k, v]) => (
+                  <option key={k} value={k}>{v}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label style={{ display: "block", fontSize: "0.62rem", fontWeight: 700, color: "var(--nyx-text-muted)", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 4 }}>Title *</label>
+              <input
+                value={logTitle}
+                onChange={e => setLogTitle(e.target.value)}
+                placeholder={`e.g. Follow-up with ${source.contactName ?? source.name}`}
+                style={{ width: "100%", boxSizing: "border-box", background: "rgba(0,0,0,0.3)", color: "var(--nyx-text)", border: "1px solid var(--nyx-border)", borderRadius: 7, padding: "8px 10px", fontSize: "0.82rem" }}
+              />
+            </div>
+          </div>
+          <div style={{ marginBottom: 14 }}>
+            <label style={{ display: "block", fontSize: "0.62rem", fontWeight: 700, color: "var(--nyx-text-muted)", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 4 }}>Notes (optional)</label>
+            <textarea
+              value={logNotes}
+              onChange={e => setLogNotes(e.target.value)}
+              rows={2}
+              placeholder="Optional notes…"
+              style={{ width: "100%", boxSizing: "border-box", background: "rgba(0,0,0,0.3)", color: "var(--nyx-text)", border: "1px solid var(--nyx-border)", borderRadius: 7, padding: "8px 10px", fontSize: "0.82rem", resize: "vertical" }}
+            />
+          </div>
+          <button
+            onClick={saveActivity}
+            disabled={logSaving || !logTitle.trim()}
+            style={{
+              background: logSaving || !logTitle.trim() ? "rgba(255,255,255,0.04)" : "var(--nyx-accent-dim)",
+              border: `1px solid ${logSaving || !logTitle.trim() ? "var(--nyx-border)" : "var(--nyx-accent-str)"}`,
+              borderRadius: 8, padding: "9px 20px",
+              fontWeight: 700, fontSize: "0.82rem",
+              color: logSaving || !logTitle.trim() ? "var(--nyx-text-muted)" : "var(--nyx-accent)",
+              cursor: logSaving || !logTitle.trim() ? "not-allowed" : "pointer",
+            }}
+          >
+            {logSaving ? "Saving…" : "Save Activity"}
+          </button>
+        </div>
+      )}
 
       {/* ── Two-column grid ──────────────────────────────────────── */}
       <div style={{
@@ -441,13 +539,13 @@ export default function VisitPrepClient({
 
         {/* ── Recent Activity ───────────────────────────────────── */}
         <Card title="Recent Activity" icon="🕐">
-          {lastActivities.length === 0 ? (
+          {activities.length === 0 ? (
             <p style={{ fontSize: "0.82rem", color: "var(--nyx-text-muted)" }}>
               No activities logged for this source yet.
             </p>
           ) : (
             <div>
-              {lastActivities.map((act, i) => {
+              {activities.map((act, i) => {
                 const color = ACT_COLORS[act.type] ?? "#94a3b8";
                 const date = formatDate(act.completedAt ?? act.createdAt);
                 return (
@@ -457,7 +555,7 @@ export default function VisitPrepClient({
                       display: "flex",
                       gap: 10,
                       padding: "8px 0",
-                      borderBottom: i < lastActivities.length - 1 ? "1px solid var(--nyx-border)" : "none",
+                      borderBottom: i < activities.length - 1 ? "1px solid var(--nyx-border)" : "none",
                     }}
                   >
                     {/* Type pill */}

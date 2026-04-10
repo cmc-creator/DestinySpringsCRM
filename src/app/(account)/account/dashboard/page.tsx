@@ -8,6 +8,8 @@ import AIInsightsPanel from "@/components/ai/AIInsightsPanel";
 import BedAvailabilityWidget from "@/components/dashboard/BedAvailabilityWidget";
 import DischargeDestinationWidget from "@/components/dashboard/DischargeDestinationWidget";
 
+export const dynamic = "force-dynamic";
+
 const CYAN = "var(--nyx-accent)";
 const CARD = "var(--nyx-card)";
 const BORDER = "var(--nyx-accent-dim)";

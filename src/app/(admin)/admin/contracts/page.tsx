@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import ContractsClient from "@/components/contracts/ContractsClient";
 
+export const dynamic = "force-dynamic";
+
 export default async function ContractsPage() {
   const [hospitals, reps] = await Promise.all([
     prisma.hospital.findMany({

@@ -56,6 +56,8 @@ export default function ReferralsPage() {
   const [status,   setStatus]     = useState("");
   const [destinationFilter, setDestinationFilter] = useState("");
   const [syncHealth, setSyncHealth] = useState<SyncHealthResponse | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkUpdating, setBulkUpdating] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -234,6 +236,24 @@ export default function ReferralsPage() {
     a.download = `admissions-referrals-${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
+  }
+
+  async function bulkUpdateStatus(newStatus: string) {
+    if (selectedIds.size === 0 || bulkUpdating) return;
+    setBulkUpdating(true);
+    try {
+      const res = await fetch("/api/referrals/bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: [...selectedIds], status: newStatus }),
+      });
+      if (res.ok) {
+        setReferrals(prev => prev.map(r => selectedIds.has(r.id) ? { ...r, status: newStatus } : r));
+        setSelectedIds(new Set());
+      }
+    } finally {
+      setBulkUpdating(false);
+    }
   }
 
   return (
@@ -452,12 +472,39 @@ export default function ReferralsPage() {
         </div>
       </div>
 
+      {/* Bulk action bar */}
+      {selectedIds.size > 0 && (
+        <div style={{ position: "sticky", top: 12, zIndex: 50, background: "var(--nyx-card)", border: "1px solid var(--nyx-accent-str)", borderRadius: 10, padding: "10px 16px", marginBottom: 12, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", boxShadow: "0 4px 20px rgba(0,0,0,0.4)" }}>
+          <span style={{ fontSize: "0.82rem", fontWeight: 700, color: "var(--nyx-accent)", minWidth: 80 }}>
+            {selectedIds.size} selected
+          </span>
+          <span style={{ fontSize: "0.75rem", color: C.muted }}>Set status:</span>
+          {["ADMITTED","PENDING","RECEIVED","DECLINED"].map((s) => (
+            <button key={s} onClick={() => void bulkUpdateStatus(s)} disabled={bulkUpdating}
+              style={{ background: STATUS_COLORS[s] ?? "rgba(255,255,255,0.04)", border: `1px solid ${STATUS_TEXT[s] ?? C.border}40`, borderRadius: 7, padding: "6px 12px", color: STATUS_TEXT[s] ?? C.muted, fontSize: "0.75rem", fontWeight: 700, cursor: bulkUpdating ? "not-allowed" : "pointer" }}>
+              {bulkUpdating ? "…" : s.charAt(0) + s.slice(1).toLowerCase()}
+            </button>
+          ))}
+          <button onClick={() => setSelectedIds(new Set())} style={{ marginLeft: "auto", background: "transparent", border: "none", color: C.muted, cursor: "pointer", fontSize: "0.78rem" }}>
+            Clear
+          </button>
+        </div>
+      )}
+
       {/* Table */}
       <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:12, overflow:"hidden" }}>
         <div style={{ overflowX:"auto" }}>
           <table style={{ width:"100%", borderCollapse:"collapse" }}>
             <thead>
               <tr style={{ borderBottom:`1px solid ${C.border}` }}>
+                <th style={{ padding:"12px 14px", width: 36 }}>
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.size === filteredReferrals.length && filteredReferrals.length > 0}
+                    onChange={(e) => setSelectedIds(e.target.checked ? new Set(filteredReferrals.map((r) => r.id)) : new Set())}
+                    style={{ cursor: "pointer" }}
+                  />
+                </th>
                 {["Referring Source","Type","Patient","Service Line","Admitted","Discharged","Referred Out To","Encounter #","Status"].map((h) => (
                   <th key={h} style={{ padding:"12px 14px", textAlign:"left", fontSize:"0.65rem", fontWeight:700, color:C.dim, letterSpacing:"0.1em", textTransform:"uppercase", whiteSpace:"nowrap" }}>{h}</th>
                 ))}
@@ -465,16 +512,20 @@ export default function ReferralsPage() {
             </thead>
             <tbody>
               {loading && (
-                <tr><td colSpan={9} style={{ padding:"32px", textAlign:"center", color:C.muted }}>Loading…</td></tr>
+                <tr><td colSpan={10} style={{ padding:"32px", textAlign:"center", color:C.muted }}>Loading…</td></tr>
               )}
               {!loading && filteredReferrals.length === 0 && (
-                <tr><td colSpan={9} style={{ padding:"48px", textAlign:"center", color:C.muted }}>
+                <tr><td colSpan={10} style={{ padding:"48px", textAlign:"center", color:C.muted }}>
                   No admissions referral records yet. Sync the daily bedboard (M365) or import from MedWorxs.
                 </td></tr>
               )}
               {filteredReferrals.map((r) => (
-                <tr key={r.id} style={{ borderBottom:`1px solid var(--nyx-accent-dim)`, background: isMissingDischargeDestination(r) ? "rgba(239,68,68,0.06)" : "transparent" }}>
-                  <td style={{ padding:"12px 14px" }}>
+                <tr key={r.id} style={{ borderBottom:`1px solid var(--nyx-accent-dim)`, background: selectedIds.has(r.id) ? "rgba(0,212,255,0.05)" : isMissingDischargeDestination(r) ? "rgba(239,68,68,0.06)" : "transparent" }}>
+                  <td style={{ padding:"8px 14px" }}>
+                    <input type="checkbox" checked={selectedIds.has(r.id)}
+                      onChange={(e) => { const next = new Set(selectedIds); if (e.target.checked) next.add(r.id); else next.delete(r.id); setSelectedIds(next); }}
+                      style={{ cursor: "pointer" }} />
+                  </td>                  <td style={{ padding:"12px 14px" }}>
                     <div style={{ fontWeight:700, fontSize:"0.875rem", color:C.text }}>{r.referralSource.name}</div>
                     {r.referralSource.specialty && <div style={{ fontSize:"0.7rem", color:C.muted }}>{r.referralSource.specialty}</div>}
                   </td>

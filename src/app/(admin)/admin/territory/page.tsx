@@ -4,6 +4,8 @@ import Link from "next/link";
 import TerritoryMapWrapper from "@/components/maps/TerritoryMapWrapper";
 import RouteIQButton from "@/components/maps/RouteIQButton";
 
+export const dynamic = "force-dynamic";
+
 const REP_COLORS = ["var(--nyx-accent)","#34d399","#fbbf24","#a78bfa","#f59e0b","#60a5fa","#f87171","#fb923c"];
 const CYAN = "var(--nyx-accent)";
 const CARD = "var(--nyx-card)";

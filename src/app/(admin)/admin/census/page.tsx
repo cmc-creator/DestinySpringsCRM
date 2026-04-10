@@ -3,6 +3,8 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 
+export const dynamic = "force-dynamic";
+
 const CYAN   = "var(--nyx-accent)";
 const CARD   = "var(--nyx-card)";
 const BORDER = "var(--nyx-accent-dim)";

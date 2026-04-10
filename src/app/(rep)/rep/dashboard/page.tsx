@@ -9,6 +9,8 @@ import CadenceAlertWidget from "@/components/dashboard/CadenceAlertWidget";
 import TurnaroundWidget from "@/components/dashboard/TurnaroundWidget";
 import BedboardAndDischargesWidget from "@/components/dashboard/BedboardAndDischargesWidget";
 
+export const dynamic = "force-dynamic";
+
 const CYAN = "var(--nyx-accent)";
 const CARD = "var(--nyx-card)";
 const BORDER = "var(--nyx-accent-dim)";

@@ -2,6 +2,8 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 
+export const dynamic = "force-dynamic";
+
 const CARD   = "var(--nyx-card)";
 const BORDER = "var(--nyx-accent-dim)";
 const TEXT   = "var(--nyx-text)";

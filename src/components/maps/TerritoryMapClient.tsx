@@ -104,6 +104,41 @@ export default function TerritoryMapClient({ hospitals, repTerritories }: Props)
   const [savingPrefs, setSavingPrefs] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
+  // Quick-log modal state
+  const [logModal, setLogModal] = useState<{ hospitalId: string; hospitalName: string } | null>(null);
+  const [logType, setLogType] = useState("CALL");
+  const [logTitle, setLogTitle] = useState("");
+  const [logNotes, setLogNotes] = useState("");
+  const [logSaving, setLogSaving] = useState(false);
+  const [logDone, setLogDone] = useState(false);
+
+  async function saveMapLog() {
+    if (!logTitle.trim() || logSaving || !logModal) return;
+    setLogSaving(true);
+    try {
+      await fetch("/api/activities", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: logType,
+          title: logTitle.trim(),
+          notes: logNotes.trim() || null,
+          hospitalId: logModal.hospitalId,
+          completedAt: new Date().toISOString(),
+        }),
+      });
+      setLogDone(true);
+      setTimeout(() => {
+        setLogModal(null);
+        setLogDone(false);
+        setLogTitle("");
+        setLogNotes("");
+      }, 1400);
+    } finally {
+      setLogSaving(false);
+    }
+  }
+
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
     check();
@@ -378,6 +413,9 @@ export default function TerritoryMapClient({ hospitals, repTerritories }: Props)
                 <span style="font-size:0.78rem;font-weight:700">${tag}</span>
               </div>
               ${h.assignedRepName ? `<div style="font-size:0.75rem;color:#888;margin-top:2px">Rep: ${h.assignedRepName}</div>` : ""}
+              <button data-log-hosp="${h.id}" data-log-name="${h.hospitalName.replace(/"/g, "&quot;")}" style="margin-top:10px;width:100%;background:rgba(0,212,255,0.12);border:1px solid rgba(0,212,255,0.35);border-radius:7px;padding:6px 10px;font-size:0.75rem;font-weight:700;color:#22d3ee;cursor:pointer;">
+                ⚡ Log Activity
+              </button>
             </div>
           `, { maxWidth: 250 });
       });
@@ -401,6 +439,23 @@ export default function TerritoryMapClient({ hospitals, repTerritories }: Props)
       new LegendControl({ position: "bottomright" as L.ControlPosition }).addTo(map);
 
       mapRef.current = map;
+
+      // Event delegation for popup "Log Activity" buttons
+      const container = containerRef.current;
+      function handlePopupClick(e: MouseEvent) {
+        const btn = (e.target as HTMLElement).closest("[data-log-hosp]") as HTMLElement | null;
+        if (!btn) return;
+        const hId = btn.getAttribute("data-log-hosp");
+        const hName = btn.getAttribute("data-log-name");
+        if (hId && hName) {
+          setLogModal({ hospitalId: hId, hospitalName: hName });
+          setLogType("CALL");
+          setLogTitle("");
+          setLogNotes("");
+          setLogDone(false);
+        }
+      }
+      container?.addEventListener("click", handlePopupClick);
     });
 
     return () => {
@@ -506,6 +561,58 @@ export default function TerritoryMapClient({ hospitals, repTerritories }: Props)
         <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
         <div ref={containerRef} style={{ width: "100%", height: isMobile ? "min(65vh, 500px)" : "clamp(300px, 50vh, 620px)", borderRadius: 10, overflow: "hidden" }} />
       </div>
+
+      {/* ── Quick-log modal ─────────────────────────────────────── */}
+      {logModal && (
+        <div
+          style={{ position: "fixed", inset: 0, zIndex: 999, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}
+          onClick={(e) => { if (e.target === e.currentTarget) setLogModal(null); }}
+        >
+          <div style={{ background: "var(--nyx-card)", border: "1px solid var(--nyx-accent-str)", borderRadius: 14, padding: "20px 24px", width: "100%", maxWidth: 420 }}>
+            {logDone ? (
+              <div style={{ textAlign: "center", padding: "16px 0" }}>
+                <div style={{ fontSize: "2rem", marginBottom: 8 }}>&#x2705;</div>
+                <div style={{ fontWeight: 700, color: "var(--nyx-accent)" }}>Activity logged!</div>
+              </div>
+            ) : (
+              <>
+                <div style={{ fontSize: "0.75rem", fontWeight: 800, color: "var(--nyx-accent)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 14 }}>
+                  &#x26A1; Log Activity &mdash; {logModal.hospitalName}
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: 10, marginBottom: 10 }}>
+                  <div>
+                    <label style={{ display: "block", fontSize: "0.62rem", fontWeight: 700, color: "var(--nyx-text-muted)", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 4 }}>Type</label>
+                    <select value={logType} onChange={e => setLogType(e.target.value)}
+                      style={{ width: "100%", background: "rgba(0,0,0,0.3)", color: "var(--nyx-text)", border: "1px solid var(--nyx-border)", borderRadius: 7, padding: "8px 10px", fontSize: "0.82rem" }}>
+                      {([["CALL","Call"],["EMAIL","Email"],["NOTE","Note"],["MEETING","Meeting"],["LUNCH","Lunch"],["SITE_VISIT","Site Visit"],["IN_SERVICE","In-Service"],["FOLLOW_UP","Follow-Up"],["CE_PRESENTATION","CE Presentation"],["LUNCH_AND_LEARN","Lunch & Learn"]] as [string,string][]).map(([k,v]) => (
+                        <option key={k} value={k}>{v}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ display: "block", fontSize: "0.62rem", fontWeight: 700, color: "var(--nyx-text-muted)", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 4 }}>Title *</label>
+                    <input value={logTitle} onChange={e => setLogTitle(e.target.value)}
+                      placeholder="e.g. Drop-in visit"
+                      style={{ width: "100%", boxSizing: "border-box", background: "rgba(0,0,0,0.3)", color: "var(--nyx-text)", border: "1px solid var(--nyx-border)", borderRadius: 7, padding: "8px 10px", fontSize: "0.82rem" }} />
+                  </div>
+                </div>
+                <div style={{ marginBottom: 14 }}>
+                  <label style={{ display: "block", fontSize: "0.62rem", fontWeight: 700, color: "var(--nyx-text-muted)", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 4 }}>Notes (optional)</label>
+                  <textarea value={logNotes} onChange={e => setLogNotes(e.target.value)} rows={2}
+                    style={{ width: "100%", boxSizing: "border-box", background: "rgba(0,0,0,0.3)", color: "var(--nyx-text)", border: "1px solid var(--nyx-border)", borderRadius: 7, padding: "8px 10px", fontSize: "0.82rem", resize: "vertical" }} />
+                </div>
+                <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+                  <button onClick={() => setLogModal(null)} style={{ background: "transparent", border: "1px solid var(--nyx-border)", borderRadius: 8, padding: "8px 16px", color: "var(--nyx-text-muted)", cursor: "pointer", fontSize: "0.82rem" }}>Cancel</button>
+                  <button onClick={saveMapLog} disabled={logSaving || !logTitle.trim()}
+                    style={{ background: logSaving || !logTitle.trim() ? "rgba(255,255,255,0.04)" : "var(--nyx-accent-dim)", border: `1px solid ${logSaving || !logTitle.trim() ? "var(--nyx-border)" : "var(--nyx-accent-str)"}`, borderRadius: 8, padding: "8px 16px", fontWeight: 700, fontSize: "0.82rem", color: logSaving || !logTitle.trim() ? "var(--nyx-text-muted)" : "var(--nyx-accent)", cursor: logSaving || !logTitle.trim() ? "not-allowed" : "pointer" }}>
+                    {logSaving ? "Saving\u2026" : "Save Activity"}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,6 +1,8 @@
 ﻿import { prisma } from "@/lib/prisma";
 import { formatDate } from "@/lib/utils";
 
+export const dynamic = "force-dynamic";
+
 const CYAN = "var(--nyx-accent)";
 const CARD = "var(--nyx-card)";
 const BORDER = "var(--nyx-accent-dim)";

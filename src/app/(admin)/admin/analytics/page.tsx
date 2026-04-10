@@ -5,6 +5,8 @@ import ActivityHeatmap from "@/components/charts/ActivityHeatmap";
 import type { HeatmapDay } from "@/components/charts/ActivityHeatmap";
 import InvoiceContractPanel from "@/components/invoices/InvoiceContractPanel";
 
+export const dynamic = "force-dynamic";
+
 const TEXT = "var(--nyx-text)";
 const TEXT_MUTED = "var(--nyx-text-muted)";
 

@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 
+export const dynamic = "force-dynamic";
+
 const GOLD   = "var(--nyx-accent)";
 const CARD   = "var(--nyx-card)";
 const BORDER = "var(--nyx-accent-dim)";

@@ -173,6 +173,7 @@ const REP_NAV: NavGroup[] = [
       { href: "/rep/referrals",     label: "Referral Log" },
       { href: "/rep/bedboard",      label: "Bedboard & Availability" },
       { href: "/rep/territory",     label: "My Territory" },
+      { href: "/rep/leaderboard",   label: "Leaderboard" },
     ],
   },
   {
@@ -292,6 +293,23 @@ export function Sidebar({ role, userName, userEmail }: SidebarProps) {
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, []);
+
+  // Swipe-to-open gesture on mobile
+  useEffect(() => {
+    let touchStartX = 0;
+    const onTouchStart = (e: TouchEvent) => { touchStartX = e.touches[0].clientX; };
+    const onTouchEnd = (e: TouchEvent) => {
+      const deltaX = e.changedTouches[0].clientX - touchStartX;
+      if (!mobileOpen && touchStartX < 30 && deltaX > 60) setMobileOpen(true);
+      if (mobileOpen && deltaX < -60) setMobileOpen(false);
+    };
+    document.addEventListener("touchstart", onTouchStart, { passive: true });
+    document.addEventListener("touchend", onTouchEnd, { passive: true });
+    return () => {
+      document.removeEventListener("touchstart", onTouchStart);
+      document.removeEventListener("touchend", onTouchEnd);
+    };
+  }, [mobileOpen]);
 
   const searchItems = searchResults ? [
     ...searchResults.hospitals.map(h => ({ icon: "≡ƒÅÑ", label: h.hospitalName, sub: [h.city, h.state].filter(Boolean).join(", "), href: "/admin/hospitals", typeLabel: "Account" })),

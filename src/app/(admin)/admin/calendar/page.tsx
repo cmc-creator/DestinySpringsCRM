@@ -2,6 +2,8 @@
 import { auth } from "@/lib/auth";
 import CalendarClient from "@/components/calendar/CalendarClient";
 
+export const dynamic = "force-dynamic";
+
 export default async function CalendarPage() {
   const session = await auth();
   const userId = session?.user?.id;
