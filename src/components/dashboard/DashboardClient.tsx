@@ -106,7 +106,7 @@ function Icon({ id, color }: { id: string; color: string }) {
   const f = { fill: color, stroke: "none" };
   const icons: Record<string, React.ReactElement | null> = {
     reps: <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" {...s}/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" {...s}/></svg>,
-    hospitals: <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="3" y="7" width="18" height="14" rx="1" {...s}/><path d="M9 21V11h6v10M3 11l9-7 9 7" {...s}/><path d="M11 14h2M12 13v2" {...s}/></svg>,
+    hospitals: <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="2" y="7" width="20" height="14" rx="2" {...s}/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" {...s}/></svg>,
     leads: <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" {...s}/><circle cx="12" cy="12" r="5" {...s}/><circle cx="12" cy="12" r="1.5" style={f}/></svg>,
     opportunities: <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="3" y="13" width="4" height="8" rx="1" {...s}/><rect x="10" y="8" width="4" height="13" rx="1" {...s}/><rect x="17" y="3" width="4" height="18" rx="1" {...s}/></svg>,
     won: <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" {...s}/><path d="M8 12l3 3 5-5" {...s}/></svg>,
@@ -584,7 +584,7 @@ export default function DashboardClient({
     switch (id) {
       case "stats":
         return (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 16, marginBottom: 32 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gridAutoRows: "1fr", gap: 16, marginBottom: 32 }}>
             {orderedStats.map((s) => {
               const hidden = hiddenStats.has(s.id);
               const focusEnabled = focusStatIds.size > 0;
@@ -609,10 +609,12 @@ export default function DashboardClient({
                     cursor: customizing ? "grab" : "default",
                     outline: statDragTarget ? "2px dashed rgba(201,168,76,0.45)" : "2px dashed transparent",
                     borderRadius: 12,
+                    display: "flex",
+                    flexDirection: "column",
                   }}
                 >
-                  <Link href={s.href} style={{ textDecoration: "none" }}>
-                    <div className="gold-card" style={{ borderRadius: 12, padding: "20px 18px", cursor: "pointer", transition: "box-shadow 0.2s", minHeight: 130, display: "flex", flexDirection: "column" }}>
+                  <Link href={s.href} style={{ textDecoration: "none", display: "flex", flex: 1 }}>
+                    <div className="gold-card" style={{ borderRadius: 12, padding: "20px 18px", cursor: "pointer", transition: "box-shadow 0.2s", flex: 1, display: "flex", flexDirection: "column" }}>
                       <div style={{ marginBottom: 10, opacity: 0.85 }}><Icon id={s.icon} color="var(--nyx-accent)" /></div>
                       <div style={{ fontSize: "1.8rem", fontWeight: 900, color: TEXT, lineHeight: 1, marginBottom: 4 }}>{s.value}</div>
                       <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>

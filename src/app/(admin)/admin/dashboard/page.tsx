@@ -70,7 +70,7 @@ export default async function AdminDashboard({ searchParams }: { searchParams: P
       prisma.hospital.count({ where: { status: { not: "CHURNED" } } }),
       prisma.lead.count({ where: { status: { in: ["NEW", "CONTACTED", "QUALIFIED"] } } }),
       prisma.opportunity.count({ where: { stage: { notIn: ["DISCHARGED", "DECLINED"] } } }),
-      prisma.opportunity.count({ where: { stage: "DISCHARGED" } }),
+      prisma.opportunity.count({ where: { stage: "DISCHARGED", updatedAt: { gte: rangeStart } } }),
       prisma.opportunity.count({
         where: {
           stage: { notIn: ["DISCHARGED", "DECLINED"] },
@@ -195,7 +195,7 @@ export default async function AdminDashboard({ searchParams }: { searchParams: P
     { id: "hospitals",     label: "Active Clients",      value: hospitalCount,    icon: "hospitals",     href: "/admin/hospitals" },
     { id: "leads",         label: "Open Leads",          value: leadCount,        icon: "leads",         href: "/admin/leads",          delta: leadsThisMonth - leadsLastMonth,    sub: unassignedLeads > 0 ? `${unassignedLeads} unassigned` : "All assigned" },
     { id: "opportunities", label: "Open Opportunities",  value: openOpps,         icon: "opportunities", href: "/admin/opportunities",   delta: oppsThisMonth - oppsLastMonth,      sub: pipelineValue > 0 ? `${fmtVal(pipelineValue)} pipeline` : undefined },
-    { id: "won",           label: "Admissions Closed",   value: closedAdmissions, icon: "won",           href: "/admin/opportunities",   delta: closedThisMonth - closedLastMonth,  sub: `${closedThisMonth} this month` },
+    { id: "won",           label: "Patient Discharges",  value: closedAdmissions, icon: "won",           href: "/admin/opportunities",   delta: closedThisMonth - closedLastMonth,  sub: `${closedThisMonth} this mo. · patient completed` },
     { id: "invoices",      label: "Stalled Opps (10d)",  value: stalledOpps,      icon: "invoices",      href: "/admin/opportunities",   delta: undefined,                          sub: overdueFollowUps > 0 ? `${overdueFollowUps} overdue follow-up${overdueFollowUps !== 1 ? "s" : ""}` : "No overdue follow-ups" },
   ];
 
