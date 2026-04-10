@@ -146,7 +146,7 @@ export default async function RepDashboard() {
   }
 
   // Referral source health: sources going cold (no contact 20+ days)
-  let coldSources: { id: string; name: string; lastActivityAt: Date | null; daysIdle: number }[] = [];
+  const coldSources: { id: string; name: string; lastActivityAt: Date | null; daysIdle: number }[] = [];
   try {
     const sources = await prisma.referralSource.findMany({
       where: { assignedRepId: rep.id },
