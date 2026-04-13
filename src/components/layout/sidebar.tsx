@@ -360,8 +360,8 @@ export function Sidebar({ role, userName, userEmail }: SidebarProps) {
       <div style={{ padding: "20px 18px 16px", borderBottom: `1px solid ${BORDER}` }}>
         <div style={{ display: "flex", alignItems: "center", gap: 9, justifyContent: "space-between" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
-          <div style={{ width: 34, height: 34, borderRadius: 8, overflow: "hidden", flexShrink: 0 }}>
-            <Image src="/Aegislogo.png" alt="Destiny Springs" width={34} height={34} style={{ objectFit: "cover", width: "100%", height: "100%" }} />
+          <div style={{ width: 48, height: 48, borderRadius: 10, overflow: "hidden", flexShrink: 0 }}>
+            <Image src="/Aegislogo.png" alt="Destiny Springs" width={48} height={48} style={{ objectFit: "cover", width: "100%", height: "100%" }} />
           </div>
           <div>
             <div style={{ fontWeight: 900, fontSize: "0.95rem", color: TEXT, letterSpacing: "-0.01em", lineHeight: 1 }}>Destiny Springs</div>
