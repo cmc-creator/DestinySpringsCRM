@@ -395,6 +395,78 @@ function LoginForm() {
           .lp-title { font-size: 1.35rem; }
           .lp-sub { font-size: 0.82rem; margin-bottom: 18px; }
         }
+
+        /* ── Gold shine effects ───────────────────────────────── */
+        @keyframes lpGoldShimmer {
+          0%   { background-position: -200% center; }
+          100% { background-position:  200% center; }
+        }
+        @keyframes lpBtnShine {
+          0%       { transform: translateX(-150%) skewX(-18deg); opacity: 0; }
+          15%      { opacity: 1; }
+          60%, 100% { transform: translateX(320%) skewX(-18deg); opacity: 0; }
+        }
+        @keyframes lpBorderGlow {
+          0%, 100% { box-shadow: 0 20px 44px rgba(0,0,0,0.36), 0 0 0 0 rgba(201,168,76,0); }
+          50%       { box-shadow: 0 20px 44px rgba(0,0,0,0.36), 0 0 26px 4px rgba(201,168,76,0.18); }
+        }
+        /* Gold gradient text on hero headings */
+        .lp-brand-title {
+          background: linear-gradient(
+            105deg,
+            #f5e7be 0%,
+            #d4a94e 18%,
+            #fff8e4 33%,
+            #C9A84C 50%,
+            #fff8e4 67%,
+            #d4a94e 82%,
+            #f5e7be 100%
+          );
+          background-size: 250% auto;
+          -webkit-background-clip: text;
+          background-clip: text;
+          -webkit-text-fill-color: transparent;
+          animation: lpGoldShimmer 8s linear infinite;
+        }
+        .lp-title {
+          background: linear-gradient(
+            105deg,
+            #ede4cf 0%,
+            #d4a94e 18%,
+            #fff8e4 33%,
+            #C9A84C 50%,
+            #fff8e4 67%,
+            #d4a94e 82%,
+            #ede4cf 100%
+          );
+          background-size: 250% auto;
+          -webkit-background-clip: text;
+          background-clip: text;
+          -webkit-text-fill-color: transparent;
+          animation: lpGoldShimmer 9s linear infinite;
+        }
+        /* Card border glow pulse */
+        .lp-brand { animation: lpBorderGlow 5s ease-in-out infinite; }
+        .lp-card  { animation: lpBorderGlow 6s ease-in-out infinite 1.5s; }
+        /* Shine sweep on sign-in button */
+        .lp-btn { position: relative; overflow: hidden; }
+        .lp-btn::after {
+          content: "";
+          position: absolute;
+          top: 0; left: 0;
+          width: 40%; height: 100%;
+          background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.42) 50%, transparent 100%);
+          animation: lpBtnShine 3.2s ease-in-out infinite;
+          pointer-events: none;
+        }
+        /* Subtly brighter background top-beam on login page */
+        .lp-wrap {
+          background:
+            radial-gradient(900px 360px at 15% 0%, rgba(201,168,76,0.26), transparent 70%),
+            radial-gradient(400px 220px at 78% 12%, rgba(201,168,76,0.1), transparent 65%),
+            radial-gradient(700px 340px at 88% 5%, rgba(255,255,255,0.06), transparent 68%),
+            var(--nyx-bg, #100805);
+        }
       `}</style>
 
       <div className={`${bodyFace.className} lp-wrap`}>

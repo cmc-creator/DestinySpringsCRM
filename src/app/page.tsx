@@ -420,6 +420,76 @@ export default async function RootPage() {
             width: 100%;
           }
         }
+
+        /* ── Gold shine effects ───────────────────────────────── */
+        @keyframes goldShimmer {
+          0%   { background-position: -200% center; }
+          100% { background-position:  200% center; }
+        }
+        @keyframes btnShine {
+          0%       { transform: translateX(-150%) skewX(-18deg); opacity: 0; }
+          15%      { opacity: 1; }
+          60%, 100% { transform: translateX(320%) skewX(-18deg); opacity: 0; }
+        }
+        @keyframes borderGlow {
+          0%, 100% { box-shadow: 0 20px 46px rgba(0,0,0,0.36), 0 0 0 0 rgba(201,168,76,0); }
+          50%       { box-shadow: 0 20px 46px rgba(0,0,0,0.36), 0 0 28px 4px rgba(201,168,76,0.18); }
+        }
+        @keyframes borderGlowProof {
+          0%, 100% { box-shadow: 0 18px 42px rgba(0,0,0,0.34), 0 0 0 0 rgba(201,168,76,0); }
+          50%       { box-shadow: 0 18px 42px rgba(0,0,0,0.34), 0 0 28px 4px rgba(201,168,76,0.18); }
+        }
+        /* Gold gradient text on hero headings */
+        .home-title {
+          background: linear-gradient(
+            105deg,
+            #ede4cf 0%,
+            #d4a94e 18%,
+            #fff8e4 33%,
+            #C9A84C 50%,
+            #fff8e4 67%,
+            #d4a94e 82%,
+            #ede4cf 100%
+          );
+          background-size: 250% auto;
+          -webkit-background-clip: text;
+          background-clip: text;
+          -webkit-text-fill-color: transparent;
+          animation: goldShimmer 8s linear infinite;
+        }
+        .home-proof-title {
+          background: linear-gradient(
+            105deg,
+            #ede4cf 0%,
+            #d4a94e 18%,
+            #fff8e4 33%,
+            #C9A84C 50%,
+            #fff8e4 67%,
+            #d4a94e 82%,
+            #ede4cf 100%
+          );
+          background-size: 250% auto;
+          -webkit-background-clip: text;
+          background-clip: text;
+          -webkit-text-fill-color: transparent;
+          animation: goldShimmer 10s linear infinite;
+        }
+        /* Card border glow pulse */
+        .home-left  { animation: borderGlow      5s ease-in-out infinite; }
+        .home-proof { animation: borderGlowProof 6s ease-in-out infinite 1s; }
+        /* Shine sweep on primary CTA buttons */
+        .home-primary,
+        .home-proof-btn { position: relative; overflow: hidden; }
+        .home-primary::after,
+        .home-proof-btn::after {
+          content: "";
+          position: absolute;
+          top: 0; left: 0;
+          width: 40%; height: 100%;
+          background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.42) 50%, transparent 100%);
+          animation: btnShine 3.6s ease-in-out infinite;
+          pointer-events: none;
+        }
       `}</style>
 
       <div className="home-shell">
